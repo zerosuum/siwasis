@@ -7,6 +7,7 @@ import { TabNavigation, TabNavigationLink } from "@/components/TabNavigation";
 import RekapTable from "./RekapTable";
 import { useToast } from "@/components/ui/useToast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import FilterModal from "./FilterModal";
 import { actionSaveRekap } from "./actions";
 import {
   Calendar as IconCalendar,
@@ -21,26 +22,42 @@ export default function RekapClient({ initial }) {
   const sp = useSearchParams();
   const { show } = useToast();
 
-  // State declarations
+  // Query/state dasar
   const [year, setYear] = React.useState(
     Number(sp.get("year")) || new Date().getFullYear()
   );
   const [q, setQ] = React.useState(sp.get("q") || "");
-  const [rt, setRt] = React.useState(sp.get("rt") || "");
-  const [range, setRange] = React.useState(
+  const [rt, setRt] = React.useState(sp.get("rt") || "all");
+
+  const initRange =
     sp.get("from") && sp.get("to")
       ? { from: new Date(sp.get("from")), to: new Date(sp.get("to")) }
-      : undefined
-  );
+      : undefined;
+  const [range, setRange] = React.useState(initRange);
+
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [filterOpen, setFilterOpen] = React.useState(false);
-  const [showRange, setShowRange] = React.useState(false);
+  const [confirmDownload, setConfirmDownload] = React.useState(false);
+
   const [editing, setEditing] = React.useState(false);
   const [confirm, setConfirm] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
   const [updates, setUpdates] = React.useState([]);
 
-  // Helper functions
+  // Data untuk FilterModal
+  const rtOptions = React.useMemo(() => {
+    const s = new Set();
+    (initial?.rows || []).forEach((r) => r?.rt && s.add(String(r.rt)));
+    return Array.from(s).sort();
+  }, [initial]);
+
+  const setoranBounds = React.useMemo(() => {
+    const vals = (initial?.rows || []).map((r) => Number(r.totalSetoran || 0));
+    if (!vals.length) return { min: 0, max: 0 };
+    return { min: Math.min(...vals), max: Math.max(...vals) };
+  }, [initial]);
+
+  // Helpers
   const onToggle = React.useCallback((wargaId, tanggal, checked) => {
     setUpdates((prev) => {
       const key = `${wargaId}-${tanggal}`;
@@ -50,20 +67,29 @@ export default function RekapClient({ initial }) {
     });
   }, []);
 
-  const applyFilter = React.useCallback(() => {
-    const params = new URLSearchParams(sp.toString());
-    params.set("year", String(year));
-    params.set("q", q);
-    params.set("rt", rt);
-    if (range?.from && range?.to) {
-      params.set("from", range.from.toISOString().slice(0, 10));
-      params.set("to", range.to.toISOString().slice(0, 10));
-    } else {
-      params.delete("from");
-      params.delete("to");
-    }
-    router.push(`/kas/rekapitulasi?${params.toString()}`);
-  }, [year, q, rt, range, sp, router]);
+  const applyURL = React.useCallback(
+    (next = {}) => {
+      const params = new URLSearchParams(sp.toString());
+      const nextYear = next.year ?? year;
+      const nextQ = next.q ?? q;
+      const nextRt = next.rt ?? rt;
+      const r = next.range ?? range;
+
+      params.set("year", String(nextYear));
+      nextQ ? params.set("q", String(nextQ)) : params.delete("q");
+      nextRt ? params.set("rt", String(nextRt)) : params.delete("rt");
+
+      if (r?.from && r?.to) {
+        params.set("from", r.from.toISOString().slice(0, 10));
+        params.set("to", r.to.toISOString().slice(0, 10));
+      } else {
+        params.delete("from");
+        params.delete("to");
+      }
+      router.push(`/kas/rekapitulasi?${params.toString()}`);
+    },
+    [sp, router, year, q, rt, range]
+  );
 
   const onSave = async () => {
     setConfirm(false);
@@ -98,19 +124,40 @@ export default function RekapClient({ initial }) {
     });
   };
 
+  // sinkron tahun URL saat berubah manual
   React.useEffect(() => {
     const params = new URLSearchParams(sp.toString());
     params.set("year", String(year));
     router.push(`/kas/rekapitulasi?${params.toString()}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year]);
+
+  // auto-apply ketika from+to lengkap
+  React.useEffect(() => {
+    if (range?.from && range?.to) applyURL({ range });
+  }, [range?.from, range?.to]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // DateRangePicker
+  const calAnchorRef = React.useRef(null);
+  const openCalendar = React.useCallback(() => {
+    if (!calAnchorRef.current) return;
+    const root = calAnchorRef.current;
+    const trigger =
+      root.querySelector('button[aria-haspopup="dialog"]') ||
+      root.querySelector('button[type="button"]') ||
+      root.querySelector("button");
+    if (!trigger) return;
+    ["pointerdown", "mousedown", "mouseup", "click"].forEach((type) => {
+      trigger.dispatchEvent(
+        new MouseEvent(type, { bubbles: true, cancelable: true, view: window })
+      );
+    });
+  }, []);
 
   return (
     <>
-      {/* ======================================================================
-          HEADER "FLOATING": TABS DAN TOOLBAR (DI LUAR CARD)
-      ====================================================================== */}
-      <div className="flex items-center justify-between gap-3 px-4 pt-3">
-        {/* KIRI: TABS */}
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3 px-4">
         <TabNavigation className="!mb-0 h-6">
           <TabNavigationLink
             href="/kas/rekapitulasi"
@@ -127,8 +174,8 @@ export default function RekapClient({ initial }) {
           </TabNavigationLink>
         </TabNavigation>
 
-        {/* KANAN: TOOLBAR */}
         <div className="flex items-center gap-2">
+          {/* Periode */}
           <select
             className="h-6 w-[138px] rounded border border-gray-300 bg-white px-2 text-sm shadow-sm"
             value={year}
@@ -143,6 +190,8 @@ export default function RekapClient({ initial }) {
               );
             })}
           </select>
+
+          {/* Pencarian */}
           <div
             className="relative"
             onMouseEnter={() => setSearchOpen(true)}
@@ -155,13 +204,15 @@ export default function RekapClient({ initial }) {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && applyFilter()}
+              onKeyDown={(e) => e.key === "Enter" && applyURL({ q })}
               placeholder="Cari nama warga..."
               className={`h-6 rounded border border-gray-300 bg-white pl-7 pr-2 text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-gray-200 ${
                 searchOpen || q ? "w-48" : "w-6"
               }`}
             />
           </div>
+
+          {/* Filter → buka FilterModal project */}
           <button
             type="button"
             onClick={() => setFilterOpen(true)}
@@ -170,24 +221,56 @@ export default function RekapClient({ initial }) {
           >
             <IconFilter size={16} />
           </button>
+
+          {/* Kalender */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={openCalendar}
+              className="flex h-6 w-6 items-center justify-center rounded border border-gray-300 bg-white"
+              title="Pilih rentang tanggal"
+              aria-label="Pilih rentang tanggal"
+            >
+              <IconCalendar size={16} />
+            </button>
+
+            <div
+              ref={calAnchorRef}
+              className="absolute inset-0 opacity-0 pointer-events-none"
+              aria-hidden="true"
+            >
+              <DateRangePicker
+                value={range}
+                onChange={(r) => setRange(r)}
+                displayMonths={2}
+                enableYearNavigation
+                translations={{
+                  cancel: "Batal",
+                  apply: "Ya, Simpan",
+                  range: "Rentang",
+                }}
+
+                align="end"
+                sideOffset={8}
+                contentClassName="mt-2 min-w-[560px] rounded-xl border bg-white p-4 shadow-lg"
+                footerClassName="mt-3 border-t pt-3 flex justify-end gap-2"
+                cancelClassName="rounded-lg bg-gray-100 px-4 py-1.5 text-sm"
+                applyClassName="rounded-lg bg-[#6E8649] px-4 py-1.5 text-sm text-white"
+              />
+            </div>
+          </div>
+
+          {/* Export dengan konfirmasi */}
           <button
             type="button"
-            onClick={() => setShowRange((v) => !v)}
             className="flex h-6 w-6 items-center justify-center rounded border border-gray-300 bg-white"
-            title="Pilih rentang tanggal"
-          >
-            <IconCalendar size={16} />
-          </button>
-          <button
-            type="button"
-            className="flex h-6 w-6 items-center justify-center rounded border border-gray-300 bg-white"
-            onClick={() =>
-              show({ title: "Unduh", description: "Menyiapkan file…" })
-            }
             title="Unduh"
+            onClick={() => setConfirmDownload(true)}
           >
             <IconDownload size={16} />
           </button>
+
+          {/* Edit / Simpan */}
           {!editing ? (
             <button
               type="button"
@@ -220,32 +303,8 @@ export default function RekapClient({ initial }) {
         </div>
       </div>
 
-      {/* Popover untuk DateRangePicker */}
-      {showRange && (
-        <div className="relative px-4">
-          <div className="absolute right-4 top-2 z-20">
-            <DateRangePicker
-              value={range}
-              onChange={(r) => {
-                setRange(r);
-                setShowRange(false);
-                setTimeout(applyFilter, 0);
-              }}
-              translations={{
-                cancel: "Batal",
-                apply: "Terapkan",
-                range: "Rentang",
-              }}
-              enableYearNavigation
-            />
-          </div>
-        </div>
-      )}
-
-      {/* ======================================================================
-          KONTEN UTAMA: HANYA TABEL DI DALAM CARD
-      ====================================================================== */}
-      <div className="rounded-xl bg-white shadow">
+      {/* Tabel */}
+      <div className="rounded-xl bg-white shadow overflow-hidden">
         <RekapTable
           initial={initial}
           editing={editing}
@@ -254,40 +313,29 @@ export default function RekapClient({ initial }) {
         />
       </div>
 
-      {/* ======================================================================
-          FOOTER "FLOATING": NOMINAL DAN PAGINATION (DI LUAR CARD)
-      ====================================================================== */}
+      {/* Footer meta & placeholder pagination */}
       <div className="flex items-center justify-between px-4 py-2 text-xs text-gray-500">
         <div>Nominal: {initial.meta?.nominalFormatted}</div>
-        <div>
-          <span>Pagination akan muncul di sini</span>
-        </div>
+        <div>Pagination akan muncul di sini</div>
       </div>
 
-      {/* ======================================================================
-          MODAL-MODAL
-      ====================================================================== */}
+      {/* Filter Modal */}
       {filterOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-lg rounded-xl bg-white p-5 shadow-lg">
-            <h3 className="text-lg font-semibold">Filter Lanjutan</h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Opsi filter akan muncul di sini.
-            </p>
-            <div className="mt-4 text-right">
-              <button
-                onClick={() => {
-                  setFilterOpen(false);
-                  applyFilter();
-                }}
-                className="rounded bg-[#6E8649] px-4 py-2 text-sm text-white"
-              >
-                Selesai
-              </button>
-            </div>
-          </div>
-        </div>
+        <FilterModal
+          open={filterOpen}
+          onClose={() => setFilterOpen(false)}
+          onApply={(vals) => {
+            setRt(vals.rt);
+            setFilterOpen(false);
+            applyURL({ rt: vals.rt });
+          }}
+          rtOptions={rtOptions}
+          value={{ rt, min: setoranBounds.min, max: setoranBounds.max }}
+          bounds={setoranBounds}
+        />
       )}
+
+      {/* Confirm Simpan Edit */}
       <ConfirmDialog
         open={confirm}
         title="Konfirmasi"
@@ -296,6 +344,31 @@ export default function RekapClient({ initial }) {
         okText="Ya, Simpan"
         onCancel={() => setConfirm(false)}
         onOk={onSave}
+      />
+
+      {/* Confirm Download */}
+      <ConfirmDialog
+        open={confirmDownload}
+        title="Konfirmasi"
+        description="Apakah Anda yakin ingin mengunduh file ini?"
+        cancelText="Batal"
+        okText="Ya, Unduh"
+        onCancel={() => setConfirmDownload(false)}
+        onOk={() => {
+          setConfirmDownload(false);
+          const params = new URLSearchParams({
+            year: String(year),
+            ...(range?.from && range?.to
+              ? {
+                  from: range.from.toISOString().slice(0, 10),
+                  to: range.to.toISOString().slice(0, 10),
+                }
+              : {}),
+            ...(q ? { q } : {}),
+            ...(rt ? { rt } : {}),
+          });
+          window.location.href = `/api/kas/rekapitulasi/export?${params.toString()}`;
+        }}
       />
     </>
   );

@@ -1,7 +1,7 @@
 // tailwind.config.js
 
 /** @type {import('tailwindcss').Config} */
-import defaultTheme from "tailwindcss/defaultTheme"; // Import tema default
+import defaultTheme from "tailwindcss/defaultTheme";
 
 export default {
   darkMode: "class",
@@ -11,13 +11,14 @@ export default {
   ],
   theme: {
     extend: {
-      // ✅ Mendaftarkan font "REM" di depan antrian font sans-serif bawaan
       fontFamily: {
         sans: ["REM", "sans-serif"],
       },
       boxShadow: {
         card: "0 4px 4px -2px rgba(24, 39, 75, 0.08), 0 2px 4px -2px rgba(24, 39, 75, 0.12)",
       },
+      modal:
+        "0 8px 28px -6px rgba(24, 39, 75, 0.12), 0 18px 88px -4px rgba(24, 39, 75, 0.14)",
       colors: {
         brand: "rgb(var(--brand) / <alpha-value>)",
         "brand-ink": "rgb(var(--brand-ink) / <alpha-value>)",

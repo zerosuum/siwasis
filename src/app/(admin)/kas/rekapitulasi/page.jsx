@@ -34,12 +34,12 @@ export default async function Page({ searchParams }) {
     (await getKasRekap({ year, from, to, search: q, rt })) || defaultData;
 
   return (
-    <div className="px-6 pb-10">
+    <div className="pb-10">
       {/* KPI cards */}
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card>
           <div className="text-sm text-gray-500">Pemasukan</div>
-          <div className="mt-1 text-2xl font-semibold">
+          <div className="mt-1 text-2xl font-semibold font-sans">
             {initial.kpi.pemasukanFormatted}
           </div>
           <div className="mt-1 text-xs text-gray-400">

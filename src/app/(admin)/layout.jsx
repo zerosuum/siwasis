@@ -1,79 +1,88 @@
-// src/app/(admin)/layout.jsx
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import {
+  LayoutDashboard as IconDashboard,
+  Wallet as IconKas,
+  Handshake as IconArisan,
+  Home as IconJimpitan,
+  Trash2 as IconSampah,
+  Folder as IconDokumen,
+  UserPlus as IconTambahWarga,
+  Settings as IconSettings,
+  ArrowLeft as IconKembali,
+} from "lucide-react";
+
+function SidebarLink({ href, icon: Icon, children }) {
+  const pathname = usePathname();
+  const isActive = pathname.startsWith(href);
+
+  return (
+    <Link
+      href={href}
+      className={`flex items-center gap-3 rounded-md px-3 py-2 transition-colors duration-150 ${
+        isActive ? "bg-white font-semibold text-[#46552D]" : "hover:bg-white/10"
+      }`}
+    >
+      <Icon size={20} />
+      <span>{children}</span>
+    </Link>
+  );
+}
 
 export default function AdminLayout({ children }) {
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <aside className="w-[200px] shrink-0 border-r border-[#E0E4D7] bg-[#6E8649] text-white flex flex-col justify-between p-4">
+    <div className="flex h-screen overflow-hidden bg-gray-50">
+      <aside className="flex w-[220px] shrink-0 flex-col justify-between border-r bg-[#6E8649] p-4 text-white">
         <div>
-          <div className="mb-6 text-2xl font-semibold">SiWASIS</div>
-          <nav className="flex flex-col gap-1 text-[15px]">
-            <Link
-              className="rounded-md px-3 py-2 hover:bg-white/10"
-              href="/dashboard"
-            >
+          <div className="mb-8 text-center text-3xl font-bold tracking-wider">
+            SiWASIS
+          </div>
+          <nav className="flex flex-col gap-2 text-[15px]">
+            <SidebarLink href="/dashboard" icon={IconDashboard}>
               Dashboard
-            </Link>
-            <Link
-              className="rounded-md px-3 py-2 hover:bg-white/10"
-              href="/kas"
-            >
+            </SidebarLink>
+            <SidebarLink href="/kas" icon={IconKas}>
               Kas
-            </Link>
-            <Link
-              className="rounded-md px-3 py-2 hover:bg-white/10"
-              href="/arisan"
-            >
+            </SidebarLink>
+            <SidebarLink href="/arisan" icon={IconArisan}>
               Arisan
-            </Link>
-            <Link
-              className="rounded-md px-3 py-2 hover:bg-white/10"
-              href="/jimpitan"
-            >
+            </SidebarLink>
+            <SidebarLink href="/jimpitan" icon={IconJimpitan}>
               Jimpitan
-            </Link>
-            <Link
-              className="rounded-md px-3 py-2 hover:bg-white/10"
-              href="/sampah"
-            >
+            </SidebarLink>
+            <SidebarLink href="/sampah" icon={IconSampah}>
               Sampah
-            </Link>
-            <Link
-              className="rounded-md px-3 py-2 hover:bg-white/10"
-              href="/dokumen"
-            >
+            </SidebarLink>
+            <SidebarLink href="/dokumen" icon={IconDokumen}>
               Dokumen
-            </Link>
-            <Link
-              className="rounded-md px-3 py-2 hover:bg-white/10"
-              href="/tambah-warga"
-            >
+            </SidebarLink>
+            <SidebarLink href="/tambah-warga" icon={IconTambahWarga}>
               Tambah Warga
-            </Link>
+            </SidebarLink>
           </nav>
         </div>
-        <div className="pt-4 border-t border-white/20">
-          <Link
-            className="rounded-md px-3 py-2 hover:bg-white/10"
-            href="/settings"
-          >
+        <div className="space-y-2 border-t border-white/20 pt-4">
+          <SidebarLink href="/settings" icon={IconSettings}>
             Settings
-          </Link>
+          </SidebarLink>
+          <SidebarLink href="/dashboard" icon={IconKembali}>
+            Kembali
+          </SidebarLink>
         </div>
       </aside>
 
-      {/* Area konten */}
-      <div className="flex-1 flex flex-col">
-        {/* TOP BAR */}
-        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-[#EEF0E8] bg-white px-6">
-          <Breadcrumbs />
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <header className="sticky top-0 z-30 grid h-[72px] grid-cols-[1fr_auto] items-center gap-4 border-b border-[#EEF0E8] bg-white px-6">
+          <div className="min-w-0 text-sm font-medium text-gray-500">
+            <Breadcrumbs />
+          </div>
           <div className="text-sm text-gray-600">Username</div>
         </header>
 
-        {/* Body */}
-        <main className="p-6">{children}</main>
+        <main className="p-6 bg-white overflow-auto">{children}</main>
       </div>
     </div>
   );

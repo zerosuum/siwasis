@@ -10,10 +10,6 @@ import {
   SlidersHorizontal as IconFilter,
 } from "lucide-react";
 
-/**
- * Toolbar ringan di strip atas: trigger ke RekapClient via data-hook
- * dan penggantian tahun via query param.
- */
 export default function ToolbarClient() {
   const router = useRouter();
   const sp = useSearchParams();
@@ -30,7 +26,6 @@ export default function ToolbarClient() {
 
   return (
     <div className="flex items-center gap-2">
-      {/* 1. Dropdown Periode yang baru */}
       <select
         className="h-9 w-[138px] rounded-md border border-gray-300 bg-white px-2 text-sm text-gray-500 shadow-xs outline-none focus:ring-2 focus:ring-gray-200"
         value={year}
@@ -40,8 +35,6 @@ export default function ToolbarClient() {
           applyYear(v);
         }}
       >
-        {/* Opsi ini berfungsi sebagai placeholder */}
-        {/* <option value="" disabled selected>Pilih periode</option> */}
         {Array.from({ length: 6 }).map((_, i) => {
           const y = new Date().getFullYear() - i;
           return (
@@ -52,22 +45,17 @@ export default function ToolbarClient() {
         })}
       </select>
 
-      {/* 2. Tombol Ikon yang sudah di-style ulang */}
-      {/* Search (Icon Only) */}
       <button
         type="button"
         className="h-9 w-9 flex items-center justify-center rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
         title="Pencarian"
         onClick={() => {
-          // Implementasi untuk membuka search bar bisa ditambahkan di sini
-          // atau menggunakan data-hook jika inputnya ada di RekapClient
           alert("Fungsi pencarian belum dihubungkan");
         }}
       >
         <IconSearch size={20} />
       </button>
 
-      {/* Filter (Icon Only) */}
       <button
         type="button"
         className="h-9 w-9 flex items-center justify-center rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
@@ -82,7 +70,6 @@ export default function ToolbarClient() {
         <IconFilter size={20} />
       </button>
 
-      {/* Calendar (Icon Only) */}
       <button
         type="button"
         className="h-9 w-9 flex items-center justify-center rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
@@ -97,7 +84,6 @@ export default function ToolbarClient() {
         <IconCalendar size={20} />
       </button>
 
-      {/* Download (Icon Only) */}
       <button
         type="button"
         className="h-9 w-9 flex items-center justify-center rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
@@ -112,7 +98,6 @@ export default function ToolbarClient() {
         <IconDownload size={20} />
       </button>
 
-      {/* Edit (Icon Only, Solid Background) */}
       <button
         type="button"
         className="h-9 w-9 flex items-center justify-center rounded-md bg-[#0F172A] text-white"
