@@ -1,10 +1,12 @@
+// src/app/(admin)/kas/rekapitulasi/RekapClient.jsx
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { DateRangePicker } from "@/components/DatePicker";
 import { TabNavigation, TabNavigationLink } from "@/components/TabNavigation";
 import RekapTable from "./RekapTable";
+import Pagination from "@/components/Pagination";
 import { useToast } from "@/components/ui/useToast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import FilterModal from "./FilterModal";
@@ -17,12 +19,22 @@ import {
   Pencil as IconPencil,
 } from "lucide-react";
 
+// ✅ Lazy-load DateRangePicker
+const DateRangePickerLazy = dynamic(
+  () => import("@/components/DatePicker").then((m) => m.DateRangePicker),
+  { ssr: false, loading: () => null }
+);
+
+const PER_PAGE = 10;
+
 export default function RekapClient({ initial }) {
   const router = useRouter();
   const sp = useSearchParams();
   const { show } = useToast();
 
-  // Query/state dasar
+  const [navPending, startNav] = React.useTransition();
+
+  const page = Number(sp.get("page")) || 1;
   const [year, setYear] = React.useState(
     Number(sp.get("year")) || new Date().getFullYear()
   );
@@ -41,10 +53,14 @@ export default function RekapClient({ initial }) {
 
   const [editing, setEditing] = React.useState(false);
   const [confirm, setConfirm] = React.useState(false);
-  const [pending, startTransition] = React.useTransition();
+  const [pending, startSave] = React.useTransition();
   const [updates, setUpdates] = React.useState([]);
 
-  // Data untuk FilterModal
+  // Datepicker baru di-mount saat dibuka (menghindari biaya awal)
+  const [calMounted, setCalMounted] = React.useState(false);
+  const calAnchorRef = React.useRef(null);
+
+  // RT options & bounds (ringan, tapi tetap memo)
   const rtOptions = React.useMemo(() => {
     const s = new Set();
     (initial?.rows || []).forEach((r) => r?.rt && s.add(String(r.rt)));
@@ -57,7 +73,7 @@ export default function RekapClient({ initial }) {
     return { min: Math.min(...vals), max: Math.max(...vals) };
   }, [initial]);
 
-  // Helpers
+  // === Helpers
   const onToggle = React.useCallback((wargaId, tanggal, checked) => {
     setUpdates((prev) => {
       const key = `${wargaId}-${tanggal}`;
@@ -66,6 +82,21 @@ export default function RekapClient({ initial }) {
       return next;
     });
   }, []);
+
+  const pushIfChanged = React.useCallback(
+    (params) => {
+      const next = params.toString();
+      const cur =
+        typeof window !== "undefined"
+          ? window.location.search.slice(1)
+          : sp.toString();
+      if (next !== cur) {
+        // dorong navigasi ke transition biar UI tetap responsif
+        startNav(() => router.push(`/kas/rekapitulasi?${next}`));
+      }
+    },
+    [router, sp]
+  );
 
   const applyURL = React.useCallback(
     (next = {}) => {
@@ -76,8 +107,12 @@ export default function RekapClient({ initial }) {
       const r = next.range ?? range;
 
       params.set("year", String(nextYear));
+      params.set("page", "1"); // reset page tiap filter
+
       nextQ ? params.set("q", String(nextQ)) : params.delete("q");
-      nextRt ? params.set("rt", String(nextRt)) : params.delete("rt");
+      nextRt && nextRt !== "all"
+        ? params.set("rt", String(nextRt))
+        : params.delete("rt");
 
       if (r?.from && r?.to) {
         params.set("from", r.from.toISOString().slice(0, 10));
@@ -86,14 +121,14 @@ export default function RekapClient({ initial }) {
         params.delete("from");
         params.delete("to");
       }
-      router.push(`/kas/rekapitulasi?${params.toString()}`);
+      pushIfChanged(params);
     },
-    [sp, router, year, q, rt, range]
+    [sp, year, q, rt, range, pushIfChanged]
   );
 
   const onSave = async () => {
     setConfirm(false);
-    startTransition(async () => {
+    startSave(async () => {
       try {
         const fd = new FormData();
         fd.append(
@@ -124,35 +159,36 @@ export default function RekapClient({ initial }) {
     });
   };
 
-  // sinkron tahun URL saat berubah manual
-  React.useEffect(() => {
-    const params = new URLSearchParams(sp.toString());
-    params.set("year", String(year));
-    router.push(`/kas/rekapitulasi?${params.toString()}`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [year]);
-
-  // auto-apply ketika from+to lengkap
+  // Auto-apply hanya ketika range lengkap; no-op kalau sama
   React.useEffect(() => {
     if (range?.from && range?.to) applyURL({ range });
-  }, [range?.from, range?.to]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range?.from, range?.to]);
 
-  // DateRangePicker
-  const calAnchorRef = React.useRef(null);
+  // Buka kalender (setelah mount) → trigger klik ke internal trigger
   const openCalendar = React.useCallback(() => {
-    if (!calAnchorRef.current) return;
-    const root = calAnchorRef.current;
-    const trigger =
-      root.querySelector('button[aria-haspopup="dialog"]') ||
-      root.querySelector('button[type="button"]') ||
-      root.querySelector("button");
-    if (!trigger) return;
-    ["pointerdown", "mousedown", "mouseup", "click"].forEach((type) => {
-      trigger.dispatchEvent(
-        new MouseEvent(type, { bubbles: true, cancelable: true, view: window })
-      );
+    if (!calMounted) setCalMounted(true);
+    requestAnimationFrame(() => {
+      const root = calAnchorRef.current;
+      if (!root) return;
+      const trigger =
+        root.querySelector('button[aria-haspopup="dialog"]') ||
+        root.querySelector('button[type="button"]') ||
+        root.querySelector("button");
+      if (!trigger) return;
+      ["pointerdown", "mousedown", "mouseup", "click"].forEach((type) => {
+        trigger.dispatchEvent(
+          new MouseEvent(type, {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+          })
+        );
+      });
     });
-  }, []);
+  }, [calMounted]);
+
+  const total = Array.isArray(initial?.rows) ? initial.rows.length : 0;
 
   return (
     <>
@@ -179,7 +215,11 @@ export default function RekapClient({ initial }) {
           <select
             className="h-6 w-[138px] rounded border border-gray-300 bg-white px-2 text-sm shadow-sm"
             value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
+            onChange={(e) => {
+              const y = Number(e.target.value);
+              setYear(y);
+              applyURL({ year: y });
+            }}
           >
             {Array.from({ length: 6 }).map((_, i) => {
               const y = new Date().getFullYear() - i;
@@ -212,7 +252,7 @@ export default function RekapClient({ initial }) {
             />
           </div>
 
-          {/* Filter → buka FilterModal project */}
+          {/* Filter */}
           <button
             type="button"
             onClick={() => setFilterOpen(true)}
@@ -222,7 +262,7 @@ export default function RekapClient({ initial }) {
             <IconFilter size={16} />
           </button>
 
-          {/* Kalender */}
+          {/* Kalender (lazy-mount + lazy-bundle) */}
           <div className="relative">
             <button
               type="button"
@@ -234,33 +274,34 @@ export default function RekapClient({ initial }) {
               <IconCalendar size={16} />
             </button>
 
-            <div
-              ref={calAnchorRef}
-              className="absolute inset-0 opacity-0 pointer-events-none"
-              aria-hidden="true"
-            >
-              <DateRangePicker
-                value={range}
-                onChange={(r) => setRange(r)}
-                displayMonths={2}
-                enableYearNavigation
-                translations={{
-                  cancel: "Batal",
-                  apply: "Ya, Simpan",
-                  range: "Rentang",
-                }}
-
-                align="end"
-                sideOffset={8}
-                contentClassName="mt-2 min-w-[560px] rounded-xl border bg-white p-4 shadow-lg"
-                footerClassName="mt-3 border-t pt-3 flex justify-end gap-2"
-                cancelClassName="rounded-lg bg-gray-100 px-4 py-1.5 text-sm"
-                applyClassName="rounded-lg bg-[#6E8649] px-4 py-1.5 text-sm text-white"
-              />
-            </div>
+            {calMounted && (
+              <div
+                ref={calAnchorRef}
+                className="absolute inset-0 opacity-0 pointer-events-none"
+                aria-hidden="true"
+              >
+                <DateRangePickerLazy
+                  value={range}
+                  onChange={(r) => setRange(r)}
+                  displayMonths={2}
+                  enableYearNavigation
+                  translations={{
+                    cancel: "Batal",
+                    apply: "Ya, Simpan",
+                    range: "Rentang",
+                  }}
+                  align="end"
+                  sideOffset={8}
+                  contentClassName="mt-2 min-w-[560px] rounded-xl border bg-white p-4 shadow-lg"
+                  footerClassName="mt-3 border-t pt-3 flex justify-end gap-2"
+                  cancelClassName="rounded-lg bg-gray-100 px-4 py-1.5 text-sm"
+                  applyClassName="rounded-lg bg-[#6E8649] px-4 py-1.5 text-sm text-white"
+                />
+              </div>
+            )}
           </div>
 
-          {/* Export dengan konfirmasi */}
+          {/* Export */}
           <button
             type="button"
             className="flex h-6 w-6 items-center justify-center rounded border border-gray-300 bg-white"
@@ -310,13 +351,15 @@ export default function RekapClient({ initial }) {
           editing={editing}
           updates={updates}
           onToggle={onToggle}
+          page={page}
+          pageSize={PER_PAGE}
         />
       </div>
 
-      {/* Footer meta & placeholder pagination */}
+      {/* Footer meta & pagination */}
       <div className="flex items-center justify-between px-4 py-2 text-xs text-gray-500">
         <div>Nominal: {initial.meta?.nominalFormatted}</div>
-        <div>Pagination akan muncul di sini</div>
+        <Pagination page={page} limit={PER_PAGE} total={total} />
       </div>
 
       {/* Filter Modal */}
@@ -365,7 +408,7 @@ export default function RekapClient({ initial }) {
                 }
               : {}),
             ...(q ? { q } : {}),
-            ...(rt ? { rt } : {}),
+            ...(rt && rt !== "all" ? { rt } : {}),
           });
           window.location.href = `/api/kas/rekapitulasi/export?${params.toString()}`;
         }}

@@ -1,56 +1,91 @@
-import { NextResponse } from "next/server";
+// src/app/api/mock/kas/rekap/route.js
+import { ROWS, DATES, META_BASE } from "./rekap-store.mjs";
 
-export async function GET(req) {
- const { searchParams } = new URL(req.url);
- const year = Number(searchParams.get("year") || new Date().getFullYear());
-
- const dates = [
- `${year}-09-01`,
- `${year}-09-15`,
- `${year}-09-29`,
- `${year}-10-13`,
- `${year}-10-27`,
- ];
-
- const rows = [
- {
- id: "w1",
- rt: "01",
- nama: "Evelyn",
- jumlahSetoran: 1,
- totalSetoranFormatted: "Rp. 10.000",
- kehadiran: { [dates[0]]: true, [dates[1]]: false, [dates[2]]: true },
- },
- {
- id: "w2",
- rt: "02",
- nama: "Mia",
- jumlahSetoran: 2,
- totalSetoranFormatted: "Rp. 20.000",
- kehadiran: { [dates[0]]: true, [dates[1]]: true, [dates[2]]: false },
- },
- ];
-
- return NextResponse.json({
- meta: {
- from: dates[0],
- to: dates.at(-1),
- nominalFormatted: "Rp. 10.000",
- },
- dates,
- kpi: {
- pemasukanFormatted: "Rp. 2.750.000",
- pengeluaranFormatted: "Rp. 1.650.000",
- saldoFormatted: "Rp. 8.050.000",
- rangeLabel: "15 Agustus 2025 - 15 September 2025",
- },
- rows,
- });
+function withinRange(dateISO, from, to) {
+  if (from && dateISO < from) return false;
+  if (to && dateISO > to) return false;
+  return true;
 }
 
-export async function POST(req) {
- const payload = await req.json();
- console.log("kas/rekap updates:", payload);
- // Di dunia nyata: validasi + simpan ke DB, lalu return status
- return NextResponse.json({ ok: true });
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+
+  const year = Number(searchParams.get("year") || 2025);
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
+  const q = (searchParams.get("q") || "").toLowerCase();
+  const rt = searchParams.get("rt") || ""; // "all" atau "01" dsb
+
+  // Filter tanggal (pakai array DATES yang sudah ringan & frozen)
+  const dates = DATES.filter((d) => withinRange(d, from, to));
+
+  // Filter rows: RT + keyword
+  let rows = ROWS;
+  if (rt && rt !== "all")
+    rows = rows.filter((r) => String(r.rt) === String(rt));
+  if (q) rows = rows.filter((r) => r.nama.toLowerCase().includes(q));
+
+  // Hitung KPI cepat (tanpa bikin objek baru besar-besar)
+  let pemasukan = 0;
+  for (const r of rows) {
+    let count = 0;
+    for (const d of dates) if (r.kehadiran[d]) count++;
+    pemasukan += count * r.jumlahSetoran;
+  }
+  const pengeluaran = 0; // mock
+  const saldo = pemasukan - pengeluaran;
+
+  const kpi = {
+    pemasukanFormatted: pemasukan.toLocaleString("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    }),
+    pengeluaranFormatted: pengeluaran.toLocaleString("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    }),
+    saldoFormatted: saldo.toLocaleString("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    }),
+    rangeLabel:
+      from && to
+        ? `${from.split("-").reverse().join("/")} – ${to
+            .split("-")
+            .reverse()
+            .join("/")}`
+        : `Periode ${year}`,
+  };
+
+  // Balikkan hanya field yang dipakai UI (hindari payload super besar)
+  const rowsSlim = rows.map((r) => ({
+    id: r.id,
+    rt: r.rt,
+    nama: r.nama,
+    jumlahSetoran: r.jumlahSetoran,
+    totalSetoranFormatted: r.totalSetoranFormatted,
+    // jangan kirim semua tanggal raw; RekapTable sudah konsumsi r.kehadiran[tgl]
+    kehadiran: dates.reduce((acc, d) => {
+      acc[d] = r.kehadiran[d] ? 1 : 0;
+      return acc;
+    }, {}),
+  }));
+
+  const meta = {
+    ...META_BASE,
+    year,
+    from: from || META_BASE.from,
+    to: to || META_BASE.to,
+    nominalFormatted: META_BASE.nominalFormatted,
+  };
+
+  return Response.json({
+    meta,
+    kpi,
+    rows: rowsSlim,
+    dates, // dipakai header kolom
+  });
 }
