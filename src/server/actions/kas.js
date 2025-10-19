@@ -1,26 +1,41 @@
-// src/server/actions/kas.js
-"use server";
+// src/server/actions/kas.js  (Next.js)
+import { API_BASE } from "@/lib/config";
 
-import "server-only";
-
-/**
- * Simpan rekap kas ke backend.
- * payload: { year, from, to, updates }
- */
-export async function saveKasRekap(payload) {
-  const base = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-  const url = `${base}/api/mock/kas/rekap`;
-
+async function postJSON(url, body) {
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    headers: { Accept: "application/json" },
+    body,
+    cache: "no-store",
   });
-
   if (!res.ok) {
-    throw new Error(`saveKasRekap failed: ${res.status}`);
+    const text = await res.text().catch(() => "");
+    throw new Error(`${url} failed: ${res.status} ${text}`);
   }
-
   return res.json();
 }
-x
+
+// === Rekap
+export async function saveKasRekap(formData) {
+  // formData: FormData yang berisi key 'payload'
+  return postJSON(`${API_BASE}/kas/rekap/save`, formData);
+}
+
+// === Laporan
+export async function createKasEntry(payload) {
+  const fd = new FormData();
+  Object.entries(payload).forEach(([k, v]) => fd.append(k, String(v ?? "")));
+  return postJSON(`${API_BASE}/kas/laporan/create`, fd);
+}
+
+export async function updateKasEntry(payload) {
+  const fd = new FormData();
+  Object.entries(payload).forEach(([k, v]) => fd.append(k, String(v ?? "")));
+  return postJSON(`${API_BASE}/kas/laporan/update`, fd);
+}
+
+export async function deleteKasEntry(id) {
+  const fd = new FormData();
+  fd.append("id", String(id));
+  return postJSON(`${API_BASE}/kas/laporan/delete`, fd);
+}

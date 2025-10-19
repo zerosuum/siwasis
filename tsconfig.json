@@ -24,6 +24,13 @@
       }
     ]
   },
-  "include": ["next-env.d.ts", ".next/types/**/*.ts", "**/*.ts", "**/*.tsx", "src/app/(admin)/kas/rekapitulasi/RekapClient.jsx"],
+  "include": [
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "src/app/(dashboard)/dashboard/kas/rekapitulasi/RekapClient.jsx",
+    "src/app/(dashboard)/dashboard/kas/rekapitulasi/ToolbarClient.jsx"
+  ],
   "exclude": ["node_modules"]
 }

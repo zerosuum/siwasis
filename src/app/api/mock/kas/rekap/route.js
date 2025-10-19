@@ -1,5 +1,6 @@
-// src/app/api/mock/kas/rekap/route.js
 import { ROWS, DATES, META_BASE } from "./rekap-store.mjs";
+
+const PER_PAGE = 15;
 
 function withinRange(dateISO, from, to) {
   if (from && dateISO < from) return false;
@@ -9,83 +10,42 @@ function withinRange(dateISO, from, to) {
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
-
-  const year = Number(searchParams.get("year") || 2025);
-  const from = searchParams.get("from");
-  const to = searchParams.get("to");
+  const page = Number(searchParams.get("page") || 1);
   const q = (searchParams.get("q") || "").toLowerCase();
-  const rt = searchParams.get("rt") || ""; // "all" atau "01" dsb
+  const rt = searchParams.get("rt") || "";
 
-  // Filter tanggal (pakai array DATES yang sudah ringan & frozen)
-  const dates = DATES.filter((d) => withinRange(d, from, to));
-
-  // Filter rows: RT + keyword
-  let rows = ROWS;
-  if (rt && rt !== "all")
-    rows = rows.filter((r) => String(r.rt) === String(rt));
-  if (q) rows = rows.filter((r) => r.nama.toLowerCase().includes(q));
-
-  // Hitung KPI cepat (tanpa bikin objek baru besar-besar)
-  let pemasukan = 0;
-  for (const r of rows) {
-    let count = 0;
-    for (const d of dates) if (r.kehadiran[d]) count++;
-    pemasukan += count * r.jumlahSetoran;
+  // Filter data di server
+  let filteredRows = ROWS;
+  if (rt && rt !== "all") {
+    filteredRows = filteredRows.filter((r) => String(r.rt) === String(rt));
   }
-  const pengeluaran = 0; // mock
-  const saldo = pemasukan - pengeluaran;
+  if (q) {
+    filteredRows = filteredRows.filter((r) => r.nama.toLowerCase().includes(q));
+  }
 
+  const total = filteredRows.length;
+  const paginatedRows = filteredRows.slice(
+    (page - 1) * PER_PAGE,
+    page * PER_PAGE
+  );
+
+  // Kalkulasi KPI bisa disederhanakan atau di-mock untuk performa dev
   const kpi = {
-    pemasukanFormatted: pemasukan.toLocaleString("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0,
-    }),
-    pengeluaranFormatted: pengeluaran.toLocaleString("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0,
-    }),
-    saldoFormatted: saldo.toLocaleString("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0,
-    }),
-    rangeLabel:
-      from && to
-        ? `${from.split("-").reverse().join("/")} – ${to
-            .split("-")
-            .reverse()
-            .join("/")}`
-        : `Periode ${year}`,
-  };
-
-  // Balikkan hanya field yang dipakai UI (hindari payload super besar)
-  const rowsSlim = rows.map((r) => ({
-    id: r.id,
-    rt: r.rt,
-    nama: r.nama,
-    jumlahSetoran: r.jumlahSetoran,
-    totalSetoranFormatted: r.totalSetoranFormatted,
-    // jangan kirim semua tanggal raw; RekapTable sudah konsumsi r.kehadiran[tgl]
-    kehadiran: dates.reduce((acc, d) => {
-      acc[d] = r.kehadiran[d] ? 1 : 0;
-      return acc;
-    }, {}),
-  }));
-
-  const meta = {
-    ...META_BASE,
-    year,
-    from: from || META_BASE.from,
-    to: to || META_BASE.to,
-    nominalFormatted: META_BASE.nominalFormatted,
+    pemasukanFormatted: "Rp 12.345.000", // Contoh KPI
+    pengeluaranFormatted: "Rp 0",
+    saldoFormatted: "Rp 12.345.000",
+    rangeLabel: `Periode ${
+      searchParams.get("year") || new Date().getFullYear()
+    }`,
   };
 
   return Response.json({
-    meta,
-    kpi,
-    rows: rowsSlim,
-    dates, // dipakai header kolom
+    meta: META_BASE,
+    kpi: kpi,
+    rows: paginatedRows, // Hanya kirim data per halaman
+    dates: DATES,
+    total: total,
+    page: page,
+    perPage: PER_PAGE,
   });
 }
