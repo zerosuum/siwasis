@@ -1,5 +1,5 @@
-import { getKasLaporan } from "@/server/queries/kas";
-import LaporanClient from "./LaporanClient";
+import { getKasRekap } from "@/server/queries/kas";
+import RekapClient from "./RekapClient";
 import KPICard from "@/components/KPICard";
 
 export const dynamic = "force-dynamic";
@@ -9,34 +9,42 @@ function first(v) {
 }
 
 const defaultData = {
-  rows: [],
-  total: 0,
-  page: 1,
-  perPage: 15,
+  meta: { year: new Date().getFullYear(), nominalFormatted: "Rp 0" },
   kpi: {
     pemasukanFormatted: "Rp 0",
     pengeluaranFormatted: "Rp 0",
     saldoFormatted: "Rp 0",
     rangeLabel: "Tidak ada data",
   },
+  rows: [],
+  dates: [],
+  total: 0,
+  page: 1,
+  perPage: 15,
 };
 
 export default async function Page({ searchParams }) {
   const sp = await searchParams;
 
-  const page = sp?.page ? Number(sp.page) : 1;
-  const year = sp?.year ? Number(sp.year) : new Date().getFullYear();
-  const from = sp?.from ?? null;
-  const to   = sp?.to ?? null;
-  const q    = sp?.q ?? "";
-  const type = sp?.type ?? null;   
-  const min  = sp?.min ? Number(sp.min) : undefined;
-  const max  = sp?.max ? Number(sp.max) : undefined;
+  const page = sp?.page ? Number(first(sp.page)) : 1;
+  const year = sp?.year ? Number(first(sp.year)) : new Date().getFullYear();
+  const q = sp?.q ? String(first(sp.q)) : ""; // pakai key "q"
+  const rt = sp?.rt ? String(first(sp.rt)) : "all";
+  const from = sp?.from ? String(first(sp.from)) : undefined; // ambil from
+  const to = sp?.to ? String(first(sp.to)) : undefined; // ambil to
+  const min = sp?.min ? Number(first(sp.min)) : undefined;
+  const max = sp?.max ? Number(first(sp.max)) : undefined;
 
-  // const initial =
-  //   (await getKasLaporan({ page, year, from, to, q })) || defaultData;
 
-  const resp = await getKasLaporan({ page, year, from, to, q, type, min, max });
+  // let initial;
+  // try {
+  //   initial = (await getKasRekap({ page, year, q, rt, from, to, min, max })) || defaultData;
+  // } catch (error) {
+  //   console.error("Error fetching data:", error);
+  //   initial = defaultData;
+  // }
+
+  const resp = await getKasRekap({ page, year, q, rt, from, to, min, max });
   const initial = resp && resp.ok === false ? defaultData : (resp || defaultData);
 
   const kpis = [
@@ -69,7 +77,9 @@ export default async function Page({ searchParams }) {
           />
         ))}
       </div>
-      <LaporanClient initial={initial} />
+      <div className="mt-2">
+        <RekapClient initial={initial} />
+      </div>
     </div>
   );
 }
