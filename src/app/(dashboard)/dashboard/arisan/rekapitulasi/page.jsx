@@ -1,6 +1,6 @@
-import { getKasRekap } from "@/server/queries/kas";
-import RekapClient from "./RekapClient";
 import KPICard from "@/components/KPICard";
+import ArisanRekapClient from "./RekapClient";
+import { getArisanRekap } from "@/server/queries/arisan";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +8,7 @@ function first(v) {
   return Array.isArray(v) ? v[0] : v;
 }
 
-const defaultData = {
+const fallback = {
   meta: { year: new Date().getFullYear(), nominalFormatted: "Rp 0" },
   kpi: {
     pemasukanFormatted: "Rp 0",
@@ -25,27 +25,31 @@ const defaultData = {
 
 export default async function Page({ searchParams }) {
   const sp = await searchParams;
-
   const page = sp?.page ? Number(first(sp.page)) : 1;
   const year = sp?.year ? Number(first(sp.year)) : new Date().getFullYear();
-  const q = sp?.q ? String(first(sp.q)) : ""; 
+  const q = sp?.q ? String(first(sp.q)) : "";
   const rt = sp?.rt ? String(first(sp.rt)) : "all";
-  const from = sp?.from ? String(first(sp.from)) : undefined; 
-  const to = sp?.to ? String(first(sp.to)) : undefined; 
+  const from = sp?.from ? String(first(sp.from)) : undefined;
+  const to = sp?.to ? String(first(sp.to)) : undefined;
   const min = sp?.min ? Number(first(sp.min)) : undefined;
   const max = sp?.max ? Number(first(sp.max)) : undefined;
 
-
-  // let initial;
-  // try {
-  //   initial = (await getKasRekap({ page, year, q, rt, from, to, min, max })) || defaultData;
-  // } catch (error) {
-  //   console.error("Error fetching data:", error);
-  //   initial = defaultData;
-  // }
-
-  const resp = await getKasRekap({ page, year, q, rt, from, to, min, max });
-  const initial = resp && resp.ok === false ? defaultData : (resp || defaultData);
+  let initial = fallback;
+  try {
+    const resp = await getArisanRekap({
+      page,
+      year,
+      q,
+      rt,
+      from,
+      to,
+      min,
+      max,
+    });
+    if (resp && resp.kpi) initial = resp;
+  } catch {
+    initial = fallback;
+  }
 
   const kpis = [
     {
@@ -77,8 +81,9 @@ export default async function Page({ searchParams }) {
           />
         ))}
       </div>
+
       <div className="mt-2">
-        <RekapClient initial={initial} />
+        <ArisanRekapClient initial={initial} />
       </div>
     </div>
   );
