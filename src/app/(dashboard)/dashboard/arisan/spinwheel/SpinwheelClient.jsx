@@ -225,7 +225,6 @@ export default function SpinwheelClient({ initialSegments }) {
                 })}
               </motion.div>
 
-              // Pointer
               <div
                 style={{
                   position: "absolute",

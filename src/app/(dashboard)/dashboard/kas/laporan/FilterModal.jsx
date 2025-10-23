@@ -19,7 +19,7 @@ export default function FilterModal({ open, onClose, onApply, value, bounds }) {
       Number.isFinite(value.min) ? value.min : bounds.min,
       Number.isFinite(value.max) ? value.max : bounds.max,
     ]);
-  }, [open]); // eslint-disable-line
+  }, [open]); 
 
   if (!open) return null;
 
