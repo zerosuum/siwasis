@@ -60,3 +60,19 @@ input[type="date"]::-moz-calendar-picker-indicator {
   opacity: 0 !important;
   display: none !important;
 }
+/* Nonaktifkan sidebar & topnav saat editing arisan/kas, tapi konten halaman tetap aktif */
+html.editing-mode aside,
+html.editing-mode [data-app-sidebar],
+html.editing-mode header [data-global-nav],
+html.editing-mode nav[data-global-nav] {
+  pointer-events: none !important;
+  filter: grayscale(0.6);
+  opacity: 0.5;
+}
+
+/* Biar area konten tetap interaktif */
+html.editing-mode [data-page-content] {
+  pointer-events: auto !important;
+  filter: none;
+  opacity: 1;
+}

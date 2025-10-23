@@ -51,13 +51,13 @@ export default function AdminLayout({ children }) {
             <SidebarLink href="/dashboard/arisan" icon={IconArisan}>
               Arisan
             </SidebarLink>
-            <SidebarLink href="/dashboard//jimpitan" icon={IconJimpitan}>
+            <SidebarLink href="/dashboard/jimpitan" icon={IconJimpitan}>
               Jimpitan
             </SidebarLink>
-            <SidebarLink href="/dashboard//sampah" icon={IconSampah}>
+            <SidebarLink href="/dashboard/sampah" icon={IconSampah}>
               Sampah
             </SidebarLink>
-            <SidebarLink href="/dashboard//dokumen" icon={IconDokumen}>
+            <SidebarLink href="/dashboard/dokumen" icon={IconDokumen}>
               Dokumen
             </SidebarLink>
             <SidebarLink href="/dashboard/tambah-warga" icon={IconTambahWarga}>

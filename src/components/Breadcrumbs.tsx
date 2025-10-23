@@ -22,6 +22,7 @@ export default function Breadcrumbs() {
 
   const base = raw[0] === "dashboard" ? raw : ["dashboard", ...raw];
 
+
   const segments = base.filter((seg, i, arr) => i === 0 || seg !== arr[i - 1]);
 
   return (

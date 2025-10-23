@@ -23,6 +23,27 @@ const rp = (n) =>
     maximumFractionDigits: 0,
   }).format(Number(n || 0));
 
+  function SourceChip({ source }) {
+    // mapping warna/teks
+    const meta = {
+      manual: { bg: "bg-gray-100", fg: "text-gray-700", label: "Manual" },
+      rekap: { bg: "bg-[#EEF0E8]", fg: "text-[#6E8649]", label: "Rekap" },
+      arisan: { bg: "bg-[#EAF4FE]", fg: "text-[#1161A5]", label: "Arisan" },
+    }[source] || {
+      bg: "bg-gray-100",
+      fg: "text-gray-700",
+      label: source || "Manual",
+    };
+
+    return (
+      <span
+        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${meta.bg} ${meta.fg}`}
+      >
+        {meta.label}
+      </span>
+    );
+  }
+
 export default function LaporanTable({ initial, onEdit, onDelete }) {
   const rows = initial?.rows || [];
 
@@ -46,7 +67,9 @@ export default function LaporanTable({ initial, onEdit, onDelete }) {
             <TableHeaderCell className="w-[320px] text-left py-3 font-semibold text-gray-600">
               Keterangan
             </TableHeaderCell>
-
+            <TableHeaderCell className="w-[110px] text-center py-3 font-semibold text-gray-600">
+              Sumber
+            </TableHeaderCell>
             <TableHeaderCell className="w-[160px] text-center py-3 font-semibold text-gray-600">
               Pemasukan
             </TableHeaderCell>
@@ -93,6 +116,10 @@ export default function LaporanTable({ initial, onEdit, onDelete }) {
 
                 <TableCell className="py-4 text-left">
                   {r.keterangan || "—"} {/* DIUBAH: Menggunakan '—' */}
+                </TableCell>
+
+                <TableCell className="py-4 text-center">
+                  <SourceChip source={r.sumber} />
                 </TableCell>
 
                 <TableCell className="py-4 text-center tabular-nums font-medium text-[#6E8649]">

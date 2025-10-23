@@ -4,12 +4,9 @@ import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DateRangePicker } from "@/components/DatePicker";
 import { TabNavigation, TabNavigationLink } from "@/components/TabNavigation";
-import RekapTable from "./RekapTable";
 import Pagination from "@/components/Pagination";
-import { useToast } from "@/components/ui/useToast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import FilterModal from "./FilterModal";
-import { actionSaveRekap } from "./actions";
+import FilterModal from "../../kas/rekapitulasi/FilterModal";
 import {
   Calendar as IconCalendar,
   Search as IconSearch,
@@ -17,14 +14,14 @@ import {
   Download as IconDownload,
   Pencil as IconPencil,
 } from "lucide-react";
-import { API_BASE } from "@/lib/config";
+import ArisanRekapTable from "./RekapTable";
+import { saveArisanRekap } from "@/server/queries/arisan";
 
-export default function RekapClient({ initial }) {
+export default function ArisanRekapClient({ initial }) {
   const router = useRouter();
   const sp = useSearchParams();
-  const { show } = useToast();
 
-  // URL state
+  // URL
   const page = initial?.page || 1;
   const year = initial?.meta?.year || new Date().getFullYear();
   const q = sp.get("q") || "";
@@ -45,62 +42,63 @@ export default function RekapClient({ initial }) {
   const [confirmDownload, setConfirmDownload] = React.useState(false);
   const [successOpen, setSuccessOpen] = React.useState(false);
 
-  // Range tanggal
+  // Range
   const initRange =
-    sp.get("from") && sp.get("to")
-      ? { from: new Date(sp.get("from")), to: new Date(sp.get("to")) }
-      : undefined;
+    from && to ? { from: new Date(from), to: new Date(to) } : undefined;
   const [range, setRange] = React.useState(initRange);
 
-  // Buka DateRangePicker hidden
+  // DateRange
   const filterAnchorRef = React.useRef(null);
   const openFilterCalendar = React.useCallback(() => {
-    if (!filterAnchorRef.current) return;
     const root = filterAnchorRef.current;
+    if (!root) return;
     const trigger =
       root.querySelector('button[aria-haspopup="dialog"]') ||
       root.querySelector('button[type="button"]') ||
       root.querySelector("button");
     if (!trigger) return;
-    ["pointerdown", "mousedown", "mouseup", "click"].forEach((type) => {
+    ["pointerdown", "mousedown", "mouseup", "click"].forEach((t) =>
       trigger.dispatchEvent(
-        new MouseEvent(type, { bubbles: true, cancelable: true, view: window })
-      );
-    });
+        new MouseEvent(t, { bubbles: true, cancelable: true, view: window })
+      )
+    );
   }, []);
 
-  // Apply range (preserve rt/q, reset page)
-React.useEffect(() => {
-  if (!range?.from || !range?.to) return;
+  const [yearState, setYearState] = React.useState(
+    initial?.meta?.year || new Date().getFullYear()
+  );
+  
+  React.useEffect(() => {
+    if (!range?.from || !range?.to) return;
 
-  const params = new URLSearchParams(sp.toString());
-  // preserve yang sudah ada
-  if (sp.get("rt")) params.set("rt", sp.get("rt"));
-  if (sp.get("q")) params.set("q", sp.get("q"));
-
-  // set range baru + year sekarang
-  params.set("year", String(year));
-  params.set("from", range.from.toISOString().slice(0, 10));
-  params.set("to", range.to.toISOString().slice(0, 10));
-
-  // reset page biar server fetch page 1 dgn header baru
-  params.set("page", "1");
-
-  router.push(`/dashboard/kas/rekapitulasi?${params.toString()}`);
-}, [range?.from, range?.to]);
-
-  // Navigate helper
-  const navigate = (newParams) => {
     const params = new URLSearchParams(sp.toString());
-    Object.entries(newParams).forEach(([k, v]) => {
+    if (sp.get("rt")) params.set("rt", sp.get("rt"));
+    if (sp.get("q")) params.set("q", sp.get("q"));
+
+    params.set("year", String(yearState));
+    params.set("from", range.from.toISOString().slice(0, 10));
+    params.set("to", range.to.toISOString().slice(0, 10));
+    params.set("page", "1");
+
+    router.push(`/dashboard/arisan/rekapitulasi?${params.toString()}`);
+  }, [
+    yearState,
+    range?.from ? range.from.getTime() : null,
+    range?.to ? range.to.getTime() : null,
+  ]);
+
+  // Navigate helper 
+  const navigate = (patch) => {
+    const params = new URLSearchParams(sp.toString());
+    Object.entries(patch).forEach(([k, v]) => {
       if (v !== undefined && v !== null && v !== "") params.set(k, String(v));
       else params.delete(k);
     });
-    if (!newParams.page) params.set("page", "1");
-    router.push(`/dashboard/kas/rekapitulasi?${params.toString()}`);
+    if (!patch.page) params.set("page", "1");
+    router.push(`/dashboard/arisan/rekapitulasi?${params.toString()}`);
   };
 
-  // Toggle checkbox
+  // Toggle checkbox 
   const onToggle = React.useCallback((wargaId, tanggal, checked) => {
     setUpdates((prev) => {
       const key = `${wargaId}-${tanggal}`;
@@ -115,41 +113,29 @@ React.useEffect(() => {
     setConfirmSave(false);
     startTransition(async () => {
       try {
-        const fd = new FormData();
-        fd.append("payload", JSON.stringify({ year, updates, from, to }));
-        await actionSaveRekap(fd);
-
+        await saveArisanRekap({ year, updates, from, to });
         setEditing(false);
         setUpdates([]);
         setSuccessOpen(true);
 
-        // force refresh URL sekarang
-        router.replace(`/dashboard/kas/rekapitulasi?${sp.toString()}`);
+        router.replace(`/dashboard/arisan/rekapitulasi?${sp.toString()}`);
         router.refresh();
-      } catch (e) {
-        show({
-          title: "Gagal",
-          description: "Gagal menyimpan perubahan.",
-          variant: "error",
-        });
+      } catch {
+        // fallback alert 
+        window.alert("Gagal menyimpan perubahan.");
       }
     });
   };
 
-  // Lock sidebar saat editing
+  // Lock/unlock sidebar saat editing
   React.useEffect(() => {
     const aside = document.querySelector("aside");
-    if (editing) {
-      aside?.classList.add("pointer-events-none", "opacity-60");
-    } else {
-      aside?.classList.remove("pointer-events-none", "opacity-60");
-    }
-    return () => {
-      aside?.classList.remove("pointer-events-none", "opacity-60");
-    };
+    if (editing) aside?.classList.add("pointer-events-none", "opacity-60");
+    else aside?.classList.remove("pointer-events-none", "opacity-60");
+    return () => aside?.classList.remove("pointer-events-none", "opacity-60");
   }, [editing]);
 
-  // Peringatan close tab ketika editing
+  // Peringatan ketika close tab saat editing
   React.useEffect(() => {
     const onBeforeUnload = (e) => {
       if (!editing) return;
@@ -160,26 +146,25 @@ React.useEffect(() => {
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [editing]);
 
-  // Data untuk modal
   const rtOptions = React.useMemo(() => ["01", "02", "03", "04", "05"], []);
   const setoranBounds = React.useMemo(() => ({ min: 0, max: 100000 }), []);
 
   return (
     <>
-      <div className="flex items-center justify-between gap-3 px-4 pt-0 border-[#E2E7D7]">
+      <div className="relative z-20 flex items-center justify-between gap-3 px-4 pt-0 border-[#E2E7D7]">
         <TabNavigation className="h-6 leading-none">
           <TabNavigationLink
-            href="/dashboard/kas/rekapitulasi"
+            href="/dashboard/arisan/rekapitulasi"
             active
             className="inline-flex h-6 items-center border-b-2 !border-[#6E8649] px-2 text-sm font-medium !text-[#6E8649]"
           >
             Rekapitulasi Pembayaran
           </TabNavigationLink>
           <TabNavigationLink
-            href="/dashboard/kas/laporan"
+            href="/dashboard/arisan/spinwheel"
             className="inline-flex h-6 items-center px-2 text-sm font-medium text-gray-400 hover:text-gray-600"
           >
-            Laporan Keuangan
+            Spinwheel
           </TabNavigationLink>
         </TabNavigation>
 
@@ -187,7 +172,11 @@ React.useEffect(() => {
           <select
             className="h-8 w-[180px] rounded-[12px] border border-[#E2E7D7] bg-white px-3 text-sm"
             value={year}
-            onChange={(e) => navigate({ year: e.target.value })}
+            onChange={(e) => {
+              const y = e.target.value;
+              setYearState(Number(y));
+              navigate({ year: y });
+            }}
           >
             {Array.from({ length: 6 }).map((_, i) => {
               const y = new Date().getFullYear() - i;
@@ -198,7 +187,6 @@ React.useEffect(() => {
               );
             })}
           </select>
-
           <div
             className="relative"
             onMouseEnter={() => setSearchOpen(true)}
@@ -220,60 +208,61 @@ React.useEffect(() => {
               }`}
             />
           </div>
-
           <button
             onClick={() => setFilterOpen(true)}
             className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
+            title="Filter"
           >
             <IconFilter size={16} />
           </button>
 
-          <button
-            type="button"
-            onClick={openFilterCalendar}
-            className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
-            title="Pilih rentang tanggal"
-            aria-label="Pilih rentang tanggal"
-          >
-            <IconCalendar size={16} />
-          </button>
           <div className="relative">
+            <button
+              type="button"
+              onClick={openFilterCalendar}
+              className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
+              title="Pilih rentang tanggal"
+              aria-label="Pilih rentang tanggal"
+            >
+              <IconCalendar size={16} />
+            </button>
             <div
-              ref={filterAnchorRef}
-              className="absolute inset-0 opacity-0 pointer-events-none"
+              className="absolute top-0 left-0 w-0 h-0 overflow-hidden"
               aria-hidden="true"
             >
-              <DateRangePicker
-                value={range}
-                onChange={(r) => setRange(r)}
-                displayMonths={2}
-                enableYearNavigation
-                translations={{
-                  cancel: "Batal",
-                  apply: "Ya, Simpan",
-                  range: "Rentang",
-                }}
-                align="end"
-                sideOffset={8}
-                contentClassName="mt-2 min-w-[560px] rounded-xl border bg-white p-4 shadow-lg"
-                footerClassName="mt-3 border-t pt-3 flex justify-end gap-2"
-                cancelClassName="rounded-lg bg-gray-100 px-4 py-1.5 text-sm"
-                applyClassName="rounded-lg bg-[#6E8649] px-4 py-1.5 text-sm text-white"
-              />
+              <div ref={filterAnchorRef}>
+                <DateRangePicker
+                  value={range}
+                  onChange={(r) => setRange(r)}
+                  displayMonths={2}
+                  enableYearNavigation
+                  translations={{
+                    cancel: "Batal",
+                    apply: "Ya, Simpan",
+                    range: "Rentang",
+                  }}
+                  align="end"
+                  sideOffset={8}
+                  contentClassName="mt-2 min-w-[560px] rounded-xl border bg-white p-4 shadow-lg"
+                  footerClassName="mt-3 border-t pt-3 flex justify-end gap-2"
+                  cancelClassName="rounded-lg bg-gray-100 px-4 py-1.5 text-sm"
+                  applyClassName="rounded-lg bg-[#6E8649] px-4 py-1.5 text-sm text-white"
+                />
+              </div>
             </div>
           </div>
-
           <button
             onClick={() => setConfirmDownload(true)}
             className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
+            title="Unduh"
           >
             <IconDownload size={16} />
           </button>
-
           {!editing ? (
             <button
               onClick={() => setEditing(true)}
               className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#2B3A1D] text-white"
+              title="Edit"
             >
               <IconPencil size={16} />
             </button>
@@ -301,14 +290,14 @@ React.useEffect(() => {
       </div>
 
       <div className="rounded-xl bg-white shadow overflow-hidden">
-        <RekapTable
+        <ArisanRekapTable
+          key={(initial?.dates || []).join(",")}
           initial={initial}
           editing={editing}
           updates={updates}
           onToggle={onToggle}
         />
       </div>
-
       <div className="grid grid-cols-[1fr_auto_1fr] items-center px-4 py-2 text-xs text-gray-500">
         <div className="justify-self-start">
           Nominal: {initial.meta?.nominalFormatted}
@@ -352,7 +341,7 @@ React.useEffect(() => {
         open={confirmDownload}
         onOk={() => {
           const params = new URLSearchParams(sp.toString());
-          window.location.href = `${API_BASE}/kas/rekap/export?${params}`;
+          window.location.href = `/dashboard/arisan/rekapitulasi/export?${params}`;
           setConfirmDownload(false);
         }}
         onCancel={() => setConfirmDownload(false)}
