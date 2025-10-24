@@ -22,7 +22,8 @@ import {
 } from "./actions";
 import { useToast } from "@/components/ui/useToast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import { API_BASE } from "@/lib/config";
+import { API_BASE } from "@/server/queries/_api";
+
 
 export default function JimpitanClient({ initial }) {
   const [filterOpen, setFilterOpen] = React.useState(false);

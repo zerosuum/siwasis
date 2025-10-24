@@ -1,16 +1,8 @@
 import { API_BASE, makeURL, setParams } from "./_api";
-export async function getSampahLaporan({
-  page,
-  year,
-  from,
-  to,
-  q,
-  type,
-  min,
-  max,
-} = {}) {
-  const url = new URL(`${API_BASE}/sampah/laporan`);
-  setParams(url, { page, year, from, to, q, type, min, max });
+
+export async function getDocuments({ page, search, from, to, perPage } = {}) {
+  const url = makeURL(`${API_BASE}/documents`);
+  setParams(url, { page, q: search, from, to, limit: perPage });
 
   const res = await fetch(url.toString(), {
     cache: "no-store",
