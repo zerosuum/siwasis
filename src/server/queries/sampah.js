@@ -23,7 +23,7 @@ export async function getSampahLaporan({
   min,
   max,
 } = {}) {
-  const url = new URL(`${API_BASE}/sampah/rekapitulasi`);
+  const url = new URL(`${API_BASE}/sampah/laporan`);
   setParams(url, { page, year, from, to, q, type, min, max });
 
   const res = await fetch(url.toString(), {

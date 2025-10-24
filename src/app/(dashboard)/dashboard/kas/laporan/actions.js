@@ -1,25 +1,48 @@
-// src/app/dashboard/kas/laporan/actions.js
 "use server";
-import "server-only";
-import { revalidatePath } from "next/cache";
-import {
-  createKasEntry,
-  updateKasEntry,
-  deleteKasEntry,
-} from "@/server/actions/kas";
 
+import { revalidatePath } from "next/cache";
+import { API_BASE } from "@/lib/config";
+
+// CREATE
 export async function actionCreateEntry(payload) {
-  await createKasEntry(payload); // {tanggal, keterangan?, type: 'IN'|'OUT', nominal}
-  revalidatePath("/dashboard/kas/laporan");
+  const { tanggal, keterangan, nominal, type } = payload;
+  await fetch(`${API_BASE}/sampah/create`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({
+      tanggal,
+      keterangan,
+      jumlah: Number(nominal),
+      type,
+    }),
+  });
+  revalidatePath("/dashboard/sampah/laporan");
   return { ok: true };
 }
+
+// UPDATE
 export async function actionUpdateEntry(payload) {
-  await updateKasEntry(payload); // {id, tanggal, keterangan?, type, nominal}
-  revalidatePath("/dashboard/kas/laporan");
+  const { id, tanggal, keterangan, nominal, type } = payload;
+  await fetch(`${API_BASE}/sampah/update/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({
+      tanggal,
+      keterangan,
+      jumlah: Number(nominal),
+      type,
+    }),
+  });
+  revalidatePath("/dashboard/sampah/laporan");
   return { ok: true };
 }
-export async function actionDeleteEntry(payload) {
-  await deleteKasEntry(payload.id); // {id}
-  revalidatePath("/dashboard/kas/laporan");
+
+// DELETE
+export async function actionDeleteEntry({ id }) {
+  await fetch(`${API_BASE}/sampah/delete/${id}`, {
+    method: "DELETE",
+    headers: { Accept: "application/json" },
+  });
+  revalidatePath("/dashboard/sampah/laporan");
   return { ok: true };
 }
