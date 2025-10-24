@@ -83,7 +83,7 @@ export default function AdminLayout({ children }) {
           <div className="text-sm text-gray-600">Username</div>
         </header>
 
-        <main className="bg-white overflow-auto">
+        <main className="bg-white overflow-auto min-h-[calc(100vh-72px)]">
           <div className="p-6">{children}</div>
         </main>
       </div>
