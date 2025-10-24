@@ -5,8 +5,8 @@ import { TabNavigation, TabNavigationLink } from "@/components/TabNavigation";
 import { DateRangePicker } from "@/components/DatePicker";
 import SampahTable from "./SampahTable";
 import Pagination from "@/components/Pagination";
-import TransaksiModal from "../kas/../laporan/TransaksiModal"; // atau "./TransaksiModal" kalau dicopy
-import FilterModal from "../kas/../laporan/FilterModal"; // atau "./FilterModal"
+import TransaksiModal from "../../kas/laporan/TransaksiModal";
+import FilterModal from "../../kas/laporan/FilterModal"; 
 import {
   Calendar as IconCalendar,
   Search as IconSearch,
@@ -69,7 +69,7 @@ export default function SampahClient({ initial }) {
         if (v === undefined || v === null || v === "") params.delete(k);
         else params.set(k, String(v));
       });
-      router.push(`/dashboard/sampah/laporan?${params.toString()}`);
+      router.push(`/dashboard/sampah/rekapitulasi?${params.toString()}`);
     },
     [sp, year, range?.from, range?.to, q, router]
   );
@@ -141,11 +141,11 @@ export default function SampahClient({ initial }) {
       <div className="flex items-center justify-between gap-3 px-4">
         <TabNavigation className="!mb-0 h-6">
           <TabNavigationLink
-            href="/dashboard/sampah/laporan"
+            href="/dashboard/sampah/rekapitulasi"
             active
             className="inline-flex h-6 items-center border-b-2 !border-[#6E8649] px-2 text-sm font-medium !text-[#6E8649]"
           >
-            Laporan Keuangan
+            Rekapitulasi Keuangan
           </TabNavigationLink>
         </TabNavigation>
 
@@ -172,10 +172,15 @@ export default function SampahClient({ initial }) {
             />
             <input
               value={q}
-              onChange={(e) => setQ(e.target.value)}
+              onChange={(e) => {
+                setQ(e.target.value);
+                if (e.target.value === "") {
+                  pushWithParams({ q: "" });
+                }
+              }}
               onKeyDown={(e) => e.key === "Enter" && pushWithParams()}
               placeholder="Cari keterangan..."
-              className={`h-8 rounded border rounded-[10px] border-gray-300 bg-white pl-7 pr-2 text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-gray-200 ${
+              className={`h-8 border rounded-[10px] border-gray-300 bg-white pl-7 pr-2 text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-gray-200 ${
                 searchOpen || q ? "w-48" : "w-6"
               }`}
             />
@@ -300,7 +305,7 @@ export default function SampahClient({ initial }) {
         onOk={() => {
           setConfirmExport(false);
           const params = new URLSearchParams(sp.toString());
-          window.location.href = `${API_BASE}/sampah/laporan/export?${params.toString()}`;
+          window.location.href = `${API_BASE}/sampah/rekapitulasi/export?${params.toString()}`;
         }}
       />
 

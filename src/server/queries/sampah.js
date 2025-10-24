@@ -13,7 +13,6 @@ function setParams(url, params = {}) {
   return url;
 }
 
-// LIST + KPI
 export async function getSampahLaporan({
   page,
   year,
@@ -24,7 +23,7 @@ export async function getSampahLaporan({
   min,
   max,
 } = {}) {
-  const url = new URL(`${API_BASE}/sampah/laporan`);
+  const url = new URL(`${API_BASE}/sampah/rekapitulasi`);
   setParams(url, { page, year, from, to, q, type, min, max });
 
   const res = await fetch(url.toString(), {

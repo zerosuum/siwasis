@@ -39,7 +39,7 @@ function SourceChip({ source }) {
 export default function SampahTable({ initial, onEdit, onDelete }) {
   const rows = initial?.rows || [];
   const hasData = rows.length > 0;
-  const colCount = 8;
+  const colCount = 7;
 
   return (
     <TableRoot className="overflow-auto max-h-[600px]">
@@ -55,9 +55,9 @@ export default function SampahTable({ initial, onEdit, onDelete }) {
             <TableHeaderCell className="w-[320px] text-left py-3 font-semibold text-gray-600">
               Keterangan
             </TableHeaderCell>
-            <TableHeaderCell className="w-[110px] text-center py-3 font-semibold text-gray-600">
+            {/* <TableHeaderCell className="w-[110px] text-center py-3 font-semibold text-gray-600">
               Sumber
-            </TableHeaderCell>
+            </TableHeaderCell> */}
             <TableHeaderCell className="w-[160px] text-center py-3 font-semibold text-gray-600">
               Pemasukan
             </TableHeaderCell>
@@ -93,9 +93,6 @@ export default function SampahTable({ initial, onEdit, onDelete }) {
                 </TableCell>
                 <TableCell className="py-4 text-left">
                   {r.keterangan || "—"}
-                </TableCell>
-                <TableCell className="py-4 text-center">
-                  <SourceChip source={r.sumber} />
                 </TableCell>
                 <TableCell className="py-4 text-center tabular-nums font-medium text-[#6E8649]">
                   {r.pemasukan ? rp(r.pemasukan) : "—"}
