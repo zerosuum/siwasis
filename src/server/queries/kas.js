@@ -1,18 +1,4 @@
-const RAW_API =
-  process.env.NEXT_PUBLIC_API_BASE ||
-  process.env.API_BASE ||
-  "http://127.0.0.1:8000/api";
-
-const API_BASE = RAW_API.replace(/\/+$/, "");
-
-function setParams(url, params = {}) {
-  for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== null && v !== "") {
-      url.searchParams.set(k, String(v));
-    }
-  }
-  return url;
-}
+import { API_BASE, makeURL, setParams } from "./_api";
 
 export async function getKasRekap({
   page,
@@ -24,7 +10,6 @@ export async function getKasRekap({
   min,
   max,
 } = {}) {
-
   const url = new URL(`${API_BASE}/kas/rekap`);
   setParams(url, { page, year, q, rt, from, to, min, max });
 
