@@ -13,7 +13,7 @@ function setParams(url, params = {}) {
   return url;
 }
 
-export async function getSampahLaporan({
+export async function getJimpitanLaporan({
   page,
   year,
   from,
@@ -23,7 +23,7 @@ export async function getSampahLaporan({
   min,
   max,
 } = {}) {
-  const url = new URL(`${API_BASE}/sampah/laporan`);
+  const url = new URL(`${API_BASE}/jimpitan/laporan`);
   setParams(url, { page, year, from, to, q, type, min, max });
 
   const res = await fetch(url.toString(), {

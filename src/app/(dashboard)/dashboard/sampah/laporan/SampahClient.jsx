@@ -69,7 +69,7 @@ export default function SampahClient({ initial }) {
         if (v === undefined || v === null || v === "") params.delete(k);
         else params.set(k, String(v));
       });
-      router.push(`/dashboard/sampah/rekapitulasi?${params.toString()}`);
+      router.push(`/dashboard/sampah/laporan?${params.toString()}`);
     },
     [sp, year, range?.from, range?.to, q, router]
   );
@@ -141,11 +141,11 @@ export default function SampahClient({ initial }) {
       <div className="flex items-center justify-between gap-3 px-4">
         <TabNavigation className="!mb-0 h-6">
           <TabNavigationLink
-            href="/dashboard/sampah/rekapitulasi"
+            href="/dashboard/sampah/laporan"
             active
             className="inline-flex h-6 items-center border-b-2 !border-[#6E8649] px-2 text-sm font-medium !text-[#6E8649]"
           >
-            Rekapitulasi Keuangan
+            Laporan Keuangan
           </TabNavigationLink>
         </TabNavigation>
 
@@ -305,7 +305,7 @@ export default function SampahClient({ initial }) {
         onOk={() => {
           setConfirmExport(false);
           const params = new URLSearchParams(sp.toString());
-          window.location.href = `${API_BASE}/sampah/rekapitulasi/export?${params.toString()}`;
+          window.location.href = `${API_BASE}/sampah/laporan/export?${params.toString()}`;
         }}
       />
 
