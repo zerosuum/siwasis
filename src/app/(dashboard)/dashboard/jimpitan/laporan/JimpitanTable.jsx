@@ -36,7 +36,7 @@ function SourceChip({ source }) {
   );
 }
 
-export default function SampahTable({ initial, onEdit, onDelete }) {
+export default function JimpitanTable({ initial, onEdit, onDelete }) {
   const rows = initial?.rows || [];
   const hasData = rows.length > 0;
   const colCount = 7;

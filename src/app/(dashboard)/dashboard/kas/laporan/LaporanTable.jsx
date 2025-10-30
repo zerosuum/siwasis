@@ -67,9 +67,9 @@ export default function LaporanTable({ initial, onEdit, onDelete }) {
             <TableHeaderCell className="w-[320px] text-left py-3 font-semibold text-gray-600">
               Keterangan
             </TableHeaderCell>
-            <TableHeaderCell className="w-[110px] text-center py-3 font-semibold text-gray-600">
+            {/* <TableHeaderCell className="w-[110px] text-center py-3 font-semibold text-gray-600">
               Sumber
-            </TableHeaderCell>
+            </TableHeaderCell> */}
             <TableHeaderCell className="w-[160px] text-center py-3 font-semibold text-gray-600">
               Pemasukan
             </TableHeaderCell>
@@ -89,7 +89,6 @@ export default function LaporanTable({ initial, onEdit, onDelete }) {
         </TableHead>
 
         <TableBody className="text-sm">
-          {/* DIUBAH: Logika render diubah untuk menangani kasus 'tidak ada data' */}
 
           {hasData ? (
             rows.map((r, idx) => (
@@ -111,29 +110,27 @@ export default function LaporanTable({ initial, onEdit, onDelete }) {
                         year: "numeric",
                       })
                     : "—"}{" "}
-                  {/* DIUBAH: Menggunakan '—' agar konsisten */}
                 </TableCell>
 
                 <TableCell className="py-4 text-left">
-                  {r.keterangan || "—"} {/* DIUBAH: Menggunakan '—' */}
+                  {r.keterangan || "—"}
                 </TableCell>
 
-                <TableCell className="py-4 text-center">
+                {/* <TableCell className="py-4 text-center">
                   <SourceChip source={r.sumber} />
-                </TableCell>
+                </TableCell> */}
 
                 <TableCell className="py-4 text-center tabular-nums font-medium text-[#6E8649]">
                   {r.pemasukan ? rp(r.pemasukan) : "—"}{" "}
-                  {/* DIUBAH: Menggunakan '—' */}
+
                 </TableCell>
 
                 <TableCell className="py-4 text-center tabular-nums font-medium text-[#B24949]">
                   {r.pengeluaran ? rp(r.pengeluaran) : "—"}{" "}
-                  {/* DIUBAH: Menggunakan '—' */}
                 </TableCell>
 
                 <TableCell className="py-4 text-center tabular-nums font-semibold">
-                  {r.saldo ? rp(r.saldo) : "—"} {/* DIUBAH: Menggunakan '—' */}
+                  {r.saldo ? rp(r.saldo) : "—"}
                 </TableCell>
 
                 <TableCell className="py-4">
@@ -158,7 +155,6 @@ export default function LaporanTable({ initial, onEdit, onDelete }) {
               </TableRow>
             ))
           ) : (
-            // DITAMBAHKAN: Return UI untuk placeholder 'Tidak ada data'
 
             <TableRow>
               <TableCell

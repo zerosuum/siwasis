@@ -1,5 +1,3 @@
-// src/app/(dashboard)/dashboard/dokumen/daftar/page.js
-import KPICard from "@/components/KPICard";
 import DocumentClient from "./DocumentClient";
 import { getDocuments } from "@/server/queries/documents";
 

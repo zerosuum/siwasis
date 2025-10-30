@@ -9,7 +9,7 @@ import Pagination from "@/components/Pagination";
 import { useToast } from "@/components/ui/useToast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import FilterModal from "./FilterModal";
-import { actionSaveRekap } from "./actions";
+import { actionSaveRekap, actionCreatePeriod } from "./actions";
 import {
   Calendar as IconCalendar,
   Search as IconSearch,
@@ -18,6 +18,8 @@ import {
   Pencil as IconPencil,
 } from "lucide-react";
 import { API_BASE } from "@/lib/config";
+import PeriodDropdown from "./PeriodDropdown";
+import PeriodModal from "./PeriodModal";
 
 export default function RekapClient({ initial }) {
   const router = useRouter();
@@ -70,24 +72,30 @@ export default function RekapClient({ initial }) {
   }, []);
 
   // Apply range (preserve rt/q, reset page)
-React.useEffect(() => {
-  if (!range?.from || !range?.to) return;
+  React.useEffect(() => {
+    if (!range?.from || !range?.to) return;
 
-  const params = new URLSearchParams(sp.toString());
-  // preserve yang sudah ada
-  if (sp.get("rt")) params.set("rt", sp.get("rt"));
-  if (sp.get("q")) params.set("q", sp.get("q"));
+    const params = new URLSearchParams(sp.toString());
+    // preserve yang sudah ada
+    if (sp.get("rt")) params.set("rt", sp.get("rt"));
+    if (sp.get("q")) params.set("q", sp.get("q"));
 
-  // set range baru + year sekarang
-  params.set("year", String(year));
-  params.set("from", range.from.toISOString().slice(0, 10));
-  params.set("to", range.to.toISOString().slice(0, 10));
+    // set range baru + year sekarang
+    params.set("year", String(year));
+    const toLocalYMD = (d) =>
+      [
+        d.getFullYear(),
+        String(d.getMonth() + 1).padStart(2, "0"),
+        String(d.getDate()).padStart(2, "0"),
+      ].join("-");
+    params.set("from", toLocalYMD(range.from));
+    params.set("to", toLocalYMD(range.to));
 
-  // reset page biar server fetch page 1 dgn header baru
-  params.set("page", "1");
+    // reset page biar server fetch page 1 dgn header baru
+    params.set("page", "1");
 
-  router.push(`/dashboard/kas/rekapitulasi?${params.toString()}`);
-}, [range?.from, range?.to]);
+    router.push(`/dashboard/kas/rekapitulasi?${params.toString()}`);
+  }, [range?.from, range?.to]);
 
   // Navigate helper
   const navigate = (newParams) => {
@@ -115,16 +123,26 @@ React.useEffect(() => {
     setConfirmSave(false);
     startTransition(async () => {
       try {
-        const fd = new FormData();
-        fd.append("payload", JSON.stringify({ year, updates, from, to }));
-        await actionSaveRekap(fd);
+        const normalized = updates.map((u) => ({
+          wargaId: u.wargaId,
+          tanggal: u.tanggal,
+          checked: u.checked ? 1 : 0,
+        }));
+        await actionSaveRekap({
+          year,
+          from,
+          to,
+          updates: normalized,
+        });
 
         setEditing(false);
         setUpdates([]);
         setSuccessOpen(true);
 
         // force refresh URL sekarang
-        router.replace(`/dashboard/kas/rekapitulasi?${sp.toString()}`);
+        const params = new URLSearchParams(sp.toString());
+        params.set("_v", String(Date.now())); // cache-buster
+        router.replace(`/dashboard/kas/rekapitulasi?${params.toString()}`);
         router.refresh();
       } catch (e) {
         show({
@@ -164,6 +182,36 @@ React.useEffect(() => {
   const rtOptions = React.useMemo(() => ["01", "02", "03", "04", "05"], []);
   const setoranBounds = React.useMemo(() => ({ min: 0, max: 100000 }), []);
 
+  const [newPeriodOpen, setNewPeriodOpen] = React.useState(false);
+  const handleSelectYear = (y) => {
+    // pindah periode, bersihkan range biar nggak bentrok
+    navigate({ year: y, from: "", to: "" });
+  };
+
+  const handleCreatePeriod = async ({ name, nominal, from, to }) => {
+    try {
+      const res = await actionCreatePeriod({ name, nominal, from, to });
+      setNewPeriodOpen(false);
+      show({ title: "Sukses!", description: "Periode baru dibuat." });
+
+      const y = Number(res?.year) || year;
+      const params = new URLSearchParams(sp.toString());
+      params.set("year", String(y));
+      params.delete("from");
+      params.delete("to");
+      params.set("page", "1");
+      router.push(`/dashboard/kas/rekapitulasi?${params.toString()}`);
+      router.refresh();
+    } catch (e) {
+      console.error(e);
+      show({
+        title: "Gagal",
+        description: "Tidak dapat membuat periode baru.",
+        variant: "error",
+      });
+    }
+  };
+
   return (
     <>
       <div className="flex items-center justify-between gap-3 px-4 pt-0 border-[#E2E7D7]">
@@ -184,20 +232,11 @@ React.useEffect(() => {
         </TabNavigation>
 
         <div className="flex items-center gap-2">
-          <select
-            className="h-8 w-[180px] rounded-[12px] border border-[#E2E7D7] bg-white px-3 text-sm"
-            value={year}
-            onChange={(e) => navigate({ year: e.target.value })}
-          >
-            {Array.from({ length: 6 }).map((_, i) => {
-              const y = new Date().getFullYear() - i;
-              return (
-                <option key={y} value={y}>
-                  Periode {y}
-                </option>
-              );
-            })}
-          </select>
+          <PeriodDropdown
+            year={Number(year)}
+            onSelectYear={(y) => handleSelectYear(Number(y))}
+            onNew={() => setNewPeriodOpen(true)}
+          />
 
           <div
             className="relative"
@@ -369,6 +408,11 @@ React.useEffect(() => {
         title="Sukses!"
         description="Berhasil menyimpan perubahan."
         autoCloseMs={1600}
+      />
+      <PeriodModal
+        open={newPeriodOpen}
+        onClose={() => setNewPeriodOpen(false)}
+        onSubmit={handleCreatePeriod}
       />
     </>
   );

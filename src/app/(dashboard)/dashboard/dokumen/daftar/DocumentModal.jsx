@@ -1,4 +1,3 @@
-// DocumentModal.jsx
 "use client";
 import * as React from "react";
 
@@ -56,7 +55,13 @@ export default function DocumentModal({
       form.append("title", title);
       if (description) form.append("description", description);
       if (file) form.append("file_path", file);
-
+      const today = new Date();
+      const uploadedAt = new Date(
+        today.getTime() - today.getTimezoneOffset() * 60000
+      )
+        .toISOString()
+        .slice(0, 10);
+      form.append("uploaded_at", uploadedAt);
       if (isEdit) await onUpdate?.(initial.id, form);
       else await onCreate?.(form);
     } finally {

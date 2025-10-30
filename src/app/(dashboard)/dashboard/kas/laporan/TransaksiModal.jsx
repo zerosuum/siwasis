@@ -44,12 +44,12 @@ export default function TransaksiModal({
   if (!open) return null;
 
   const handleSubmit = () => {
-  onSubmit?.({
-  tanggal,
-  keterangan,
-  nominal: nominal === "" ? 0 : Number(nominal),
- });    
-};
+    onSubmit?.({
+      tanggal,
+      keterangan,
+      nominal: nominal === "" ? 0 : Number(nominal),
+    });
+  };
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
@@ -66,10 +66,21 @@ export default function TransaksiModal({
                 type="date"
                 value={tanggal}
                 onChange={(e) => setTanggal(e.target.value)}
-                onFocus={(e) => e.target.showPicker?.()}
+                // onFocus={(e) => e.target.showPicker?.()}
                 onClick={(e) => e.currentTarget.showPicker?.()}
                 className="h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 text-sm placeholder-gray-400 focus:border-gray-400 focus:ring-0"
               />
+              <button
+                type="button"
+                onClick={(e) => {
+                  if (e.isTrusted) {
+                    const input = e.currentTarget.previousElementSibling; 
+                    input?.showPicker?.();
+                  }
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1"
+                aria-label="Buka pemilih tanggal"
+              ></button>
               <IconCalendar
                 size={16}
                 className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"

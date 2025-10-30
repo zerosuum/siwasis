@@ -52,7 +52,15 @@ export async function getKasLaporan({
 
 export async function saveKasRekap(formData) {
   const url = `${API_BASE}/kas/rekap/save`;
-  const res = await fetch(url, { method: "POST", body: formData });
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-  return res.json();
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(formData),
+  });
+  if (!res.ok) {
+    let more = "";
+    try { more = ` — ${await res.text()}`; } catch {}
+    throw new Error(`HTTP ${res.status} ${res.statusText}${more}`);
+  }
+  return res.json()
 }

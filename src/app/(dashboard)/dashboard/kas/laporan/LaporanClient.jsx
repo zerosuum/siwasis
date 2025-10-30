@@ -25,9 +25,11 @@ import { useToast } from "@/components/ui/useToast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { API_BASE } from "@/lib/config";
 import FilterModal from "./FilterModal";
+import PeriodDropdown from "../rekapitulasi/PeriodDropdown";
+import PeriodModal from "../rekapitulasi/PeriodModal";
+import { actionCreatePeriod } from "../rekapitulasi/actions";
 
 export default function LaporanClient({ initial }) {
-  
   const [filterOpen, setFilterOpen] = React.useState(false);
   const setoranBounds = React.useMemo(() => ({ min: 0, max: 10000000 }), []);
 
@@ -40,6 +42,7 @@ export default function LaporanClient({ initial }) {
   const [year, setYear] = React.useState(
     Number(sp.get("year")) || new Date().getFullYear()
   );
+  const [newPeriodOpen, setNewPeriodOpen] = React.useState(false);
   const initRange =
     sp.get("from") && sp.get("to")
       ? { from: new Date(sp.get("from")), to: new Date(sp.get("to")) }
@@ -57,9 +60,15 @@ export default function LaporanClient({ initial }) {
     (extra = {}) => {
       const params = new URLSearchParams(sp.toString());
       if (year) params.set("year", String(year));
+      const toLocalYMD = (d) =>
+        [
+          d.getFullYear(),
+          String(d.getMonth() + 1).padStart(2, "0"),
+          String(d.getDate()).padStart(2, "0"),
+        ].join("-");
       if (range?.from && range?.to) {
-        params.set("from", range.from.toISOString().slice(0, 10));
-        params.set("to", range.to.toISOString().slice(0, 10));
+        params.set("from", toLocalYMD(range.from));
+        params.set("to", toLocalYMD(range.to));
       } else {
         params.delete("from");
         params.delete("to");
@@ -79,6 +88,31 @@ export default function LaporanClient({ initial }) {
   React.useEffect(() => {
     pushWithParams();
   }, [year]); // reset page tiap ganti tahun
+  const handleSelectYear = (y) => setYear(Number(y));
+
+  const handleCreatePeriod = async ({ name, nominal, from, to }) => {
+    try {
+      const res = await actionCreatePeriod({ name, nominal, from, to });
+      setNewPeriodOpen(false);
+      show({ title: "Sukses!", description: "Periode baru dibuat." });
+      // pindah ke tahun baru, bersihkan range, refresh data
+      const y = Number(res?.year) || new Date().getFullYear();
+      const params = new URLSearchParams(sp.toString());
+      params.set("year", String(y));
+      params.delete("from");
+      params.delete("to");
+      params.set("page", "1");
+      router.push(`/dashboard/kas/laporan?${params.toString()}`);
+      router.refresh();
+    } catch (e) {
+      console.error(e);
+      show({
+        title: "Gagal",
+        description: "Tidak dapat membuat periode baru.",
+        variant: "error",
+      });
+    }
+  };
   React.useEffect(() => {
     if (range?.from && range?.to) pushWithParams();
   }, [range?.from, range?.to]);
@@ -147,7 +181,6 @@ export default function LaporanClient({ initial }) {
 
   return (
     <>
-      {/* Toolbar */}
       <div className="flex items-center justify-between gap-3 px-4">
         <TabNavigation className="!mb-0 h-6">
           <TabNavigationLink
@@ -166,20 +199,11 @@ export default function LaporanClient({ initial }) {
         </TabNavigation>
 
         <div className="flex items-center gap-2">
-          <select
-            className="h-8 w-[180px] rounded-[12px] border border-[#E2E7D7] bg-white px-3 text-sm"
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-          >
-            {Array.from({ length: 6 }).map((_, i) => {
-              const y = new Date().getFullYear() - i;
-              return (
-                <option key={y} value={y}>
-                  Periode {y}
-                </option>
-              );
-            })}
-          </select>
+          <PeriodDropdown
+            year={Number(year)}
+            onSelectYear={handleSelectYear}
+            onNew={() => setNewPeriodOpen(true)}
+          />
 
           <div
             className="relative"
@@ -212,7 +236,6 @@ export default function LaporanClient({ initial }) {
             <IconFilter size={16} />
           </button>
 
-          {/* Kalender = DateRangePicker */}
           <div className="relative">
             <button
               type="button"
@@ -345,6 +368,12 @@ export default function LaporanClient({ initial }) {
           }}
         />
       )}
+
+      <PeriodModal
+        open={newPeriodOpen}
+        onClose={() => setNewPeriodOpen(false)}
+        onSubmit={handleCreatePeriod}
+      />
     </>
   );
 }

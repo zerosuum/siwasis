@@ -66,6 +66,7 @@ export default function SpinwheelClient({ initialSegments }) {
     await postSpinDraw({
       wargaId: winner.id,
       tanggal: new Date().toISOString().slice(0, 10),
+      year,
     });
     setList((prev) => prev.filter((s) => s.id !== winner.id));
     router.prefetch("/dashboard/arisan/rekapitulasi");

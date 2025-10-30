@@ -19,9 +19,9 @@ export async function getArisanRekap({
   return res.json();
 }
 
-export async function getSpinCandidates({ year } = {}) {
+export async function getSpinCandidates({ year, rt } = {}) {
   const url = new URL(`${API_BASE}/arisan/spin/candidates`);
-  setParams(url, { year });
+  setParams(url, { year, rt });
   const res = await fetch(url.toString(), {
     headers: { Accept: "application/json" },
     cache: "no-store",
@@ -30,12 +30,12 @@ export async function getSpinCandidates({ year } = {}) {
   return res.json();
 }
 
-export async function postSpinDraw({ wargaId, tanggal }) {
+export async function postSpinDraw({ wargaId, tanggal, year }) {
   const url = `${API_BASE}/arisan/spin/draw`;
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ wargaId, tanggal }),
+    body: JSON.stringify({ wargaId, tanggal, year }),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
   return res.json();

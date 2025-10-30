@@ -300,7 +300,7 @@ export default function ArisanRekapClient({ initial }) {
       </div>
       <div className="grid grid-cols-[1fr_auto_1fr] items-center px-4 py-2 text-xs text-gray-500">
         <div className="justify-self-start">
-          Nominal: {initial.meta?.nominalFormatted}
+          Nominal: {initial.meta?.nominalPerEventFormatted ?? "Rp 0"}
         </div>
         <div className="justify-self-center">
           <Pagination
@@ -342,6 +342,8 @@ export default function ArisanRekapClient({ initial }) {
         onOk={() => {
           const params = new URLSearchParams(sp.toString());
           window.location.href = `/dashboard/arisan/rekapitulasi/export?${params}`;
+          //  const params = new URLSearchParams(sp.toString());
+          //window.location.href = `/api/arisan/rekap/export?${params}`;
           setConfirmDownload(false);
         }}
         onCancel={() => setConfirmDownload(false)}

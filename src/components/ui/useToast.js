@@ -1,31 +1,46 @@
 "use client";
-import * as React from "react";
+import React from "react";
+import Toast from "./Toast";
 
-const Ctx = React.createContext({ show: () => {} });
+const Ctx = React.createContext(null);
 
 export function ToastProvider({ children }) {
- const [stack, setStack] = React.useState([]);
- const show = ({ title, description, variant = "success" }) => {
- const id = Math.random().toString(36).slice(2);
- setStack((s) => [...s, { id, title, description, variant }]);
- setTimeout(() => setStack((s) => s.filter((x) => x.id !== id)), 2500);
- };
- return (
- <Ctx.Provider value={{ show }}>
- {children}
- <div className="fixed inset-0 pointer-events-none">
- {stack.map((t) => (
- <div
- key={t.id}
- className="pointer-events-auto absolute left-1/2 top-24 -translate-x-1/2 rounded-lg px-4 py-3 shadow-xl"
- style={{ background: "rgba(212, 255, 191, 0.9)" }}
- >
- <div className="font-semibold">{t.title}</div>
- {t.description && <div className="text-sm">{t.description}</div>}
- </div>
- ))}
- </div>
- </Ctx.Provider>
- );
+  const [state, setState] = React.useState({
+    open: false,
+    title: "",
+    description: "",
+    variant: "success",
+    duration: 2400,
+  });
+
+  const show = React.useCallback(
+    ({ title, description, variant = "success", duration = 2400 }) => {
+      setState({ open: true, title, description, variant, duration });
+    },
+    []
+  );
+  const hide = React.useCallback(
+    () => setState((s) => ({ ...s, open: false })),
+    []
+  );
+
+  return (
+    <Ctx.Provider value={{ show, hide }}>
+      {children}
+      <Toast
+        open={state.open}
+        onClose={hide}
+        title={state.title}
+        desc={state.description}
+        variant={state.variant}
+        duration={state.duration}
+      />
+    </Ctx.Provider>
+  );
 }
-export const useToast = () => React.useContext(Ctx);
+
+export function useToast() {
+  const ctx = React.useContext(Ctx);
+  if (!ctx) throw new Error("useToast must be used within <ToastProvider>");
+  return ctx;
+}

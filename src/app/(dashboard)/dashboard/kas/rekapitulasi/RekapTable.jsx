@@ -42,7 +42,7 @@ export default function RekapTable({ initial, editing, updates, onToggle }) {
             <TableHeaderCell className="w-[110px] text-center py-3 font-semibold text-gray-600">
               Jumlah Setoran
             </TableHeaderCell>
-            <TableHeaderCell className="w-[140px] text-right py-3 font-semibold text-gray-600">
+            <TableHeaderCell className="w-[140px] text-right py-3 font-semibold text-gray-600 tabular-nums">
               Total Setoran
             </TableHeaderCell>
             {dates.map((d) => (
@@ -68,10 +68,10 @@ export default function RekapTable({ initial, editing, updates, onToggle }) {
                 </TableCell>
                 <TableCell className="text-center py-4">{row.rt}</TableCell>
                 <TableCell className="text-left py-4">{row.nama}</TableCell>
-                <TableCell className="text-right py-4 tabular-nums">
+                <TableCell className="text-center py-4 tabular-nums">
                   {row.jumlahSetoran}
                 </TableCell>
-                <TableCell className="text-right font-medium py-4 tabular-nums">
+                <TableCell className="text-center font-medium py-4 tabular-nums">
                   {row.totalSetoranFormatted}
                 </TableCell>
 

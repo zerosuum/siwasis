@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { API_BASE } from "@/server/queries/documents";
+import { API_BASE } from "@/server/queries/_api";
 
 // CREATE
 export async function actionCreate(formData) {

@@ -23,6 +23,7 @@ const BE_ORIGIN = (() => {
     return "http://127.0.0.1:8000";
   }
 })();
+import { actionUploadDocument, actionUpdate } from "./actions";
 
 const publicFileURL = (file_path) =>
   `${BE_ORIGIN}/storage/${String(file_path)
@@ -85,11 +86,12 @@ export default function DocumentClient({ initial }) {
 
   const onCreate = async (form) => {
     try {
-      const res = await fetch(`${API_BASE}/documents`, {
-        method: "POST",
-        body: form,
+      await actionUploadDocument({
+        title: form.get("title"),
+        description: form.get("description"),
+        uploaded_at: form.get("uploaded_at"),
+        file: form.get("file_path"),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setModalState({ open: false, data: null });
       show({ title: "Sukses", description: "Dokumen diunggah." });
       router.refresh();
@@ -101,12 +103,7 @@ export default function DocumentClient({ initial }) {
 
   const onUpdate = async (id, form) => {
     try {
-      const res = await fetch(`${API_BASE}/documents/${id}`, {
-        method: "POST",
-        body: form,
-        headers: { "X-HTTP-Method-Override": "PUT" },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await actionUpdate(id, form);
       setModalState({ open: false, data: null });
       show({ title: "Sukses", description: "Dokumen diperbarui." });
       router.refresh();

@@ -1,12 +1,10 @@
 import { getKasLaporan } from "@/server/queries/kas";
 import LaporanClient from "./LaporanClient";
 import KPICard from "@/components/KPICard";
+import { first } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-function first(v) {
-  return Array.isArray(v) ? v[0] : v;
-}
 
 const defaultData = {
   rows: [],
@@ -24,20 +22,38 @@ const defaultData = {
 export default async function Page({ searchParams }) {
   const sp = await searchParams;
 
-  const page = sp?.page ? Number(sp.page) : 1;
-  const year = sp?.year ? Number(sp.year) : new Date().getFullYear();
-  const from = sp?.from ?? null;
-  const to   = sp?.to ?? null;
-  const q    = sp?.q ?? "";
-  const type = sp?.type ?? null;   
-  const min  = sp?.min ? Number(sp.min) : undefined;
-  const max  = sp?.max ? Number(sp.max) : undefined;
+const page = sp?.page ? Number(first(sp.page)) : 1;
+const year = sp?.year ? Number(first(sp.year)) : new Date().getFullYear();
+const from = sp?.from ? String(first(sp.from)) : null;
+const to = sp?.to ? String(first(sp.to)) : null;
+const q = sp?.q ? String(first(sp.q)) : "";
+const type = sp?.type ? String(first(sp.type)) : null;
+const min = sp?.min ? Number(first(sp.min)) : undefined;
+const max = sp?.max ? Number(first(sp.max)) : undefined;
+const rt = sp?.rt ? String(first(sp.rt)) : "all";
 
   // const initial =
   //   (await getKasLaporan({ page, year, from, to, q })) || defaultData;
 
-  const resp = await getKasLaporan({ page, year, from, to, q, type, min, max });
-  const initial = resp && resp.ok === false ? defaultData : (resp || defaultData);
+  // const resp = await getKasLaporan({ page, year, from, to, q, type, min, max });
+  // const initial = resp && resp.ok === false ? defaultData : (resp || defaultData);
+
+  let initial = defaultData;
+  try {
+    const resp = await getKasLaporan({
+      page,
+      year,
+      from,
+      to,
+      q,
+      type,
+      min,
+      max,
+    });
+    initial = resp && resp.ok === false ? defaultData : resp || defaultData;
+  } catch (_) {
+    initial = defaultData;
+  }
 
   const kpis = [
     {

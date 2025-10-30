@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 
 const LABELS = {
   dashboard: "Dashboard",
+  warga: "Warga",
+  "tambah-warga": "Tambah Warga",
   kas: "Kas",
   rekapitulasi: "Rekapitulasi",
   laporan: "Laporan Keuangan",
@@ -14,7 +16,8 @@ const LABELS = {
   dokumen: "Dokumen",
 };
 
-const titleCase = (s) => s?.[0]?.toUpperCase() + s?.slice(1);
+const titleCase = (s="") =>
+  s.split("-").map(w => w ? w[0].toUpperCase() + w.slice(1) : w).join(" ");
 
 export default function Breadcrumbs() {
   const pathname = usePathname(); // e.g. /dashboard/kas/rekapitulasi
