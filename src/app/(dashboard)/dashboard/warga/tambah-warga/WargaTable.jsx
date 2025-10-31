@@ -25,14 +25,20 @@ const rp = (n) =>
 
 function ArisanBadge({ status }) {
   if (!status) return null;
-  const isSudah = status === "sudah" || status === "Sudah";
+
+  const statusNormalized = status.toLowerCase().includes("sudah");
+
+  const statusText = statusNormalized ? "Sudah Dapat" : "Belum Dapat";
+
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-        isSudah ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+        statusNormalized
+          ? "bg-[#EEF0E8] text-[#2B3A1D]" 
+          : "bg-[#FFF6E5] text-[#B0892E]"
       }`}
     >
-      {isSudah ? "Sudah dapat" : "Belum dapat"}
+      {statusText}
     </span>
   );
 }
