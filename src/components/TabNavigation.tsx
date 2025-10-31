@@ -7,20 +7,21 @@ import * as NavigationMenuPrimitives from "@radix-ui/react-navigation-menu";
 import { cx, focusRing } from "@/lib/utils";
 
 function getSubtree(
- options: { asChild: boolean | undefined; children: React.ReactNode },
- content: React.ReactNode | ((children: React.ReactNode) => React.ReactNode)
+  options: { asChild?: boolean; children: React.ReactNode },
+  content: React.ReactNode | ((children: React.ReactNode) => React.ReactNode)
 ) {
- const { asChild, children } = options;
- if (!asChild)
- return typeof content === "function" ? content(children) : content;
+  const { asChild, children } = options;
 
- const firstChild = React.Children.only(children) as React.ReactElement;
- return React.cloneElement(firstChild, {
- children:
- typeof content === "function"
- ? content(firstChild.props.children)
- : content,
- });
+  if (!asChild) {
+    return typeof content === "function" ? content(children) : content;
+  }
+
+  const firstChild = React.Children.only(children) as React.ReactElement<any>;
+  const newChildren =
+    typeof content === "function"
+      ? content((firstChild.props as any).children)
+      : content;
+  return React.cloneElement(firstChild, undefined, newChildren);
 }
 
 const TabNavigation = React.forwardRef<
