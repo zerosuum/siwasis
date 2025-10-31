@@ -88,7 +88,6 @@ export default function FilterModal({ open, onClose, value = {}, onApply }) {
           </button>
         </div>
 
-        {/* Status arisan (opsional—biar mirip mock). Kamu boleh hide jika bukan konteksnya */}
         <div className="mb-4">
           <div className="mb-2 text-sm font-medium text-gray-700">
             Status Arisan
@@ -111,7 +110,6 @@ export default function FilterModal({ open, onClose, value = {}, onApply }) {
           </label>
         </div>
 
-        {/* RT chips */}
         <div className="mb-4">
           <div className="mb-2 text-sm font-medium text-gray-700">RT</div>
           <div className="flex flex-wrap gap-2">
@@ -159,9 +157,7 @@ export default function FilterModal({ open, onClose, value = {}, onApply }) {
           </div>
 
           <div className="relative h-8">
-            {/* track */}
             <div className="absolute left-0 right-0 top-3 h-1 rounded bg-[#E2E7D7]" />
-            {/* range highlight */}
             <div
               className="absolute top-3 h-1 rounded bg-[#6E8649]"
               style={{
@@ -169,7 +165,6 @@ export default function FilterModal({ open, onClose, value = {}, onApply }) {
                 right: `${100 - (kasMax / MAX) * 100}%`,
               }}
             />
-            {/* 2 thumbs (dua input range) */}
             <input
               type="range"
               min={0}
@@ -195,7 +190,6 @@ export default function FilterModal({ open, onClose, value = {}, onApply }) {
           </div>
         </div>
 
-        {/* Arisan range */}
         <div className="mb-6">
           <div className="mb-2 text-sm font-medium text-gray-700">
             Jumlah Setoran Arisan

@@ -1,0 +1,129 @@
+"use client";
+
+import * as React from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { DateRangePicker } from "@/components/DatePicker";
+import { Calendar as IconCalendar } from "lucide-react";
+import PeriodDropdown from "./kas/rekapitulasi/PeriodDropdown";
+import PeriodModal from "./kas/rekapitulasi/PeriodModal";
+
+export default function DashboardHeaderControls() {
+  const router = useRouter();
+  const sp = useSearchParams();
+
+  const [year, setYear] = React.useState(new Date().getFullYear());
+  const [newPeriodOpen, setNewPeriodOpen] = React.useState(false);
+
+  const handleSelectYear = (y) => setYear(Number(y));
+  const handleCreatePeriod = async ({ name, nominal, from, to }) => {
+    setNewPeriodOpen(false);
+    router.refresh();
+  };
+
+  const initRange =
+    sp.get("from") && sp.get("to")
+      ? { from: new Date(sp.get("from")), to: new Date(sp.get("to")) }
+      : undefined;
+
+  const [range, setRange] = React.useState(initRange);
+
+  const pushWithParams = React.useCallback(
+    (extra = {}) => {
+      const params = new URLSearchParams(sp.toString());
+      const toYMD = (d) =>
+        [
+          d.getFullYear(),
+          String(d.getMonth() + 1).padStart(2, "0"),
+          String(d.getDate()).padStart(2, "0"),
+        ].join("-");
+
+      if (range?.from && range?.to) {
+        params.set("from", toYMD(range.from));
+        params.set("to", toYMD(range.to));
+      } else {
+        params.delete("from");
+        params.delete("to");
+      }
+
+      Object.entries(extra).forEach(([k, v]) => {
+        if (v === undefined || v === null || v === "") params.delete(k);
+        else params.set(k, String(v));
+      });
+
+      router.push(`/dashboard?${params.toString()}`);
+      router.refresh();
+    },
+    [router, sp, range?.from, range?.to]
+  );
+
+  React.useEffect(() => {
+    if (range?.from && range?.to) pushWithParams();
+  }, [range?.from, range?.to, pushWithParams]);
+
+
+  const filterAnchorRef = React.useRef(null);
+  const openCalendar = React.useCallback(() => {
+    const root = filterAnchorRef.current;
+    if (!root) return;
+    const btn =
+      root.querySelector('button[aria-haspopup="dialog"]') ||
+      root.querySelector("button");
+    if (!btn) return;
+    ["pointerdown", "mousedown", "mouseup", "click"].forEach((t) =>
+      btn.dispatchEvent(
+        new MouseEvent(t, { bubbles: true, cancelable: true, view: window })
+      )
+    );
+  }, []);
+
+  return (
+    <div className="flex items-center gap-2">
+      <PeriodDropdown
+        year={year}
+        onSelectYear={handleSelectYear}
+        onNew={() => setNewPeriodOpen(true)}
+      />
+
+      <div className="relative">
+        <button
+          type="button"
+          onClick={openCalendar}
+          className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
+          title="Pilih rentang tanggal"
+          aria-label="Pilih rentang tanggal"
+        >
+          <IconCalendar size={16} />
+        </button>
+
+        <div
+          ref={filterAnchorRef}
+          className="absolute inset-0 pointer-events-none opacity-0"
+          aria-hidden="true"
+        >
+          <DateRangePicker
+            value={range}
+            onChange={(r) => setRange(r)}
+            displayMonths={2}
+            enableYearNavigation
+            translations={{
+              cancel: "Batal",
+              apply: "Ya, Simpan",
+              range: "Rentang",
+            }}
+            align="end"
+            sideOffset={8}
+            contentClassName="mt-2 min-w-[560px] rounded-xl border bg-white p-4 shadow-lg"
+            footerClassName="mt-3 border-t pt-3 flex justify-end gap-2"
+            cancelClassName="rounded-lg bg-gray-100 px-4 py-1.5 text-sm"
+            applyClassName="rounded-lg bg-[#6E8649] px-4 py-1.5 text-sm text-white"
+          />
+        </div>
+      </div>
+      <PeriodModal
+        open={newPeriodOpen}
+        onClose={() => setNewPeriodOpen(false)}
+        onSubmit={handleCreatePeriod}
+      />
+    </div>
+  );
+}
