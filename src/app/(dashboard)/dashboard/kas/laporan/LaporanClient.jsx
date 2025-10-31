@@ -6,7 +6,7 @@ import { TabNavigation, TabNavigationLink } from "@/components/TabNavigation";
 import { DateRangePicker } from "@/components/DatePicker";
 import LaporanTable from "./LaporanTable";
 import Pagination from "@/components/Pagination";
-import TransaksiModal from "./TransaksiModal";
+import TransaksiModal from "@/components/TransaksiModal";
 import {
   Calendar as IconCalendar,
   Search as IconSearch,
@@ -24,7 +24,7 @@ import {
 import { useToast } from "@/components/ui/useToast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { API_BASE } from "@/lib/config";
-import FilterModal from "./FilterModal";
+import FilterModal from "@/components/FilterModal";
 import PeriodDropdown from "../rekapitulasi/PeriodDropdown";
 import PeriodModal from "../rekapitulasi/PeriodModal";
 import { actionCreatePeriod } from "../rekapitulasi/actions";

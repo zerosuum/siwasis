@@ -6,19 +6,7 @@ import { API_BASE } from "@/server/queries/_api";
 const BASE =
   API_BASE || process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000/api";
 
-// CREATE
-export async function actionCreate(formData) {
-  const res = await fetch(`${BASE}/documents`, {
-    method: "POST",
-    headers: { Accept: "application/json" },
-    body: formData,
-  });
-  if (!res.ok) throw new Error(`Upload gagal (${res.status})`);
-  revalidatePath("/dashboard/dokumen/daftar");
-  return { ok: true };
-}
-
-// UPDATE 
+// UPDATE
 export async function actionUpdate(id, form) {
   const fd = new FormData();
   fd.set("_method", "PUT");

@@ -15,11 +15,13 @@ import {
   Pencil as IconPencil,
 } from "lucide-react";
 import ArisanRekapTable from "./RekapTable";
-import { saveArisanRekap } from "@/server/queries/arisan";
+import { actionSaveArisanRekap } from "./actions";
+import { useToast } from "@/components/ui/useToast"; // Pastikan useToast diimpor
 
 export default function ArisanRekapClient({ initial }) {
   const router = useRouter();
   const sp = useSearchParams();
+  const { show } = useToast(); 
 
   // URL
   const page = initial?.page || 1;
@@ -67,7 +69,7 @@ export default function ArisanRekapClient({ initial }) {
   const [yearState, setYearState] = React.useState(
     initial?.meta?.year || new Date().getFullYear()
   );
-  
+
   React.useEffect(() => {
     if (!range?.from || !range?.to) return;
 
@@ -87,7 +89,7 @@ export default function ArisanRekapClient({ initial }) {
     range?.to ? range.to.getTime() : null,
   ]);
 
-  // Navigate helper 
+  // Navigate helper
   const navigate = (patch) => {
     const params = new URLSearchParams(sp.toString());
     Object.entries(patch).forEach(([k, v]) => {
@@ -98,7 +100,7 @@ export default function ArisanRekapClient({ initial }) {
     router.push(`/dashboard/arisan/rekapitulasi?${params.toString()}`);
   };
 
-  // Toggle checkbox 
+  // Toggle checkbox
   const onToggle = React.useCallback((wargaId, tanggal, checked) => {
     setUpdates((prev) => {
       const key = `${wargaId}-${tanggal}`;
@@ -108,21 +110,23 @@ export default function ArisanRekapClient({ initial }) {
     });
   }, []);
 
-  // Save
+  // 3. MODIFIKASI onSave
   const onSave = async () => {
     setConfirmSave(false);
     startTransition(async () => {
       try {
-        await saveArisanRekap({ year, updates, from, to });
+        // Panggil Server Action
+        await actionSaveArisanRekap({ year, updates, from, to });
         setEditing(false);
         setUpdates([]);
-        setSuccessOpen(true);
-
-        router.replace(`/dashboard/arisan/rekapitulasi?${sp.toString()}`);
+        setSuccessOpen(true); 
         router.refresh();
-      } catch {
-        // fallback alert 
-        window.alert("Gagal menyimpan perubahan.");
+      } catch (err) {
+        show({
+          title: "Gagal Menyimpan",
+          description: err.message || "Terjadi kesalahan.",
+          variant: "error",
+        });
       }
     });
   };
@@ -342,8 +346,6 @@ export default function ArisanRekapClient({ initial }) {
         onOk={() => {
           const params = new URLSearchParams(sp.toString());
           window.location.href = `/dashboard/arisan/rekapitulasi/export?${params}`;
-          //  const params = new URLSearchParams(sp.toString());
-          //window.location.href = `/api/arisan/rekap/export?${params}`;
           setConfirmDownload(false);
         }}
         onCancel={() => setConfirmDownload(false)}

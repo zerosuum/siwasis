@@ -15,11 +15,12 @@ import {
   UsersRound as IconArisan,
   IdCard as IconKas,
 } from "lucide-react";
+
 import {
-  API_BASE,
-  addArisanMember,
-  addKasMember,
-} from "@/server/queries/warga";
+  actionCreateWarga,
+  actionUpdateWarga,
+  actionDeleteWarga,
+} from "./actions";
 
 import FilterModal from "./FilterModal";
 
@@ -57,49 +58,16 @@ export default function WargaClient({ initial }) {
   });
 
   const filterBtnRef = React.useRef(null);
+
   async function onCreate(values, variant) {
     try {
-      const res = await fetch(`${API_BASE}/warga`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(values), 
-      });
-
-      if (!res.ok) {
-        let msg = `HTTP ${res.status}`;
-        try {
-          const data = await res.json();
-          if (res.status === 422 && data?.errors) {
-            msg =
-              Object.entries(data.errors)
-                .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
-                .join(" | ") || msg;
-          } else if (data?.message) {
-            msg = data.message;
-          }
-        } catch {}
-        throw new Error(msg);
-      }
-
-      const created = await res.json();
-
-      if (variant === "KAS") await addKasMember(created.id);
-      if (variant === "ARISAN") await addArisanMember(created.id);
-
+      const res = await actionCreateWarga(values, variant);
       setCreateModal({ open: false, variant: "WARGA" });
       show({
         title: "Sukses",
-        description:
-          variant === "KAS"
-            ? "Warga ditambahkan & ditandai anggota Kas."
-            : variant === "ARISAN"
-            ? "Warga ditambahkan & ditandai anggota Arisan."
-            : "Warga ditambahkan.",
+        description: res.message || "Warga ditambahkan.",
       });
-      router.refresh();
+      router.refresh(); 
     } catch (e) {
       show({
         title: "Gagal",
@@ -112,22 +80,14 @@ export default function WargaClient({ initial }) {
 
   async function onUpdate(id, values) {
     try {
-      const res = await fetch(`${API_BASE}/warga/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(values),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await actionUpdateWarga(id, values);
       setEditRow(null);
       show({ title: "Sukses", description: "Data warga diperbarui." });
       router.refresh();
-    } catch {
+    } catch (e) {
       show({
         title: "Gagal",
-        description: "Tidak bisa update warga.",
+        description: e.message || "Tidak bisa update warga.",
         variant: "error",
       });
     }
@@ -135,11 +95,7 @@ export default function WargaClient({ initial }) {
 
   async function onDelete(id) {
     try {
-      const res = await fetch(`${API_BASE}/warga/${id}`, {
-        method: "DELETE",
-        headers: { Accept: "application/json" },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await actionDeleteWarga(id);
       setConfirmDelete(null);
       show({
         title: "Terhapus",
@@ -147,10 +103,10 @@ export default function WargaClient({ initial }) {
         duration: 2500,
       });
       router.refresh();
-    } catch {
+    } catch (e) {
       show({
         title: "Gagal",
-        description: "Tidak bisa hapus.",
+        description: e.message || "Tidak bisa hapus.",
         variant: "error",
       });
     }
@@ -194,7 +150,6 @@ export default function WargaClient({ initial }) {
         </TabNavigation>
 
         <div className="flex items-center gap-2">
-          {/* Search */}
           <div
             className="relative"
             onMouseEnter={() => setSearchOpen(true)}
@@ -218,7 +173,6 @@ export default function WargaClient({ initial }) {
             />
           </div>
 
-          {/* Filter */}
           <button
             ref={filterBtnRef}
             type="button"
@@ -230,7 +184,6 @@ export default function WargaClient({ initial }) {
             <IconFilter size={16} />
           </button>
 
-          {/* Tambah Anggota Arisan */}
           <button
             type="button"
             onClick={() => setCreateModal({ open: true, variant: "ARISAN" })}
@@ -239,7 +192,6 @@ export default function WargaClient({ initial }) {
             <IconArisan size={16} />
           </button>
 
-          {/* Tambah Anggota Kas */}
           <button
             type="button"
             onClick={() => setCreateModal({ open: true, variant: "KAS" })}
@@ -249,7 +201,6 @@ export default function WargaClient({ initial }) {
           </button>
         </div>
       </div>
-      {/* Table */}
       <div className="rounded-xl bg-white shadow overflow-hidden">
         <WargaTable
           initial={initial}
@@ -296,7 +247,10 @@ export default function WargaClient({ initial }) {
           warga={arisanModal.warga}
           onClose={() => setArisanModal({ open: false, warga: null })}
           onSuccess={() => {
-            show({ title: "OK", description: "Ditandai anggota arisan." });
+            show({
+              title: "OK",
+              description: "Ditandai anggota arisan & kas.",
+            });
             router.refresh();
           }}
         />

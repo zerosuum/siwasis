@@ -5,8 +5,8 @@ import { TabNavigation, TabNavigationLink } from "@/components/TabNavigation";
 import { DateRangePicker } from "@/components/DatePicker";
 import SampahTable from "./SampahTable";
 import Pagination from "@/components/Pagination";
-import TransaksiModal from "../../kas/laporan/TransaksiModal";
-import FilterModal from "../../kas/laporan/FilterModal"; 
+import TransaksiModal from "@/components/TransaksiModal";
+import FilterModal from "@/components/FilterModal";
 import {
   Calendar as IconCalendar,
   Search as IconSearch,

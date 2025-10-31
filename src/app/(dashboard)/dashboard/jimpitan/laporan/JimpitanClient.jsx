@@ -5,8 +5,8 @@ import { TabNavigation, TabNavigationLink } from "@/components/TabNavigation";
 import { DateRangePicker } from "@/components/DatePicker";
 import JimpitanTable from "./JimpitanTable";
 import Pagination from "@/components/Pagination";
-import TransaksiModal from "../../kas/laporan/TransaksiModal";
-import FilterModal from "../../kas/laporan/FilterModal";
+import TransaksiModal from "@/components/TransaksiModal";
+import FilterModal from "@/components/FilterModal";
 import {
   Calendar as IconCalendar,
   Search as IconSearch,
@@ -23,7 +23,6 @@ import {
 import { useToast } from "@/components/ui/useToast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { API_BASE } from "@/server/queries/_api";
-
 
 export default function JimpitanClient({ initial }) {
   const [filterOpen, setFilterOpen] = React.useState(false);

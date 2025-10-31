@@ -5,11 +5,14 @@ import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TabNavigation, TabNavigationLink } from "@/components/TabNavigation";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import { getSpinCandidates, postSpinDraw } from "@/server/queries/arisan";
+import { getSpinCandidates } from "@/server/queries/arisan";
+import { actionPostSpinDraw } from "./actions";
+import { useToast } from "@/components/ui/useToast";
 
 export default function SpinwheelClient({ initialSegments }) {
   const router = useRouter();
   const sp = useSearchParams();
+  const { show } = useToast(); 
 
   // Hydration guard
   const [mounted, setMounted] = React.useState(false);
@@ -39,8 +42,7 @@ export default function SpinwheelClient({ initialSegments }) {
       try {
         const segs = await getSpinCandidates({ year, rt });
         if (!aborted) setList(Array.isArray(segs) ? segs : []);
-      } catch {
-      }
+      } catch {}
     })();
     return () => {
       aborted = true;
@@ -63,13 +65,13 @@ export default function SpinwheelClient({ initialSegments }) {
   const wheelRadius = wheelSize / 2;
 
   async function persistWinner(winner) {
-    await postSpinDraw({
+    await actionPostSpinDraw({
       wargaId: winner.id,
       tanggal: new Date().toISOString().slice(0, 10),
       year,
     });
+
     setList((prev) => prev.filter((s) => s.id !== winner.id));
-    router.prefetch("/dashboard/arisan/rekapitulasi");
   }
 
   const handleSpin = () => {
@@ -94,7 +96,12 @@ export default function SpinwheelClient({ initialSegments }) {
           await persistWinner(winner);
           setWinnerName(winner.label);
           setSuccessOpen(true);
-        } catch {
+        } catch (err) {
+          show({
+            title: "Gagal",
+            description: err.message || "Gagal menyimpan pemenang.",
+            variant: "error",
+          });
         }
       }
     }, duration * 1000);
