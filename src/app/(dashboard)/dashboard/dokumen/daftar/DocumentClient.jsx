@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { API_BASE } from "@/server/queries/_api";
 
+import { actionUploadDocument, actionUpdate, actionDelete } from "./actions";
+
 const BE_ORIGIN = (() => {
   try {
     return new URL(API_BASE).origin;
@@ -23,7 +25,6 @@ const BE_ORIGIN = (() => {
     return "http://127.0.0.1:8000";
   }
 })();
-import { actionUploadDocument, actionUpdate } from "./actions";
 
 const publicFileURL = (file_path) =>
   `${BE_ORIGIN}/storage/${String(file_path)
@@ -115,17 +116,7 @@ export default function DocumentClient({ initial }) {
 
   const onDelete = async (id) => {
     try {
-      const res = await fetch(`${BE_ORIGIN}/api/documents/${id}`, {
-        method: "DELETE",
-        headers: { Accept: "application/json" },
-      });
-      if (!res.ok) {
-        const ct = res.headers.get("content-type") || "";
-        const errMsg = ct.includes("application/json")
-          ? (await res.json())?.message || "Delete gagal"
-          : await res.text();
-        throw new Error(errMsg);
-      }
+      await actionDelete(id);
       setConfirmDelete(null);
       show({
         title: "Terhapus",
