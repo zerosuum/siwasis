@@ -1,6 +1,7 @@
 import KPICard from "@/components/KPICard";
 import SampahClient from "./SampahClient";
 import { getSampahLaporan } from "@/server/queries/sampah";
+import { getAdminProfile } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,8 @@ const defaultData = {
 };
 
 export default async function Page({ searchParams }) {
+  const profile = await getAdminProfile();
+  const isLoggedIn = !!profile;
   const sp = await searchParams;
   const page = sp?.page ? Number(sp.page) : 1;
   const year = sp?.year ? Number(sp.year) : new Date().getFullYear();
@@ -70,7 +73,7 @@ export default async function Page({ searchParams }) {
           <KPICard key={k.label} {...k} />
         ))}
       </div>
-      <SampahClient initial={initial} />
+      <SampahClient initial={initial} readOnly={!isLoggedIn} />
     </div>
   );
 }

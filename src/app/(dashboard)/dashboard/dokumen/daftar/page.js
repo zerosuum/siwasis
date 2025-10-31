@@ -1,11 +1,15 @@
 import DocumentClient from "./DocumentClient";
 import { getDocuments } from "@/server/queries/documents";
+import { getAdminProfile } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 const defaultData = { rows: [], total: 0, page: 1, perPage: 15, kpi: null };
 
 export default async function Page({ searchParams }) {
+
+  const profile = await getAdminProfile();
+  const isLoggedIn = !!profile;
   const sp = await searchParams;
   const page = sp?.page ? Number(sp.page) : 1;
   const search = sp?.q ?? "";
@@ -41,7 +45,7 @@ export default async function Page({ searchParams }) {
         ))}
       </div> */}
 
-      <DocumentClient initial={initial} />
+      <DocumentClient initial={initial} readOnly={!isLoggedIn} />
     </div>
   );
 }

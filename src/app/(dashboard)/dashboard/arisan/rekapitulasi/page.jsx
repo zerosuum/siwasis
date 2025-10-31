@@ -1,6 +1,7 @@
 import KPICard from "@/components/KPICard";
 import ArisanRekapClient from "./RekapClient";
 import { getArisanRekap } from "@/server/queries/arisan";
+import { getAdminProfile } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,9 @@ const fallback = {
 };
 
 export default async function Page({ searchParams }) {
+  const profile = await getAdminProfile();
+  const isLoggedIn = !!profile; 
+
   const sp = await searchParams;
   const page = sp?.page ? Number(first(sp.page)) : 1;
   const year = sp?.year ? Number(first(sp.year)) : new Date().getFullYear();
@@ -83,7 +87,7 @@ export default async function Page({ searchParams }) {
       </div>
 
       <div className="mt-2">
-        <ArisanRekapClient initial={initial} />
+        <ArisanRekapClient initial={initial} readOnly={!isLoggedIn} />
       </div>
     </div>
   );

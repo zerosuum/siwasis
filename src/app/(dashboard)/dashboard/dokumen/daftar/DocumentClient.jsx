@@ -34,7 +34,7 @@ const publicFileURL = (file_path) =>
 
 const downloadURL = (id) => `${BE_ORIGIN}/api/documents/${id}/download`;
 
-export default function DocumentClient({ initial }) {
+export default function DocumentClient({ initial, readOnly }) {
   const router = useRouter();
   const sp = useSearchParams();
   const { show } = useToast();
@@ -214,19 +214,21 @@ export default function DocumentClient({ initial }) {
               />
             </div>
           </div>
-
-          <button
-            onClick={() => setModalState({ open: true, data: null })}
-            className="flex h-8 items-center gap-1 rounded-[10px] bg-[#6E8649] px-3 text-sm text-white"
-          >
-            <IconPlus size={16} /> Upload
-          </button>
+          {!readOnly && (
+            <button
+              onClick={() => setModalState({ open: true, data: null })}
+              className="flex h-8 items-center gap-1 rounded-[10px] bg-[#6E8649] px-3 text-sm text-white"
+            >
+              <IconPlus size={16} /> Upload
+            </button>
+          )}
         </div>
       </div>
 
       <div className="rounded-xl bg-white shadow overflow-hidden">
         <DocumentTable
           initial={initial}
+          readOnly={readOnly}
           onView={(row) =>
             setViewer({ open: true, url: publicFileURL(row.file_path) })
           }

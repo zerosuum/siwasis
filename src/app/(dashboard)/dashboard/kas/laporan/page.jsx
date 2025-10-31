@@ -2,9 +2,9 @@ import { getKasLaporan } from "@/server/queries/kas";
 import LaporanClient from "./LaporanClient";
 import KPICard from "@/components/KPICard";
 import { first } from "@/lib/utils";
+import { getAdminProfile } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
-
 
 const defaultData = {
   rows: [],
@@ -20,17 +20,22 @@ const defaultData = {
 };
 
 export default async function Page({ searchParams }) {
+
+  const profile = await getAdminProfile();
+  const isLoggedIn = !!profile;
+
   const sp = await searchParams;
 
-const page = sp?.page ? Number(first(sp.page)) : 1;
-const year = sp?.year ? Number(first(sp.year)) : new Date().getFullYear();
-const from = sp?.from ? String(first(sp.from)) : null;
-const to = sp?.to ? String(first(sp.to)) : null;
-const q = sp?.q ? String(first(sp.q)) : "";
-const type = sp?.type ? String(first(sp.type)) : null;
-const min = sp?.min ? Number(first(sp.min)) : undefined;
-const max = sp?.max ? Number(first(sp.max)) : undefined;
-const rt = sp?.rt ? String(first(sp.rt)) : "all";
+
+  const page = sp?.page ? Number(first(sp.page)) : 1;
+  const year = sp?.year ? Number(first(sp.year)) : new Date().getFullYear();
+  const from = sp?.from ? String(first(sp.from)) : null;
+  const to = sp?.to ? String(first(sp.to)) : null;
+  const q = sp?.q ? String(first(sp.q)) : "";
+  const type = sp?.type ? String(first(sp.type)) : null;
+  const min = sp?.min ? Number(first(sp.min)) : undefined;
+  const max = sp?.max ? Number(first(sp.max)) : undefined;
+  const rt = sp?.rt ? String(first(sp.rt)) : "all";
 
   // const initial =
   //   (await getKasLaporan({ page, year, from, to, q })) || defaultData;
@@ -85,7 +90,7 @@ const rt = sp?.rt ? String(first(sp.rt)) : "all";
           />
         ))}
       </div>
-      <LaporanClient initial={initial} />
+      <LaporanClient initial={initial} readOnly={!isLoggedIn} />
     </div>
   );
 }

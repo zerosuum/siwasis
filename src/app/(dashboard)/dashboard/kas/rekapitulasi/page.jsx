@@ -2,8 +2,9 @@ import { getKasRekap } from "@/server/queries/kas";
 import RekapClient from "./RekapClient";
 import KPICard from "@/components/KPICard";
 import { first } from "@/lib/utils";
-export const dynamic = "force-dynamic";
+import { getAdminProfile } from "@/lib/session";
 
+export const dynamic = "force-dynamic";
 
 const defaultData = {
   meta: { year: new Date().getFullYear(), nominalFormatted: "Rp 0" },
@@ -21,28 +22,21 @@ const defaultData = {
 };
 
 export default async function Page({ searchParams }) {
+  const profile = await getAdminProfile();
+  const isLoggedIn = !!profile;
+
   const sp = await searchParams;
 
-const page = sp?.page ? Number(first(sp.page)) : 1;
-const year = sp?.year ? Number(first(sp.year)) : new Date().getFullYear();
-const from = sp?.from ? String(first(sp.from)) : null;
-const to = sp?.to ? String(first(sp.to)) : null;
-const q = sp?.q ? String(first(sp.q)) : "";
-const type = sp?.type ? String(first(sp.type)) : null;
-const min = sp?.min ? Number(first(sp.min)) : undefined;
-const max = sp?.max ? Number(first(sp.max)) : undefined;
-const rt = sp?.rt ? String(first(sp.rt)) : "all";
+  const page = sp?.page ? Number(first(sp.page)) : 1;
+  const year = sp?.year ? Number(first(sp.year)) : new Date().getFullYear();
+  const from = sp?.from ? String(first(sp.from)) : null;
+  const to = sp?.to ? String(first(sp.to)) : null;
+  const q = sp?.q ? String(first(sp.q)) : "";
+  const type = sp?.type ? String(first(sp.type)) : null;
+  const min = sp?.min ? Number(first(sp.min)) : undefined;
+  const max = sp?.max ? Number(first(sp.max)) : undefined;
+  const rt = sp?.rt ? String(first(sp.rt)) : "all";
 
-  // let initial;
-  // try {
-  //   initial = (await getKasRekap({ page, year, q, rt, from, to, min, max })) || defaultData;
-  // } catch (error) {
-  //   console.error("Error fetching data:", error);
-  //   initial = defaultData;
-  // }
-
-  // const resp = await getKasRekap({ page, year, q, rt, from, to, min, max });
-  // const initial = resp && resp.ok === false ? defaultData : (resp || defaultData);
   let initial = defaultData;
   try {
     const resp = await getKasRekap({ page, year, q, rt, from, to, min, max });
@@ -81,7 +75,7 @@ const rt = sp?.rt ? String(first(sp.rt)) : "all";
         ))}
       </div>
       <div className="mt-2">
-        <RekapClient initial={initial} />
+        <RekapClient initial={initial} readOnly={!isLoggedIn} />
       </div>
     </div>
   );

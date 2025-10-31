@@ -24,7 +24,7 @@ import { useToast } from "@/components/ui/useToast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { API_BASE } from "@/lib/config";
 
-export default function SampahClient({ initial }) {
+export default function SampahClient({ initial, readOnly }) {
   const [filterOpen, setFilterOpen] = React.useState(false);
   const setoranBounds = React.useMemo(() => ({ min: 0, max: 10000000 }), []);
 
@@ -236,27 +236,31 @@ export default function SampahClient({ initial }) {
           >
             <IconDownload size={16} />
           </button>
-
-          <button
-            onClick={() => handleOpenModal("pemasukan")}
-            className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#6E8649] text-white"
-            title="Tambah Pemasukan"
-          >
-            <IconPlus size={16} />
-          </button>
-          <button
-            onClick={() => handleOpenModal("pengeluaran")}
-            className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#334a2a] text-white"
-            title="Tambah Pengeluaran"
-          >
-            <IconMinus size={16} />
-          </button>
+          {!readOnly && (
+            <>
+              <button
+                onClick={() => handleOpenModal("pemasukan")}
+                className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#6E8649] text-white"
+                title="Tambah Pemasukan"
+              >
+                <IconPlus size={16} />
+              </button>
+              <button
+                onClick={() => handleOpenModal("pengeluaran")}
+                className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#334a2a] text-white"
+                title="Tambah Pengeluaran"
+              >
+                <IconMinus size={16} />
+              </button>
+            </>
+          )}
         </div>
       </div>
 
       <div className="rounded-xl bg-white shadow overflow-hidden">
         <SampahTable
           initial={initial}
+          readOnly={readOnly}
           onEdit={(item) => handleOpenModal("edit", item)}
           onDelete={async (item) => {
             if (window.confirm(`Hapus "${item.keterangan}"?`)) {

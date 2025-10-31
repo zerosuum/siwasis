@@ -16,12 +16,12 @@ import {
 } from "lucide-react";
 import ArisanRekapTable from "./RekapTable";
 import { actionSaveArisanRekap } from "./actions";
-import { useToast } from "@/components/ui/useToast"; // Pastikan useToast diimpor
+import { useToast } from "@/components/ui/useToast";
 
-export default function ArisanRekapClient({ initial }) {
+export default function ArisanRekapClient({ initial, readOnly }) {
   const router = useRouter();
   const sp = useSearchParams();
-  const { show } = useToast(); 
+  const { show } = useToast();
 
   // URL
   const page = initial?.page || 1;
@@ -110,7 +110,6 @@ export default function ArisanRekapClient({ initial }) {
     });
   }, []);
 
-  // 3. MODIFIKASI onSave
   const onSave = async () => {
     setConfirmSave(false);
     startTransition(async () => {
@@ -119,7 +118,7 @@ export default function ArisanRekapClient({ initial }) {
         await actionSaveArisanRekap({ year, updates, from, to });
         setEditing(false);
         setUpdates([]);
-        setSuccessOpen(true); 
+        setSuccessOpen(true);
         router.refresh();
       } catch (err) {
         show({
@@ -164,12 +163,14 @@ export default function ArisanRekapClient({ initial }) {
           >
             Rekapitulasi Pembayaran
           </TabNavigationLink>
-          <TabNavigationLink
-            href="/dashboard/arisan/spinwheel"
-            className="inline-flex h-6 items-center px-2 text-sm font-medium text-gray-400 hover:text-gray-600"
-          >
-            Spinwheel
-          </TabNavigationLink>
+          {!readOnly && (
+            <TabNavigationLink
+              href="/dashboard/arisan/spinwheel"
+              className="inline-flex h-6 items-center px-2 text-sm font-medium text-gray-400 hover:text-gray-600"
+            >
+              Spinwheel
+            </TabNavigationLink>
+          )}
         </TabNavigation>
 
         <div className="flex items-center gap-2">
@@ -262,33 +263,37 @@ export default function ArisanRekapClient({ initial }) {
           >
             <IconDownload size={16} />
           </button>
-          {!editing ? (
-            <button
-              onClick={() => setEditing(true)}
-              className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#2B3A1D] text-white"
-              title="Edit"
-            >
-              <IconPencil size={16} />
-            </button>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  setEditing(false);
-                  setUpdates([]);
-                }}
-                className="h-8 rounded-[10px] border px-3 text-sm"
-              >
-                Batal
-              </button>
-              <button
-                onClick={() => setConfirmSave(true)}
-                disabled={pending || updates.length === 0}
-                className="h-8 rounded-[10px] bg-[#6E8649] px-3 text-sm text-white disabled:opacity-50"
-              >
-                {pending ? "Menyimpan…" : "Simpan"}
-              </button>
-            </div>
+          {!readOnly && (
+            <>
+              {!editing ? (
+                <button
+                  onClick={() => setEditing(true)}
+                  className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#2B3A1D] text-white"
+                  title="Edit"
+                >
+                  <IconPencil size={16} />
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setEditing(false);
+                      setUpdates([]);
+                    }}
+                    className="h-8 rounded-[10px] border px-3 text-sm"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={() => setConfirmSave(true)}
+                    disabled={pending || updates.length === 0}
+                    className="h-8 rounded-[10px] bg-[#6E8649] px-3 text-sm text-white disabled:opacity-50"
+                  >
+                    {pending ? "Menyimpan…" : "Simpan"}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -298,6 +303,7 @@ export default function ArisanRekapClient({ initial }) {
           key={(initial?.dates || []).join(",")}
           initial={initial}
           editing={editing}
+          readOnly={readOnly}
           updates={updates}
           onToggle={onToggle}
         />

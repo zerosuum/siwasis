@@ -74,7 +74,6 @@ export default function PeriodModal({ open, onClose, onSubmit }) {
 
           <Field label="Tanggal *">
             <div className="relative">
-              {/* Trigger tersembunyi (klik tombol di kanan untuk buka) */}
               <button
                 type="button"
                 onClick={(e) => {
@@ -123,7 +122,7 @@ export default function PeriodModal({ open, onClose, onSubmit }) {
                   }}
                   align="center"
                   sideOffset={8}
-                  contentClassName="mt-2 min-w-[560px] rounded-xl border bg-white p-4 shadow-lg"
+                  contentClassName="z-[60] mt-2 min-w-[560px] rounded-xl border bg-white p-4 shadow-lg"
                   footerClassName="mt-3 border-t pt-3 flex justify-end gap-2"
                   cancelClassName="rounded-lg bg-gray-100 px-4 py-1.5 text-sm"
                   applyClassName="rounded-lg bg-[#6E8649] px-4 py-1.5 text-sm text-white"
