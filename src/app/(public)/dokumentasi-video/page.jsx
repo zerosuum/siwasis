@@ -2,7 +2,7 @@ import { API_BASE } from "@/server/queries/_api";
 import { cookies } from "next/headers";
 import VideoCard from "@/components/VideoCard";
 import UploadVideoCTA from "@/components/UploadVideoCTA";
-
+import SectionPill from "@/components/SectionPill";
 async function fetchData(endpoint) {
   try {
     const res = await fetch(`${API_BASE}${endpoint}`, { cache: "no-store" });
