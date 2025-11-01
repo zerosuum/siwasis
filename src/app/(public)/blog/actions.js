@@ -1,15 +1,9 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { API_BASE } from "@/server/queries/_api";
-import { getAdminProfile } from "@/lib/session";
 
 export async function actionCreateBerita(payload) {
   const { title, content, imageUrl } = payload;
-
-  const profile = await getAdminProfile();
-  if (!profile) {
-    throw new Error("Anda tidak punya hak akses!");
-  }
 
   const res = await fetch(`${API_BASE}/berita`, {
     method: "POST",

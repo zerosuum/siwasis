@@ -1,4 +1,3 @@
-import { getAdminProfile } from "@/lib/session";
 import { API_BASE } from "@/server/queries/_api";
 import VideoCard from "@/components/VideoCard";
 import UploadVideoCTA from "@/components/UploadVideoCTA";
@@ -15,11 +14,6 @@ async function fetchData(endpoint) {
 }
 
 export default async function DokumentasiVideoPage() {
-  const [profile, videos] = await Promise.all([
-    getAdminProfile(),
-    fetchData("/video"),
-  ]);
-  const isLoggedIn = !!profile;
 
   return (
     <div className="w-full">

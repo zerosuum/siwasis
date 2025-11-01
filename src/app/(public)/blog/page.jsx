@@ -1,4 +1,3 @@
-import { getAdminProfile } from "@/lib/session";
 import { API_BASE } from "@/server/queries/_api";
 import Link from "next/link";
 import BlogCard from "@/components/BlogCard"; 
@@ -16,11 +15,6 @@ async function fetchData(endpoint) {
 }
 
 export default async function BlogPage() {
-  const [profile, allBerita] = await Promise.all([
-    getAdminProfile(),
-    fetchData("/berita"),
-  ]);
-  const isLoggedIn = !!profile;
 
   return (
     <div className="w-full">
