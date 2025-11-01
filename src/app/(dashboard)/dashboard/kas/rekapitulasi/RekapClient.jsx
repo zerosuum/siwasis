@@ -21,7 +21,7 @@ import { API_BASE } from "@/lib/config";
 import PeriodDropdown from "./PeriodDropdown";
 import PeriodModal from "./PeriodModal";
 
-export default function RekapClient({ initial }) {
+export default function RekapClient({ initial, readOnly }) {
   const router = useRouter();
   const sp = useSearchParams();
   const { show } = useToast();
@@ -54,7 +54,7 @@ export default function RekapClient({ initial }) {
       : undefined;
   const [range, setRange] = React.useState(initRange);
 
-  // Buka DateRangePicker hidden
+  // Buka DateRangePicker
   const filterAnchorRef = React.useRef(null);
   const openFilterCalendar = React.useCallback(() => {
     if (!filterAnchorRef.current) return;
@@ -236,6 +236,7 @@ export default function RekapClient({ initial }) {
             year={Number(year)}
             onSelectYear={(y) => handleSelectYear(Number(y))}
             onNew={() => setNewPeriodOpen(true)}
+            isLoggedIn={!readOnly} 
           />
 
           <div
@@ -309,33 +310,38 @@ export default function RekapClient({ initial }) {
             <IconDownload size={16} />
           </button>
 
-          {!editing ? (
-            <button
-              onClick={() => setEditing(true)}
-              className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#2B3A1D] text-white"
-            >
-              <IconPencil size={16} />
-            </button>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  setEditing(false);
-                  setUpdates([]);
-                }}
-                className="h-8 rounded-[10px] border px-3 text-sm"
-              >
-                Batal
-              </button>
-              <button
-                onClick={() => setConfirmSave(true)}
-                disabled={pending || updates.length === 0}
-                className="h-8 rounded-[10px] bg-[#6E8649] px-3 text-sm text-white disabled:opacity-50"
-              >
-                {pending ? "Menyimpan…" : "Simpan"}
-              </button>
-            </div>
+          {!readOnly && (
+            <>
+              {!editing ? (
+                <button
+                  onClick={() => setEditing(true)}
+                  className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#2B3A1D] text-white"
+                >
+                  <IconPencil size={16} />
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setEditing(false);
+                      setUpdates([]);
+                    }}
+                    className="h-8 rounded-[10px] border px-3 text-sm"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={() => setConfirmSave(true)}
+                    disabled={pending || updates.length === 0}
+                    className="h-8 rounded-[10px] bg-[#6E8649] px-3 text-sm text-white disabled:opacity-50"
+                  >
+                    {pending ? "Menyimpan…" : "Simpan"}
+                  </button>
+                </div>
+              )}
+            </>
           )}
+          
         </div>
       </div>
 
@@ -345,6 +351,7 @@ export default function RekapClient({ initial }) {
           editing={editing}
           updates={updates}
           onToggle={onToggle}
+          readOnly={readOnly}
         />
       </div>
 
@@ -379,13 +386,15 @@ export default function RekapClient({ initial }) {
         />
       )}
 
-      <ConfirmDialog
-        open={confirmSave}
-        onOk={onSave}
-        onCancel={() => setConfirmSave(false)}
-        title="Konfirmasi"
-        description="Yakin ingin menyimpan perubahan?"
-      />
+      {!readOnly && (
+        <ConfirmDialog
+          open={confirmSave}
+          onOk={onSave}
+          onCancel={() => setConfirmSave(false)}
+          title="Konfirmasi"
+          description="Yakin ingin menyimpan perubahan?"
+        />
+      )}
 
       <ConfirmDialog
         open={confirmDownload}
@@ -399,21 +408,26 @@ export default function RekapClient({ initial }) {
         description="Anda yakin ingin mengunduh file ini?"
       />
 
-      <ConfirmDialog
-        open={successOpen}
-        onOk={() => setSuccessOpen(false)}
-        hideCancel
-        variant="success"
-        okText="Tutup"
-        title="Sukses!"
-        description="Berhasil menyimpan perubahan."
-        autoCloseMs={1600}
-      />
-      <PeriodModal
-        open={newPeriodOpen}
-        onClose={() => setNewPeriodOpen(false)}
-        onSubmit={handleCreatePeriod}
-      />
+      {!readOnly && (
+        <ConfirmDialog
+          open={successOpen}
+          onOk={() => setSuccessOpen(false)}
+          hideCancel
+          variant="success"
+          okText="Tutup"
+          title="Sukses!"
+          description="Berhasil menyimpan perubahan."
+          autoCloseMs={1600}
+        />
+      )}
+      
+      {!readOnly && (
+        <PeriodModal
+          open={newPeriodOpen}
+          onClose={() => setNewPeriodOpen(false)}
+          onSubmit={handleCreatePeriod}
+        />
+      )}
     </>
   );
 }

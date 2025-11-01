@@ -17,6 +17,7 @@ export default function ArisanRekapTable({
   editing,
   updates,
   onToggle,
+  readOnly,
 }) {
   const rows = initial?.rows || [];
   const dates = initial?.dates || [];
@@ -101,12 +102,7 @@ export default function ArisanRekapTable({
                     : !!row.kehadiran[ds];
                   return (
                     <TableCell key={key} className="text-center py-4">
-                      {editing ? (
-                        <Checkbox
-                          checked={isChecked}
-                          onCheckedChange={(v) => onToggle?.(row.id, ds, !!v)}
-                        />
-                      ) : (
+                      {readOnly || !editing ? (
                         <span
                           className={
                             isChecked
@@ -116,6 +112,11 @@ export default function ArisanRekapTable({
                         >
                           {isChecked ? "✓" : "—"}
                         </span>
+                      ) : (
+                        <Checkbox
+                          checked={isChecked}
+                          onCheckedChange={(v) => onToggle?.(row.id, ds, !!v)}
+                        />
                       )}
                     </TableCell>
                   );

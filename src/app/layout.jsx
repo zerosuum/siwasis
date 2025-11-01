@@ -1,22 +1,33 @@
-import { REM } from "next/font/google";
+import { Inter, REM } from "next/font/google";
 import "@/styles/globals.css";
 
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 const rem = REM({
   subsets: ["latin"],
-  display: "swap",
   variable: "--font-rem",
+  weight: ["400", "500", "700"],
+  display: "swap",
 });
+
+
+export const metadata = {
+  title: "SiWASIS",
+  description: "Sistem Informasi Warga Siwalan Sentolo",
+};
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="id">
-      <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=REM:ital,wght@0,100..900;1,100..900&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="font-sans">{children}</body>
+    <html
+      lang="id"
+      className={`${inter.variable} ${rem.variable} bg-wasis-pr00`}
+    >
+      <body className="min-h-screen bg-wasis-pr00 text-wasis-pr80 antialiased">
+        {children}
+      </body>
     </html>
   );
 }

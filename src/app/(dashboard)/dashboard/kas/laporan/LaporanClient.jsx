@@ -29,7 +29,7 @@ import PeriodDropdown from "../rekapitulasi/PeriodDropdown";
 import PeriodModal from "../rekapitulasi/PeriodModal";
 import { actionCreatePeriod } from "../rekapitulasi/actions";
 
-export default function LaporanClient({ initial }) {
+export default function LaporanClient({ initial, readOnly }) {
   const [filterOpen, setFilterOpen] = React.useState(false);
   const setoranBounds = React.useMemo(() => ({ min: 0, max: 10000000 }), []);
 
@@ -87,7 +87,7 @@ export default function LaporanClient({ initial }) {
 
   React.useEffect(() => {
     pushWithParams();
-  }, [year]); // reset page tiap ganti tahun
+  }, [year]);
   const handleSelectYear = (y) => setYear(Number(y));
 
   const handleCreatePeriod = async ({ name, nominal, from, to }) => {
@@ -95,7 +95,6 @@ export default function LaporanClient({ initial }) {
       const res = await actionCreatePeriod({ name, nominal, from, to });
       setNewPeriodOpen(false);
       show({ title: "Sukses!", description: "Periode baru dibuat." });
-      // pindah ke tahun baru, bersihkan range, refresh data
       const y = Number(res?.year) || new Date().getFullYear();
       const params = new URLSearchParams(sp.toString());
       params.set("year", String(y));
@@ -203,6 +202,7 @@ export default function LaporanClient({ initial }) {
             year={Number(year)}
             onSelectYear={handleSelectYear}
             onNew={() => setNewPeriodOpen(true)}
+            isLoggedIn={!readOnly} 
           />
 
           <div
@@ -221,7 +221,7 @@ export default function LaporanClient({ initial }) {
                 if (e.key === "Enter") pushWithParams();
               }}
               placeholder="Cari keterangan..."
-              className={`h-8 rounded border rounded-[10px] border-gray-300 bg-white pl-7 pr-2 text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-gray-200 ${
+              className={`h-8 border rounded-[10px] border-gray-300 bg-white pl-7 pr-2 text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-gray-200 ${
                 searchOpen || q ? "w-48" : "w-6"
               }`}
             />
@@ -279,26 +279,31 @@ export default function LaporanClient({ initial }) {
             <IconDownload size={16} />
           </button>
 
-          <button
-            onClick={() => handleOpenModal("pemasukan")}
-            className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#6E8649] text-white"
-            title="Tambah Pemasukan"
-          >
-            <IconPlus size={16} />
-          </button>
-          <button
-            onClick={() => handleOpenModal("pengeluaran")}
-            className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#334a2a] text-white"
-            title="Tambah Pengeluaran"
-          >
-            <IconMinus size={16} />
-          </button>
+          {!readOnly && (
+            <>
+              <button
+                onClick={() => handleOpenModal("pemasukan")}
+                className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#6E8649] text-white"
+                title="Tambah Pemasukan"
+              >
+                <IconPlus size={16} />
+              </button>
+              <button
+                onClick={() => handleOpenModal("pengeluaran")}
+                className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#334a2a] text-white"
+                title="Tambah Pengeluaran"
+              >
+                <IconMinus size={16} />
+              </button>
+            </>
+          )}
         </div>
       </div>
 
       <div className="rounded-xl bg-white shadow overflow-hidden">
         <LaporanTable
           initial={initial}
+          readOnly={readOnly}
           onEdit={(item) => handleOpenModal("edit", item)}
           onDelete={async (item) => {
             if (window.confirm(`Yakin ingin menghapus "${item.keterangan}"?`)) {
@@ -363,7 +368,6 @@ export default function LaporanClient({ initial }) {
             max: sp.get("max") ? Number(sp.get("max")) : undefined,
           }}
           onApply={({ type, min, max }) => {
-            // kosongkan type kalau undefined (hapus dari URL)
             pushWithParams({ type: type ?? "", min, max });
           }}
         />

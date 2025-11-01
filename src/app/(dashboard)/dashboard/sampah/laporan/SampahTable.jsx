@@ -36,10 +36,10 @@ function SourceChip({ source }) {
   );
 }
 
-export default function SampahTable({ initial, onEdit, onDelete }) {
+export default function SampahTable({ initial, onEdit, onDelete, readOnly }) {
   const rows = initial?.rows || [];
   const hasData = rows.length > 0;
-  const colCount = 7;
+  const colCount = readOnly ? 6 : 7;
 
   return (
     <TableRoot className="overflow-auto max-h-[600px]">
@@ -67,9 +67,11 @@ export default function SampahTable({ initial, onEdit, onDelete }) {
             <TableHeaderCell className="w-[160px] text-center py-3 font-semibold text-gray-600">
               Saldo
             </TableHeaderCell>
-            <TableHeaderCell className="w-[126px] text-center py-3 font-semibold text-gray-600">
-              Aksi
-            </TableHeaderCell>
+            {!readOnly && (
+              <TableHeaderCell className="w-[126px] text-center py-3 font-semibold text-gray-600">
+                Aksi
+              </TableHeaderCell>
+            )}
           </TableRow>
         </TableHead>
         <TableBody className="text-sm">
@@ -103,22 +105,24 @@ export default function SampahTable({ initial, onEdit, onDelete }) {
                 <TableCell className="py-4 text-center tabular-nums font-semibold">
                   {r.saldo ? rp(r.saldo) : "—"}
                 </TableCell>
-                <TableCell className="py-4">
-                  <div className="flex items-center justify-center gap-2">
-                    <button
-                      onClick={() => onEdit?.(r)}
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-[#6E8649] text-white"
-                    >
-                      <IconEdit size={14} />
-                    </button>
-                    <button
-                      onClick={() => onDelete?.(r)}
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-[#6E8649] text-white"
-                    >
-                      <IconDelete size={14} />
-                    </button>
-                  </div>
-                </TableCell>
+                {!readOnly && (
+                  <TableCell className="py-4">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => onEdit?.(r)}
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-[#6E8649] text-white"
+                      >
+                        <IconEdit size={14} />
+                      </button>
+                      <button
+                        onClick={() => onDelete?.(r)}
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-[#6E8649] text-white"
+                      >
+                        <IconDelete size={14} />
+                      </button>
+                    </div>
+                  </TableCell>
+                )}
               </TableRow>
             ))
           ) : (

@@ -40,6 +40,7 @@ export default function DocumentTable({
   onEdit,
   onDelete,
   onDownload,
+  readOnly,
 }) {
   const rows = initial?.rows || [];
   const hasData = rows.length > 0;
@@ -101,6 +102,8 @@ export default function DocumentTable({
                     <ActionIcon title="Lihat" onClick={() => onView?.(r)}>
                       <IconEye size={16} strokeWidth={2} className="shrink-0" />
                     </ActionIcon>
+                    {!readOnly && (
+                      <>
                     <ActionIcon title="Edit" onClick={() => onEdit?.(r)}>
                       <IconEdit
                         size={16}
@@ -129,6 +132,8 @@ export default function DocumentTable({
                         className="shrink-0"
                       />
                     </ActionIcon>
+                    </>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
