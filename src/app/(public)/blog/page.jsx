@@ -3,16 +3,6 @@ import Link from "next/link";
 import BlogCard from "@/components/BlogCard"; 
 import SectionPill from "@/components/SectionPill";
 
-async function fetchData(endpoint) {
-  try {
-    const res = await fetch(`${API_BASE}${endpoint}`, { cache: "no-store" });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.rows || data;
-  } catch {
-    return [];
-  }
-}
 
 export default async function BlogPage() {
 

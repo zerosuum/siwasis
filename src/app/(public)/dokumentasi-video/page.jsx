@@ -2,16 +2,6 @@ import { API_BASE } from "@/server/queries/_api";
 import VideoCard from "@/components/VideoCard";
 import UploadVideoCTA from "@/components/UploadVideoCTA";
 
-async function fetchData(endpoint) {
-  try {
-    const res = await fetch(`${API_BASE}${endpoint}`, { cache: "no-store" });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.rows || data;
-  } catch {
-    return [];
-  }
-}
 
 export default async function DokumentasiVideoPage() {
 
