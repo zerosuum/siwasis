@@ -1,14 +1,12 @@
 import { getAdminProfile } from "@/lib/session";
 import { API_BASE } from "@/server/queries/_api";
-import BeritaCarousel from "@/components/BeritaCarousel";
-import VideoCarousel from "@/components/VideoCarousel";
 import Link from "next/link";
-import NewsCard from "@/components/NewsCard";
-import SectionPill from "@/components/SectionPill";
 import Image from "next/image";
-import BeritaSection from "@/components/BeritaSection";
-import VideoSection from "@/components/VideoSection";
+import { User, Library, HandCoins, UserCheck } from "lucide-react";
 import HeroEditableModal from "@/components/HeroEditableModal";
+import SectionPill from "@/components/SectionPill";
+import BeritaCarousel from "@/components/BeritaCarousel"; // Import Carousel
+import VideoSection from "@/components/VideoSection";
 
 async function fetchData(endpoint) {
   try {
@@ -21,21 +19,31 @@ async function fetchData(endpoint) {
   }
 }
 
+// Komponen Card Pengurus (dibuat responsif)
 function PengurusCard({ role, name, icon }) {
   return (
-    <div className="w-[423px] h-[124px] rounded-[24px] bg-wasis-pr40 border border-white/20 shadow-card flex items-center gap-4 px-6">
+    // FIX: Hapus 'w-[423px]' agar bisa responsif
+    <div className="h-[124px] rounded-[24px] bg-wasis-pr40 border border-white/20 shadow-card flex items-center gap-4 px-6">
       <img src={icon} alt={role} width={96} height={96} className="shrink-0" />
       <div className="min-w-0">
-        <p className="text-wasis-nt80/80 font-rem text-[20px] leading-[26px]">
+        <p className="text-wasis-nt80/80 font-rem text-lg md:text-[20px] leading-[26px]">
           {role}
         </p>
-        <p className="text-wasis-nt80 font-rem font-bold text-[28px] leading-[32px] truncate">
+        <p className="text-wasis-nt80 font-rem font-bold text-2xl md:text-[28px] leading-[32px] truncate">
           {name}
         </p>
       </div>
     </div>
   );
 }
+
+const roleIcons = {
+  ketua: <User size={32} className="text-wasis-nt80" />,
+  wakil: <UserCheck size={32} className="text-wasis-nt80" />,
+  sekretaris: <Library size={32} className="text-wasis-nt80" />,
+  bendahara: <HandCoins size={32} className="text-wasis-nt80" />,
+  warga: <User size={32} className="text-wasis-nt80" />,
+};
 
 export default async function HomePage() {
   const [profile, pengurus, berita, video] = await Promise.all([
@@ -44,7 +52,8 @@ export default async function HomePage() {
     fetchData("/berita?limit=5"),
     fetchData("/video?limit=5"),
   ]);
-  const isAdmin = !!profile && (profile.role === "admin" || profile.is_admin);
+
+  const isAdmin = !!profile;
 
   return (
     <div className="w-full overflow-x-hidden">
@@ -94,7 +103,8 @@ yang mandiri, sejahtera, dan berbudaya.`}
           </div>
         </div>
       </section>
-      <section className="relative w-full">
+
+      <section className="relative z-40 w-full">
         <div className="h-[360px] bg-wasis-pr40 rounded-b-massive shadow-[0_8px_28px_-6px_rgba(24,39,75,0.12),_0_18px_88px_-4px_rgba(24,39,75,0.14)]" />
 
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-full max-w-[1320px] px-4 z-10">
@@ -155,8 +165,8 @@ yang mandiri, sejahtera, dan berbudaya.`}
             subtitle="Tim utama yang memimpin dan menggerakkan setiap kegiatan WASIS dengan penuh semangat, tanggung jawab, dan dedikasi."
           />
 
-          <div className="mt-12 px-[177px] flex justify-center">
-            <div className="grid grid-cols-[repeat(2,423px)] gap-x-[120px] gap-y-[48px]">
+          <div className="mt-12 w-full flex justify-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
               <PengurusCard
                 role="Ketua"
                 name="Fajar Pratama"
@@ -195,6 +205,7 @@ yang mandiri, sejahtera, dan berbudaya.`}
               Lihat seluruh berita
             </a>
           </SectionPill>
+          <BeritaCarousel dense berita={berita} />
         </div>
       </section>
       <VideoSection
@@ -226,6 +237,4 @@ yang mandiri, sejahtera, dan berbudaya.`}
       />
     </div>
   );
-
-  <FooterLayer />;
 }
