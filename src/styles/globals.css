@@ -75,3 +75,27 @@ html.editing-mode [data-page-content] { pointer-events:auto!important; filter:no
   background: linear-gradient(to bottom, rgba(255, 255, 255, 0.35), transparent);
   pointer-events: none;
 }
+
+.container-wasis {
+  @apply w-full max-w-[1320px] mx-auto px-6 md:px-8 lg:px-16;
+}
+
+.prosemirror-editor {
+  min-height: 400px; 
+  padding: 1rem;
+  font-family: 'REM', system-ui, sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.75;
+}
+
+.prosemirror-editor:focus {
+  outline: none;
+}
+
+.prosemirror-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #adb5bd;
+  pointer-events: none;
+  height: 0;
+}
