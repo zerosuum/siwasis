@@ -2,18 +2,26 @@ import { cookies } from "next/headers";
 import { API_BASE } from "@/server/queries/_api";
 
 const COOKIE_NAME = "siwasis_token";
+const IS_DEV_MODE = process.env.NODE_ENV === "development";
 
 export async function getSessionToken() {
   const cookieStore = await cookies();
-
   const sessionCookie = cookieStore.get(COOKIE_NAME);
-
   return sessionCookie ? sessionCookie.value : null;
 }
 
 export async function getAdminProfile() {
-  const token = await getSessionToken();
+  if (IS_DEV_MODE) {
+    return {
+      id: 99,
+      name: "Admin (Dev)",
+      email: "dev@admin.com",
+      role: "admin", 
+      is_admin: true,
+    };
+  }
 
+  const token = await getSessionToken();
   if (!token) {
     return null;
   }
@@ -24,7 +32,7 @@ export async function getAdminProfile() {
         Authorization: `Bearer ${token}`,
         Accept: "application/json",
       },
-      cache: "no-store", 
+      cache: "no-store",
     });
 
     if (!res.ok) {

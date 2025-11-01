@@ -2,6 +2,8 @@ export default function SectionPill({
   title,
   subtitle,
   className = "",
+  titleClass = "text-wasis-pr80", 
+  subtitleClass = "text-wasis-pr80",
   children,
 }) {
   return (
@@ -14,11 +16,15 @@ export default function SectionPill({
       ].join(" ")}
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[40%] bg-gradient-to-b from-white/35 to-transparent rounded-[inherit]" />
-      <h2 className="text-wasis-pr80 font-rem font-bold text-[36px] leading-[46px]">
+      <h2
+        className={`font-rem font-bold text-[36px] leading-[46px] ${titleClass}`}
+      >
         {title}
       </h2>
       {subtitle ? (
-        <p className="text-wasis-pr80 font-rem font-bold text-[20px] leading-[26px] mt-2">
+        <p
+          className={`font-rem font-bold text-[20px] leading-[26px] mt-2 ${subtitleClass}`}
+        >
           {subtitle}
         </p>
       ) : null}

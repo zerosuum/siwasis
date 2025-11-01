@@ -23,17 +23,33 @@ export default function PublicNavbar({ profile }) {
 
   if (pathname.startsWith("/dashboard")) return null;
 
+  const isHomepage = pathname === "/";
+
   const navClasses = `
-    fixed top-0 left-0 right-0 z-50 h-[72px]
-    transition-transform duration-300 ease-in-out
-    bg-white/10 text-wasis-nt80 backdrop-blur-md border-b border-white/20
-    ${scrolled ? "-translate-y-full" : "translate-y-0"}
+    w-full h-[72px] z-50
+    ${
+      isHomepage
+        ? `fixed top-0 left-0 right-0 transition-transform duration-300 ease-in-out
+         ${scrolled ? "-translate-y-full" : "translate-y-0"}
+         ${
+           !scrolled
+             ? "backdrop-blur-md bg-white/10 text-wasis-nt80 border-b border-white/20"
+             : ""
+         }
+        `
+        : 
+          `sticky top-0 bg-wasis-pr40 text-wasis-nt80 border-b border-white/20`
+    }
   `;
 
   const linkClass = "text-lg font-rem hover:opacity-80";
   const buttonClass = `
     flex h-9 px-4 justify-center items-center gap-1 rounded-lg text-sm font-semibold
-    bg-wasis-pr60 text-wasis-nt80 hover:bg-wasis-pr60/80
+    ${
+      isHomepage
+        ? "bg-wasis-pr60 text-wasis-nt80 hover:bg-wasis-pr60/80"
+        : "bg-wasis-pr00 text-wasis-pr80 hover:bg-white/80"
+    }
   `;
 
   return (
@@ -42,11 +58,10 @@ export default function PublicNavbar({ profile }) {
         className="relative w-full max-w-[1440px] mx-auto h-full px-4
                       flex justify-between items-center"
       >
-        <Link href="/" className="flex items-center gap-2 p-3">
+        <Link href="/" className="flex items-center gap-2">
           <span className="font-bold text-2xl">SiWASIS</span>
         </Link>
-
-        <div className="hidden md:flex items-center gap-4 p-3">
+        <div className="hidden md:flex items-center gap-4">
           <Link href="/" className={linkClass}>
             Beranda
           </Link>
@@ -71,37 +86,43 @@ export default function PublicNavbar({ profile }) {
         </div>
 
         <div className="md:hidden">
-          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
             {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
         </div>
       </div>
 
-      {isMobileMenuOpen && (
-        <div
-          className="md:hidden absolute top-[72px] left-0 w-full bg-wasis-pr40 shadow-lg p-4
-                      flex flex-col gap-4 text-center"
+      <div
+        className={`absolute top-[72px] left-0 w-full bg-wasis-pr40 shadow-lg p-4
+                     flex flex-col gap-4 text-center transition-transform duration-300
+                     md:hidden ${
+                       isMobileMenuOpen
+                         ? "translate-y-0"
+                         : "-translate-y-[150%]"
+                     }`}
+      >
+        <Link href="/" className={linkClass}>
+          Beranda
+        </Link>
+        <Link href="/blog" className={linkClass}>
+          Berita
+        </Link>
+        <Link href="/dokumentasi-video" className={linkClass}>
+          Dokumentasi Video
+        </Link>
+        <Link href="/dashboard" className={linkClass}>
+          Transparansi Keuangan
+        </Link>
+        <Link
+          href={isLoggedIn ? "/api/logout" : "/login"}
+          className={`${buttonClass} w-full`}
         >
-          <Link href="/" className={linkClass}>
-            Beranda
-          </Link>
-          <Link href="/blog" className={linkClass}>
-            Berita
-          </Link>
-          <Link href="/dokumentasi-video" className={linkClass}>
-            Dokumentasi Video
-          </Link>
-          <Link href="/dashboard" className={linkClass}>
-            Transparansi Keuangan
-          </Link>
-          <Link
-            href={isLoggedIn ? "/api/logout" : "/login"}
-            className={`${buttonClass} w-full`}
-          >
-            {isLoggedIn ? "Logout" : "Login"}
-          </Link>
-        </div>
-      )}
+          {isLoggedIn ? "Logout" : "Login"}
+        </Link>
+      </div>
     </nav>
   );
 }
