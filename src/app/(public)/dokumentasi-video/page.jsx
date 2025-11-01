@@ -25,17 +25,20 @@ export default async function DokumentasiVideoPage() {
       <div className="w-full bg-wasis-pr40 rounded-b-massive shadow-[0_8px_28px_-6px_rgba(24,39,75,0.12),_0_18px_88px_-4px_rgba(24,39,75,0.14)]">
         <div className="w-full max-w-[1440px] mx-auto px-4 py-8">
           <div className="grid grid-cols-[12px_1fr]">
-            <div /> { }
+            <div /> {}
             <div className="w-full">
               <h2 className="font-rem font-bold text-[32px] leading-[38px] text-wasis-nt80">
                 Dokumentasi Video
               </h2>
-              <p className="mt-2 text-wasis-nt80/90">
-                Cek highlight seru dari berbagai acara dan aktivitas WASIS.
-                Semua momen terbaik, terekam di sini!
-              </p>
-
-              {isLoggedIn && <UploadVideoCTA />}
+              <SectionPill
+                title="Dokumentasi Video"
+                subtitle="Cek highlight seru dari berbagai acara dan aktivitas WASIS. Semua momen terbaik, terekam di sini!"
+                className="w-full bg-transparent !border-0 !shadow-none p-0"
+                titleClass="text-wasis-nt80"
+                subtitleClass="text-wasis-nt80/90"
+              >
+                {isLoggedIn && <UploadVideoCTA />}
+              </SectionPill>
             </div>
           </div>
         </div>
@@ -43,7 +46,7 @@ export default async function DokumentasiVideoPage() {
 
       <div className="w-full max-w-[1440px] mx-auto px-4 py-12">
         <div className="grid grid-cols-[12px_1fr]">
-          <div /> { }
+          <div /> {}
           <div className="w-full flex flex-col items-center gap-8">
             {Array.isArray(videos) && videos.length ? (
               videos.map((item) => <VideoCard key={item.id} item={item} />)
