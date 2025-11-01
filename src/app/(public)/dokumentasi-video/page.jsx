@@ -27,9 +27,6 @@ export default async function DokumentasiVideoPage() {
           <div className="grid grid-cols-[12px_1fr]">
             <div /> {}
             <div className="w-full">
-              <h2 className="font-rem font-bold text-[32px] leading-[38px] text-wasis-nt80">
-                Dokumentasi Video
-              </h2>
               <SectionPill
                 title="Dokumentasi Video"
                 subtitle="Cek highlight seru dari berbagai acara dan aktivitas WASIS. Semua momen terbaik, terekam di sini!"
