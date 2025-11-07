@@ -14,59 +14,56 @@ import Image from "next/image";
 
 function NewsCard({ item, isCenter }) {
   const WRAP_W = isCenter ? 422 : 350;
-  const WRAP_H = isCenter ? 470 : 398;
-  const IMG_W = isCenter ? 374 : 320;
-  const IMG_H = isCenter ? 282 : 240;
+  const MIN_H = isCenter ? 470 : 398;
+  const TITLE_MIN_H = isCenter ? 96 : 72;
 
   return (
     <div
-      className="relative inline-flex flex-col overflow-hidden rounded-[24px] bg-wasis-nt80 
-                 shadow-[0_6px_14px_-6px_rgba(24,39,75,0.12),0_10px_32px_-4px_rgba(24,39,75,0.10)]"
-      style={{ width: WRAP_W, height: WRAP_H, padding: 24 }}
+      className={[
+        "relative inline-flex flex-col overflow-hidden rounded-[24px] bg-wasis-nt80",
+        "shadow-[0_6px_14px_-6px_rgba(24,39,75,0.12),_0_10px_32px_-4px_rgba(24,39,75,0.10)]",
+        "p-5 md:p-6",
+      ].join(" ")}
+      style={{ width: WRAP_W, minHeight: MIN_H }}
     >
-      <div
-        className="relative rounded-2xl overflow-hidden"
-        style={{ width: IMG_W, height: IMG_H }}
-      >
+      <div className="relative w-full rounded-2xl overflow-hidden aspect-[16/10]">
         <Image
           src={item.image_url || "/placeholder-berita.jpg"}
           alt={item.title || "Berita"}
           fill
           className="object-cover"
-          sizes={`${IMG_W}px`}
+          sizes="(max-width: 768px) 84vw, 422px"
           priority={isCenter}
         />
       </div>
 
       <h4
-        className="mt-3 font-rem font-medium text-[24px] leading-[32px] text-wasis-pr80 line-clamp-3 break-words"
-        style={{ width: IMG_W }}
+        className={[
+          "mt-3 font-rem font-medium text-wasis-pr80 break-words",
+          "text-[22px] leading-[30px] md:text-[24px] md:leading-[32px]",
+          "line-clamp-3 md:line-clamp-4",
+        ].join(" ")}
+        style={{ minHeight: TITLE_MIN_H }}
         title={item.title}
       >
         {item.title || "Judul Berita"}
       </h4>
 
-      <div
-        className="mt-auto flex items-center justify-between pt-4"
-        style={{ width: IMG_W }}
-      >
-        <div className="flex items-center gap-2 text-wasis-pr60/90">
-          <Calendar width={24} height={24} />
-          <span className="text-[14px] font-rem">
+      <div className="mt-auto pt-4 w-full flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-wasis-pr60/90 flex-shrink-0">
+          <Calendar width={22} height={22} className="md:w-6 md:h-6" />
+          <span className="text-[13px] md:text-[14px] font-rem whitespace-nowrap">
             {new Date(item.created_at || Date.now()).toLocaleDateString(
               "id-ID",
-              {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              }
+              { day: "numeric", month: "long", year: "numeric" }
             )}
           </span>
         </div>
 
         <Link
           href={`/blog/${item.id || "#"}`}
-          className="px-3 h-7 inline-flex items-center rounded-lg bg-wasis-pr60 text-wasis-nt80 text-sm font-medium"
+          className="flex-shrink-0 px-3 h-8 md:h-7 inline-flex items-center rounded-lg
+                     bg-wasis-pr60 text-wasis-nt80 text-sm font-medium"
         >
           Selengkapnya
         </Link>

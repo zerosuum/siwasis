@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 export default async function PublicLayout({ children }) {
   const profile = await getAdminProfile();
   return (
-    <div className="w-full min-h-[100svh] flex flex-col">
+    <div className="w-full min-h-screen flex flex-col">
       <PublicNavbar profile={profile} />
       <main className="w-full flex-1">{children}</main>
       <Footer />

@@ -51,23 +51,17 @@ export default function VideoSection({ items = [] }) {
         <div className="mx-auto w-full max-w-[1320px] px-16">
           <div
             className={`
-    relative overflow-hidden
-    rounded-[100px] bg-white/10 backdrop-blur-md
-    shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]
- outline-1 outline-white/40
-    px-8 py-4
-  `}
+      relative overflow-hidden rounded-massive
+      bg-white/10 backdrop-blur-md border border-white/30
+      shadow-[0_8px_28px_-6px_rgba(24,39,75,0.12),_0_18px_88px_-4px_rgba(24,39,75,0.14)]
+      px-10 py-6
+    `}
           >
-            <div
-              className={`
-                pointer-events-none absolute inset-x-0 top-0 h-[40%]
-                bg-gradient-to-b from-white/35 to-transparent
-              `}
-            />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-[38%] bg-gradient-to-b from-white/35 to-transparent" />
             <h2 className="font-rem text-[36px] leading-[46px] font-bold text-wasis-pr00">
               Dokumentasi Video
             </h2>
-            <p className="mt-1 font-rem text-[20px] leading-[26px] font-bold text-wasis-pr00">
+            <p className="mt-1 font-rem text-[18px] md:text-[20px] leading-[26px] font-medium text-wasis-pr00/90">
               Cek highlight seru dari berbagai acara dan aktivitas WASIS. Semua
               momen terbaik, terekam di sini!
             </p>
@@ -77,13 +71,7 @@ export default function VideoSection({ items = [] }) {
         <div className="mt-6">
           <div
             ref={railRef}
-            className={`
-              no-scrollbar
-              mx-auto w-full max-w-[1440px]
-              px-[60px]
-              overflow-x-auto scroll-smooth
-              snap-x snap-mandatory
-            `}
+            className="no-scrollbar mx-auto w-full max-w-[1320px] px-4 md:px-16 overflow-x-auto scroll-smooth snap-x snap-mandatory"
             style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
           >
             <div className="flex min-w-max gap-6">

@@ -1,24 +1,15 @@
-import { API_BASE } from "@/server/queries/_api";
-import { cookies } from "next/headers";
+import { API_BASE, fetchData } from "@/server/queries/_api";
+import { getAdminProfile } from "@/lib/session";
 import Link from "next/link";
 import BlogCard from "@/components/BlogCard";
 import SectionPill from "@/components/SectionPill";
 
-async function fetchData(endpoint) {
-  try {
-    const res = await fetch(`${API_BASE}${endpoint}`, { cache: "no-store" });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.rows || data;
-  } catch {
-    return [];
-  }
-}
-
 export default async function BlogPage() {
-  const cookieStore = await cookies();
-  const isLoggedIn = !!cookieStore.get("siwasis_token");
-  const allBerita = await fetchData("/berita");
+  const [profile, allBerita] = await Promise.all([
+    getAdminProfile(),
+    fetchData("/berita"),
+  ]);
+  const isLoggedIn = !!profile;
 
   return (
     <div className="w-full">
