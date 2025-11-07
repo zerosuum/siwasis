@@ -71,7 +71,17 @@ export default function Footer() {
       </div>
 
       <div className="h-12 flex items-center justify-center rounded-t-[100px] bg-wasis-pr40 shadow-[0_-2px_4px_-2px_rgba(24,39,75,.12),0_-4px_4px_-2px_rgba(24,39,75,.08)]">
-        <p className="text-wasis-nt80 text-sm text-center">© 2025 SIWASIS.</p>
+        <p className="text-wasis-nt80/80 text-sm font-rem text-center">
+          © 2025 SiWASIS ·{" "}
+          <a
+            href="https://novarentech.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-wasis-nt80 hover:text-wasis-pr00 transition-colors font-medium"
+          >
+            Powered by Novaren Tech Indonesia
+          </a>
+        </p>
       </div>
     </footer>
   );
