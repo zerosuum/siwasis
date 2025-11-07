@@ -23,3 +23,14 @@ export function setParams(url, params = {}) {
   }
   return url;
 }
+
+export async function fetchData(endpoint) {
+  try {
+    const res = await fetch(`${API_BASE}${endpoint}`, { cache: "no-store" });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.rows || data;
+  } catch {
+    return [];
+  }
+}

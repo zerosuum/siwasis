@@ -1,31 +1,23 @@
-import { API_BASE } from "@/server/queries/_api";
-import { cookies } from "next/headers";
+import { fetchData } from "@/server/queries/_api";
+import { getAdminProfile } from "@/lib/session";
 import VideoCard from "@/components/VideoCard";
-import UploadVideoCTA from "@/components/UploadVideoCTA";
 import SectionPill from "@/components/SectionPill";
-async function fetchData(endpoint) {
-  try {
-    const res = await fetch(`${API_BASE}${endpoint}`, { cache: "no-store" });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.rows || data;
-  } catch {
-    return [];
-  }
-}
+import UploadVideoTrigger from "@/components/UploadVideoTrigger";
+import UploadVideoCTA from "@/components/UploadVideoCTA";
 
 export default async function DokumentasiVideoPage() {
-  const cookieStore = await cookies();
-  const isLoggedIn = !!cookieStore.get("siwasis_token");
-
-  const videos = await fetchData("/video");
+  const [profile, videos] = await Promise.all([
+    getAdminProfile(),
+    fetchData("/video"),
+  ]);
+  const isLoggedIn = !!profile;
 
   return (
-    <div className="w-full">
+    <div className="w-full relative">
       <div className="w-full bg-wasis-pr40 rounded-b-massive shadow-[0_8px_28px_-6px_rgba(24,39,75,0.12),_0_18px_88px_-4px_rgba(24,39,75,0.14)]">
         <div className="w-full max-w-[1440px] mx-auto px-4 py-8">
           <div className="grid grid-cols-[12px_1fr]">
-            <div /> {}
+            <div />
             <div className="w-full">
               <SectionPill
                 title="Dokumentasi Video"
@@ -34,25 +26,23 @@ export default async function DokumentasiVideoPage() {
                 titleClass="text-wasis-nt80"
                 subtitleClass="text-wasis-nt80/90"
               >
-                {isLoggedIn && <UploadVideoCTA />}
+                {isLoggedIn && <UploadVideoTrigger />}{" "}
               </SectionPill>
             </div>
           </div>
         </div>
       </div>
+      {isLoggedIn && <UploadVideoCTA hideTrigger />}
 
       <div className="w-full max-w-[1440px] mx-auto px-4 py-12">
-        <div className="grid grid-cols-[12px_1fr]">
-          <div /> {}
-          <div className="w-full flex flex-col items-center gap-8">
-            {Array.isArray(videos) && videos.length ? (
-              videos.map((item) => <VideoCard key={item.id} item={item} />)
-            ) : (
-              <p className="text-gray-500 text-center py-24">
-                Belum ada video untuk ditampilkan.
-              </p>
-            )}
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1320px] mx-auto px-4 sm:px-16">
+          {Array.isArray(videos) && videos.length ? (
+            videos.map((item) => <VideoCard key={item.id} item={item} />)
+          ) : (
+            <p className="text-gray-500 col-span-full text-center py-24">
+              Belum ada video untuk ditampilkan.
+            </p>
+          )}
         </div>
       </div>
     </div>
