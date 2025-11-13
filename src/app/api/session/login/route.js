@@ -6,7 +6,9 @@ import { cookies } from "next/headers";
 import { Agent as UndiciAgent } from "undici";
 
 const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_BASE || "https://siwasis.novarentech.web.id/api"
+  process.env.API_BASE ||
+  process.env.NEXT_PUBLIC_API_BASE ||
+  "https://siwasis.novarentech.web.id/api"
 ).replace(/\/+$/, "");
 const COOKIE_NAME = "siwasis_token";
 
@@ -62,11 +64,12 @@ export async function POST(req) {
   try {
     const body = await req.json().catch(() => null);
     const { email, password } = body || {};
-    if (!email || !password)
+    if (!email || !password) {
       return NextResponse.json(
         { message: "Email dan password wajib diisi." },
         { status: 400 }
       );
+    }
 
     const url = `${API_BASE_URL}/login`;
     const res = await fetchWithRetries(url, {
@@ -79,22 +82,27 @@ export async function POST(req) {
     });
 
     if (!res.ok) {
-      try {
-        const errJson = await readJsonSafe(res);
-        const msg = errJson?.message || "Gagal login.";
-        const status = [401, 422, 429].includes(res.status) ? res.status : 502;
-        return NextResponse.json({ message: msg }, { status });
-      } catch (e) {
-        console.error("Login backend non-JSON:", e.message);
-        return NextResponse.json(
-          { message: "Server login bermasalah." },
-          { status: 502 }
-        );
+      const ct = res.headers.get("content-type") || "";
+      let msg = "Server login bermasalah.";
+      let status = res.status;
+
+      if (ct.includes("application/json")) {
+        const data = await res.json().catch(() => null);
+        if (data?.message) msg = data.message;
+      } else {
+        const text = await res.text().catch(() => "");
+        console.error("Login backend non-JSON:", res.status, text);
       }
+
+      if (![400, 401, 422].includes(status)) {
+        status = 502;
+      }
+
+      return NextResponse.json({ message: msg }, { status });
     }
 
     const data = await readJsonSafe(res);
-    
+
     const token = data?.token || data?.data?.token || null;
     const admin = data?.admin || data?.data || data;
 
