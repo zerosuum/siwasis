@@ -1,5 +1,7 @@
 import { Inter, REM } from "next/font/google";
 import "@/styles/globals.css";
+import { ToastProvider } from "@/components/ui/useToast";
+import Toast from "@/components/ui/Toast";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -26,7 +28,10 @@ export default function RootLayout({ children }) {
       className={`${inter.variable} ${rem.variable} bg-wasis-pr00`}
     >
       <body className="min-h-screen bg-wasis-pr00 text-wasis-pr80 antialiased">
-        {children}
+        <ToastProvider>
+          {children}
+          <Toast /> {/* <- renderer global */}
+        </ToastProvider>
       </body>
     </html>
   );

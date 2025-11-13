@@ -1,22 +1,10 @@
-import { API_BASE, makeURL, setParams } from "./_api";
+import { proxyJSON } from "./_api";
 
-export async function getJimpitanLaporan({
-  page,
-  year,
-  from,
-  to,
-  q,
-  type,
-  min,
-  max,
-} = {}) {
-  const url = new URL(`${API_BASE}/jimpitan/laporan`);
-  setParams(url, { page, year, from, to, q, type, min, max });
-
-  const res = await fetch(url.toString(), {
-    cache: "no-store",
-    headers: { Accept: "application/json" },
+export async function getJimpitanLaporan(
+  _tokenIgnored,
+  { page, year, from, to, q, type, min, max } = {}
+) {
+  return proxyJSON("/jimpitan/laporan", {
+    params: { page, year, from, to, q, type, min, max, per_page: 15 },
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-  return res.json();
 }

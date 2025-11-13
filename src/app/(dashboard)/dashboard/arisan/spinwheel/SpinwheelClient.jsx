@@ -5,14 +5,14 @@ import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TabNavigation, TabNavigationLink } from "@/components/TabNavigation";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import { getSpinCandidates } from "@/server/queries/arisan";
+// import { getSpinCandidates } from "@/server/queries/arisan";
 import { actionPostSpinDraw } from "./actions";
 import { useToast } from "@/components/ui/useToast";
 
 export default function SpinwheelClient({ initialSegments }) {
   const router = useRouter();
   const sp = useSearchParams();
-  const { show } = useToast(); 
+  const { show } = useToast();
 
   // Hydration guard
   const [mounted, setMounted] = React.useState(false);
@@ -40,7 +40,11 @@ export default function SpinwheelClient({ initialSegments }) {
     let aborted = false;
     (async () => {
       try {
-        const segs = await getSpinCandidates({ year, rt });
+        const res = await fetch(
+          `/api/arisan/spin-candidates?year=${year}&rt=${rt || "all"}`,
+          { cache: "no-store" }
+        );
+        const segs = await res.json();
         if (!aborted) setList(Array.isArray(segs) ? segs : []);
       } catch {}
     })();

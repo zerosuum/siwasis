@@ -42,9 +42,12 @@ export default function DocumentTable({
   onDownload,
   readOnly,
 }) {
-  const rows = initial?.rows || [];
+  const rows = initial?.data || [];
   const hasData = rows.length > 0;
   const colCount = 5;
+
+  const currentPage = Number(initial?.current_page) || 1;
+  const itemsPerPage = Number(initial?.per_page) || 15;
 
   const fmtDate = (s) =>
     s
@@ -86,7 +89,7 @@ export default function DocumentTable({
                 className="odd:bg-white even:bg-[#FAFBF7] border-b-0"
               >
                 <TableCell className="py-4 text-center text-gray-500">
-                  {(initial.page - 1) * initial.perPage + idx + 1}
+                  {(currentPage - 1) * itemsPerPage + idx + 1}
                 </TableCell>
                 <TableCell className="py-4 text-left font-medium">
                   {r.title || r.filename}
@@ -104,24 +107,26 @@ export default function DocumentTable({
                     </ActionIcon>
                     {!readOnly && (
                       <>
-                    <ActionIcon title="Edit" onClick={() => onEdit?.(r)}>
-                      <IconEdit
-                        size={16}
-                        strokeWidth={2}
-                        className="shrink-0"
-                      />
-                    </ActionIcon>
-                    <ActionIcon
-                      title="Hapus"
-                      variant="danger"
-                      onClick={() => onDelete?.(r)}
-                    >
-                      <IconDelete
-                        size={16}
-                        strokeWidth={2}
-                        className="shrink-0"
-                      />
-                    </ActionIcon>
+                        <ActionIcon title="Edit" onClick={() => onEdit?.(r)}>
+                          <IconEdit
+                            size={16}
+                            strokeWidth={2}
+                            className="shrink-0"
+                          />
+                        </ActionIcon>
+                        <ActionIcon
+                          title="Hapus"
+                          variant="danger"
+                          onClick={() => onDelete?.(r)}
+                        >
+                          <IconDelete
+                            size={16}
+                            strokeWidth={2}
+                            className="shrink-0"
+                          />
+                        </ActionIcon>
+                      </>
+                    )}
                     <ActionIcon
                       title="Download"
                       onClick={() => onDownload?.(r)}
@@ -132,8 +137,6 @@ export default function DocumentTable({
                         className="shrink-0"
                       />
                     </ActionIcon>
-                    </>
-                    )}
                   </div>
                 </TableCell>
               </TableRow>

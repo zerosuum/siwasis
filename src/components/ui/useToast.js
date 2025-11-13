@@ -1,46 +1,57 @@
 "use client";
-import React from "react";
-import Toast from "./Toast";
 
-const Ctx = React.createContext(null);
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
+
+const ToastContext = createContext(null);
 
 export function ToastProvider({ children }) {
-  const [state, setState] = React.useState({
-    open: false,
-    title: "",
-    description: "",
-    variant: "success",
-    duration: 2400,
-  });
+  const [toast, setToast] = useState(null);
 
-  const show = React.useCallback(
-    ({ title, description, variant = "success", duration = 2400 }) => {
-      setState({ open: true, title, description, variant, duration });
-    },
-    []
-  );
-  const hide = React.useCallback(
-    () => setState((s) => ({ ...s, open: false })),
-    []
+  const show = useCallback((options) => {
+    if (!options) return;
+
+    const {
+      title = "",
+      description = "",
+      variant = "success", // "success" | "error" | "warning" | "destructive"
+    } = options;
+
+    setToast({
+      id: Date.now(),
+      title,
+      description,
+      variant,
+    });
+  }, []);
+
+  const dismiss = useCallback(() => {
+    setToast(null);
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      toast,
+      show,
+      dismiss,
+    }),
+    [toast, show, dismiss]
   );
 
   return (
-    <Ctx.Provider value={{ show, hide }}>
-      {children}
-      <Toast
-        open={state.open}
-        onClose={hide}
-        title={state.title}
-        desc={state.description}
-        variant={state.variant}
-        duration={state.duration}
-      />
-    </Ctx.Provider>
+    <ToastContext.Provider value={value}>{children}</ToastContext.Provider>
   );
 }
 
 export function useToast() {
-  const ctx = React.useContext(Ctx);
-  if (!ctx) throw new Error("useToast must be used within <ToastProvider>");
+  const ctx = useContext(ToastContext);
+  if (!ctx) {
+    throw new Error("useToast must be used inside <ToastProvider />");
+  }
   return ctx;
 }

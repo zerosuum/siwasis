@@ -42,10 +42,10 @@ export async function GET(req) {
       `"${row.nama?.replace(/"/g, '""') || ""}"`,
       row.rt || "",
       row.status || "",
-      row.jumlahSetoran || "0x",
+      row.jumlahSetoran || "0",
       row.totalSetoranFormatted || "Rp 0",
     ];
-    const marks = dates.map((d) => (row.kehadiran?.[d] ? "v" : "x"));
+    const marks = dates.map((d) => (row.kehadiran?.[d] ? "1" : "0"));
     csv += [...base, ...marks].join(",") + "\n";
   });
 

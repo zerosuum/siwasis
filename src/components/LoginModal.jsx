@@ -3,9 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { X, Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/useToast";
 
 export default function LoginModal({ open, onClose }) {
   const router = useRouter();
+  const { show: toast } = useToast();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
@@ -23,15 +26,46 @@ export default function LoginModal({ open, onClose }) {
         body: JSON.stringify({ email, password }),
       });
 
+      const data = await res.json().catch(() => null);
+
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "Email atau password salah.");
+        const msg = data?.message || "Email atau password salah.";
+        setError(msg);
+
+        toast({
+          variant: "error",
+          title: "Gagal!",
+          description: msg,
+        });
+
+        return;
       }
 
+      const username =
+        data?.user?.username ||
+        data?.profile?.username ||
+        data?.user?.email ||
+        email;
+
+      toast({
+        variant: "success",
+        title: "Sukses!",
+        description: `Berhasil login ke akun @${username || "admin"}.`,
+      });
+
       onClose();
-      router.refresh(); 
+
+      router.refresh();
     } catch (err) {
-      setError(err.message);
+      const msg = err.message || "Terjadi kesalahan saat login.";
+
+      setError(msg);
+
+      toast({
+        variant: "error",
+        title: "Gagal!",
+        description: msg,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -45,8 +79,7 @@ export default function LoginModal({ open, onClose }) {
       onClick={onClose}
     >
       <div
-        className="w-[420px] max-w-[90vw] bg-white rounded-2xl shadow-modal p-6
-                   flex flex-col animate-slide-up-and-fade"
+        className="w-[420px] max-w-[90vw] bg-white rounded-2xl shadow-modal p-6 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-4">
@@ -94,8 +127,7 @@ export default function LoginModal({ open, onClose }) {
           <button
             type="submit"
             disabled={isLoading}
-            className="h-10 px-6 rounded-lg bg-wasis-pr60 text-white font-semibold text-sm
-                       flex items-center justify-center disabled:opacity-50"
+            className="h-10 px-6 rounded-lg bg-wasis-pr60 text-white font-semibold text-sm flex items-center justify-center disabled:opacity-50"
           >
             {isLoading ? <Loader2 className="animate-spin" /> : "Login"}
           </button>

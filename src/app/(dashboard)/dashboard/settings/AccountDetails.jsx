@@ -16,20 +16,22 @@ function Label({ children }) {
   );
 }
 
-export default function AccountDetails({ profile = {} }) {
+export default function AccountDetails({ profile }) {
+  const safeProfile = profile ?? {};
+
   return (
     <Card className="p-5">
       <div className="space-y-5">
         <div>
           <Label>Nama:</Label>
           <div className="mt-1 border-b border-gray-200 pb-2 text-gray-800">
-            {profile.name || "—"}
+            {safeProfile.name || "—"}
           </div>
         </div>
         <div>
           <Label>Email:</Label>
           <div className="mt-1 border-b border-gray-200 pb-2 text-gray-800">
-            {profile.email || "—"}
+            {safeProfile.email || "—"}
           </div>
         </div>
         <div>

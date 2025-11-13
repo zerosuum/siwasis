@@ -14,7 +14,7 @@ import {
   Search as IconSearch,
   Plus as IconPlus,
 } from "lucide-react";
-import { API_BASE } from "@/server/queries/_api";
+import { API_BASE } from "@/lib/config";
 
 import { actionUploadDocument, actionUpdate, actionDelete } from "./actions";
 
@@ -39,6 +39,10 @@ export default function DocumentClient({ initial, readOnly }) {
   const sp = useSearchParams();
   const { show } = useToast();
 
+  const currentPage = initial?.current_page || 1;
+  const totalItems = initial?.total || 0;
+  const itemsPerPage = initial?.per_page || 15;
+
   const [search, setSearch] = React.useState(sp.get("q") || "");
   const [searchOpen, setSearchOpen] = React.useState(false);
 
@@ -58,10 +62,8 @@ export default function DocumentClient({ initial, readOnly }) {
   const pushWithParams = React.useCallback(
     (extra = {}) => {
       const params = new URLSearchParams(sp.toString());
-
       if (search) params.set("q", search);
       else params.delete("q");
-
       if (range?.from && range?.to) {
         params.set("from", range.from.toISOString().slice(0, 10));
         params.set("to", range.to.toISOString().slice(0, 10));
@@ -69,13 +71,11 @@ export default function DocumentClient({ initial, readOnly }) {
         params.delete("from");
         params.delete("to");
       }
-
       params.set("page", "1");
       Object.entries(extra).forEach(([k, v]) => {
         if (v === undefined || v === null || v === "") params.delete(k);
         else params.set(k, String(v));
       });
-
       router.push(`/dashboard/dokumen/daftar?${params.toString()}`);
     },
     [sp, search, range?.from, range?.to, router]
@@ -87,18 +87,18 @@ export default function DocumentClient({ initial, readOnly }) {
 
   const onCreate = async (form) => {
     try {
-      await actionUploadDocument({
-        title: form.get("title"),
-        description: form.get("description"),
-        uploaded_at: form.get("uploaded_at"),
-        file: form.get("file_path"),
-      });
+      await actionUploadDocument(form);
+
       setModalState({ open: false, data: null });
       show({ title: "Sukses", description: "Dokumen diunggah." });
       router.refresh();
     } catch (e) {
       console.error(e);
-      show({ title: "Gagal", description: "Upload gagal.", variant: "error" });
+      show({
+        title: "Gagal",
+        description: String(e?.message || e),
+        variant: "error",
+      });
     }
   };
 
@@ -110,7 +110,11 @@ export default function DocumentClient({ initial, readOnly }) {
       router.refresh();
     } catch (e) {
       console.error(e);
-      show({ title: "Gagal", description: "Update gagal.", variant: "error" });
+      show({
+        title: "Gagal",
+        description: String(e?.message || e),
+        variant: "error",
+      });
     }
   };
 
@@ -240,9 +244,9 @@ export default function DocumentClient({ initial, readOnly }) {
 
       <div className="flex items-center justify-center px-4 py-3">
         <Pagination
-          page={initial.page}
-          limit={initial.perPage}
-          total={initial.total}
+          page={currentPage}
+          limit={itemsPerPage}
+          total={totalItems}
         />
       </div>
 

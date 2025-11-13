@@ -3,17 +3,13 @@
 import { useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-// Fungsi untuk membuat array halaman dengan elipsis (...)
 function generatePages(currentPage, totalPages) {
-  // Jika total halaman sedikit, tampilkan semua
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, i) => i + 1);
   }
-  // Jika di awal
   if (currentPage <= 4) {
     return [1, 2, 3, 4, 5, "...", totalPages];
   }
-  // Jika di akhir
   if (currentPage >= totalPages - 3) {
     return [
       1,
@@ -25,7 +21,6 @@ function generatePages(currentPage, totalPages) {
       totalPages,
     ];
   }
-  // Jika di tengah
   return [
     1,
     "...",
@@ -37,35 +32,37 @@ function generatePages(currentPage, totalPages) {
   ];
 }
 
-export default function Pagination({ page, limit, total }) {
+export default function Pagination({ page = 1, limit = 15, total = 0 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const totalPages = Math.ceil(total / limit);
+  const currentPage = Number(page) || 1;
+  const perPage = Number(limit) || 15;
+  const totalItems = Number(total) || 0;
+
+  const totalPages = Math.ceil(totalItems / perPage);
   const pages = useMemo(
-    () => generatePages(page, totalPages),
-    [page, totalPages]
+    () => generatePages(currentPage, totalPages),
+    [currentPage, totalPages]
   );
 
   const go = (p) => {
-    // Jangan lakukan navigasi jika halaman tidak valid
-    if (p < 1 || p > totalPages || p === page) return;
+    if (p < 1 || p > totalPages || p === currentPage) return;
 
     const sp = new URLSearchParams(searchParams.toString());
     sp.set("page", String(p));
     router.push(`?${sp.toString()}`);
   };
 
-  // Jangan tampilkan apa-apa jika hanya ada 1 halaman atau kurang
-  if (totalPages <= 1) {
-    return null;
-  }
+  // if (totalPages <= 1) {
+  //   return null;
+  // }
 
   return (
     <nav className="flex items-center gap-2 text-sm font-medium">
       <button
-        onClick={() => go(page - 1)}
-        disabled={page <= 1}
+        onClick={() => go(currentPage - 1)}
+        disabled={currentPage <= 1}
         className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-gray-600 disabled:pointer-events-none disabled:opacity-50"
       >
         previous
@@ -82,20 +79,20 @@ export default function Pagination({ page, limit, total }) {
               key={p}
               onClick={() => go(p)}
               className={`flex h-8 w-8 items-center justify-center rounded-md border ${
-                page === p
-                  ? "border-[#6E8649] bg-[#6E8649] text-white" // Style aktif
-                  : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50" // Style normal
+                currentPage === p
+                  ? "border-[#6E8649] bg-[#6E8649] text-white"
+                  : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
               }`}
             >
-              {p}
+              {p} { }
             </button>
           )
         )}
       </div>
 
       <button
-        onClick={() => go(page + 1)}
-        disabled={page >= totalPages}
+        onClick={() => go(currentPage + 1)}
+        disabled={currentPage >= totalPages}
         className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-gray-600 disabled:pointer-events-none disabled:opacity-50"
       >
         next

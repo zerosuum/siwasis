@@ -54,7 +54,10 @@ export default function DocumentModal({
       const form = new FormData();
       form.append("title", title);
       if (description) form.append("description", description);
+
+
       if (file) form.append("file_path", file);
+
       const today = new Date();
       const uploadedAt = new Date(
         today.getTime() - today.getTimezoneOffset() * 60000
@@ -62,6 +65,7 @@ export default function DocumentModal({
         .toISOString()
         .slice(0, 10);
       form.append("uploaded_at", uploadedAt);
+
       if (isEdit) await onUpdate?.(initial.id, form);
       else await onCreate?.(form);
     } finally {

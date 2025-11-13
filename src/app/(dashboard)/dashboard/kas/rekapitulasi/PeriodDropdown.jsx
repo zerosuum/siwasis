@@ -3,12 +3,7 @@
 import * as React from "react";
 import { Plus as IconPlus, ChevronDown } from "lucide-react";
 
-export default function PeriodDropdown({
-  year,
-  onSelectYear,
-  onNew,
-  isLoggedIn,
-}) {
+export default function PeriodDropdown({ year, onSelectYear, onNew, showCreateButton }) {
   const [open, setOpen] = React.useState(false);
   const ref = React.useRef(null);
 
@@ -31,7 +26,7 @@ export default function PeriodDropdown({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="h-8 w-[180px] rounded-[12px] border border-[#E2E7D7] bg-white px-3 text-sm flex items-center justify-between"
+        className="h-9 w-[180px] rounded-[12px] border border-[#E2E7D7] bg-white px-3 text-sm flex items-center justify-between"
         aria-haspopup="listbox"
         aria-expanded={open}
       >
@@ -42,7 +37,7 @@ export default function PeriodDropdown({
       {open && (
         <div
           role="listbox"
-          className="absolute right-0 z-50 mt-1 w-[220px] rounded-xl border bg-white p-1.5 shadow-xl"
+          className="absolute right-0 z-50 mt-1 w-[220px] rounded-xl border border-[#E2E7D7] bg-white p-1.5 shadow-xl"
         >
           {years.map((y) => (
             <button
@@ -59,7 +54,7 @@ export default function PeriodDropdown({
             </button>
           ))}
 
-          {isLoggedIn && (
+          {showCreateButton && (
             <>
               <div className="my-1 h-px bg-gray-100" />
               <button

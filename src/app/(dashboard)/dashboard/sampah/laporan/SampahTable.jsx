@@ -17,29 +17,15 @@ const rp = (n) =>
     maximumFractionDigits: 0,
   }).format(Number(n || 0));
 
-function SourceChip({ source }) {
-  const meta = {
-    manual: { bg: "bg-gray-100", fg: "text-gray-700", label: "Manual" },
-    rekap: { bg: "bg-[#EEF0E8]", fg: "text-[#6E8649]", label: "Rekap" },
-    sampah: { bg: "bg-[#EAF4FE]", fg: "text-[#1161A5]", label: "Sampah" },
-  }[source] || {
-    bg: "bg-gray-100",
-    fg: "text-gray-700",
-    label: source || "Manual",
-  };
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${meta.bg} ${meta.fg}`}
-    >
-      {meta.label}
-    </span>
-  );
-}
 
 export default function SampahTable({ initial, onEdit, onDelete, readOnly }) {
-  const rows = initial?.rows || [];
+  const paginatedData = initial?.data || {};
+  const rows = paginatedData?.data || [];
   const hasData = rows.length > 0;
   const colCount = readOnly ? 6 : 7;
+
+  const currentPage = Number(paginatedData?.current_page) || 1;
+  const itemsPerPage = Number(paginatedData?.per_page) || 15;
 
   return (
     <TableRoot className="overflow-auto max-h-[600px]">
@@ -55,9 +41,6 @@ export default function SampahTable({ initial, onEdit, onDelete, readOnly }) {
             <TableHeaderCell className="w-[320px] text-left py-3 font-semibold text-gray-600">
               Keterangan
             </TableHeaderCell>
-            {/* <TableHeaderCell className="w-[110px] text-center py-3 font-semibold text-gray-600">
-              Sumber
-            </TableHeaderCell> */}
             <TableHeaderCell className="w-[160px] text-center py-3 font-semibold text-gray-600">
               Pemasukan
             </TableHeaderCell>
@@ -82,7 +65,7 @@ export default function SampahTable({ initial, onEdit, onDelete, readOnly }) {
                 className="odd:bg-white even:bg-[#FAFBF7] border-b-0"
               >
                 <TableCell className="py-4 text-center text-gray-500">
-                  {(initial.page - 1) * initial.perPage + idx + 1}
+                  {(currentPage - 1) * itemsPerPage + idx + 1}
                 </TableCell>
                 <TableCell className="py-4 text-center tabular-nums">
                   {r.tanggal
@@ -97,13 +80,13 @@ export default function SampahTable({ initial, onEdit, onDelete, readOnly }) {
                   {r.keterangan || "—"}
                 </TableCell>
                 <TableCell className="py-4 text-center tabular-nums font-medium text-[#6E8649]">
-                  {r.pemasukan ? rp(r.pemasukan) : "—"}
+                  {r.tipe === "pemasukan" ? rp(r.jumlah) : "—"}
                 </TableCell>
                 <TableCell className="py-4 text-center tabular-nums font-medium text-[#B24949]">
-                  {r.pengeluaran ? rp(r.pengeluaran) : "—"}
+                  {r.tipe === "pengeluaran" ? rp(r.jumlah) : "—"}
                 </TableCell>
                 <TableCell className="py-4 text-center tabular-nums font-semibold">
-                  {r.saldo ? rp(r.saldo) : "—"}
+                  —
                 </TableCell>
                 {!readOnly && (
                   <TableCell className="py-4">

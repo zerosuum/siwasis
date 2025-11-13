@@ -25,7 +25,9 @@ export default function ArisanRekapClient({ initial, readOnly }) {
 
   // URL
   const page = initial?.page || 1;
-  const year = initial?.meta?.year || new Date().getFullYear();
+  // const year = initial?.meta?.year || new Date().getFullYear();
+  const yearFromUrl = Number(sp.get("year"));
+  const year = Number.isFinite(yearFromUrl) ? yearFromUrl : (initial?.meta?.year || new Date().getFullYear());
   const q = sp.get("q") || "";
   const rt = sp.get("rt") || "all";
   const from = sp.get("from");
@@ -66,9 +68,7 @@ export default function ArisanRekapClient({ initial, readOnly }) {
     );
   }, []);
 
-  const [yearState, setYearState] = React.useState(
-    initial?.meta?.year || new Date().getFullYear()
-  );
+  const [yearState, setYearState] = React.useState(year);
 
   React.useEffect(() => {
     if (!range?.from || !range?.to) return;
@@ -115,7 +115,7 @@ export default function ArisanRekapClient({ initial, readOnly }) {
     startTransition(async () => {
       try {
         // Panggil Server Action
-        await actionSaveArisanRekap({ year, updates, from, to });
+        await actionSaveArisanRekap({ year: yearState, updates, from, to });
         setEditing(false);
         setUpdates([]);
         setSuccessOpen(true);

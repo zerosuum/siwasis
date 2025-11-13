@@ -235,8 +235,8 @@ export default function RekapClient({ initial, readOnly }) {
           <PeriodDropdown
             year={Number(year)}
             onSelectYear={(y) => handleSelectYear(Number(y))}
-            onNew={() => setNewPeriodOpen(true)}
-            isLoggedIn={!readOnly} 
+            // onNew={() => setNewPeriodOpen(true)}
+            showCreateButton={false}
           />
 
           <div
@@ -341,7 +341,6 @@ export default function RekapClient({ initial, readOnly }) {
               )}
             </>
           )}
-          
         </div>
       </div>
 
@@ -420,7 +419,7 @@ export default function RekapClient({ initial, readOnly }) {
           autoCloseMs={1600}
         />
       )}
-      
+
       {!readOnly && (
         <PeriodModal
           open={newPeriodOpen}

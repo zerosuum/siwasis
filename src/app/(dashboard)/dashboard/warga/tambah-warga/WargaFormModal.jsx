@@ -12,7 +12,6 @@ export default function WargaFormModal({
   const [tanggal_lahir, setTanggalLahir] = React.useState("");
   const [role, setRole] = React.useState("warga");
   const [alamat, setAlamat] = React.useState("");
-  const [telepon, setTelepon] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
 
     React.useEffect(() => {
@@ -22,7 +21,6 @@ export default function WargaFormModal({
       setTanggalLahir(initial.tanggal_lahir?.slice(0, 10) ?? "");
       setRole(initial.role ?? "warga");
       setAlamat(initial.alamat ?? "");
-      setTelepon(initial.telepon ?? "");
     }, [initial]);
 
   const title =
@@ -34,7 +32,7 @@ export default function WargaFormModal({
 
   async function handleSubmit() {
     const rt2 = (rt || "").padStart(2, "0");
-    if (!nama || !rt2 || !tanggal_lahir || !alamat || !telepon) return;
+    if (!nama || !rt2 || !tanggal_lahir || !alamat ) return;
 
     setSubmitting(true);
     try {
@@ -44,7 +42,6 @@ export default function WargaFormModal({
         tanggal_lahir,
         role: role || "warga",
         alamat,
-        telepon,
       });
       onClose();
     } finally {
@@ -110,7 +107,7 @@ export default function WargaFormModal({
             >
               <option value="warga">Warga</option>
               <option value="ketua">Ketua</option>
-              <option value="wakil">Wakil Ketua</option>
+              <option value="wakil_ketua">Wakil Ketua</option>
               <option value="sekretaris">Sekretaris</option>
               <option value="bendahara">Bendahara</option>
             </select>
@@ -123,16 +120,6 @@ export default function WargaFormModal({
               onChange={(e) => setAlamat(e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
               placeholder="Alamat domisili"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm">Telepon *</label>
-            <input
-              value={telepon}
-              onChange={(e) => setTelepon(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
-              placeholder="08xxxxxxxxxx"
             />
           </div>
         </div>
@@ -150,7 +137,6 @@ export default function WargaFormModal({
               !rt ||
               !tanggal_lahir ||
               !alamat ||
-              !telepon ||
               submitting
             }
             onClick={handleSubmit}

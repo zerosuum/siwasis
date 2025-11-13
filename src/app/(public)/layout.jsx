@@ -2,12 +2,15 @@ import { getAdminProfile } from "@/lib/session";
 import PublicNavbar from "@/components/PublicNavbar";
 import Footer from "@/components/Footer";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function PublicLayout({ children }) {
-  const profile = await getAdminProfile();
+  const profile = await getAdminProfile(); 
   return (
-    <div className="w-full min-h-screen flex flex-col">
+    <div className="min-h-dvh flex flex-col">
       <PublicNavbar profile={profile} />
-      <main className="w-full flex-1">{children}</main>
+      <main className="flex-1">{children}</main>
       <Footer />
     </div>
   );

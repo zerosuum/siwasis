@@ -26,15 +26,17 @@ const rp = (n) =>
 function ArisanBadge({ status }) {
   if (!status) return null;
 
-  const statusNormalized = status.toLowerCase().includes("sudah");
+  const s = String(status).toLowerCase();
+  if (s === "tidak_ikut") return null;
 
+  const statusNormalized = s.includes("sudah");
   const statusText = statusNormalized ? "Sudah Dapat" : "Belum Dapat";
 
   return (
     <span
       className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
         statusNormalized
-          ? "bg-[#EEF0E8] text-[#2B3A1D]" 
+          ? "bg-[#EEF0E8] text-[#2B3A1D]"
           : "bg-[#FFF6E5] text-[#B0892E]"
       }`}
     >
@@ -43,15 +45,13 @@ function ArisanBadge({ status }) {
   );
 }
 
-export default function WargaTable({
-  initial,
-  onEdit,
-  onDelete,
-  onAddArisan,
-}) {
+export default function WargaTable({ initial, onEdit, onDelete, onAddArisan }) {
   const rows = initial?.data ?? initial?.rows ?? [];
   const hasData = rows.length > 0;
   const colCount = 10;
+
+  const currentPage = Number(initial?.page || initial?.current_page) || 1;
+  const itemsPerPage = Number(initial?.perPage || initial?.per_page) || 15;
 
   return (
     <TableRoot
@@ -59,8 +59,8 @@ export default function WargaTable({
       style={{ maxHeight: "calc(100vh - 72px - 24px - 56px - 72px)" }}
     >
       <Table className="w-full table-fixed min-w-[1200px]">
-        <TableHead className="bg-[#F4F6EE] sticky top-0 z-10 border-0">
-          <TableRow className="border-b border-gray-200">
+        <TableHead className="bg-[#F4F6EE] sticky top-0 z-10">
+          <TableRow>
             <TableHeaderCell className="w-[56px] text-center py-3 font-semibold text-gray-600">
               No
             </TableHeaderCell>
@@ -102,7 +102,7 @@ export default function WargaTable({
                 className="odd:bg-white even:bg-[#FAFBF7] border-b-0"
               >
                 <TableCell className="py-4 text-center text-gray-500">
-                  {(initial.page - 1) * initial.perPage + idx + 1}
+                  {(currentPage - 1) * itemsPerPage + idx + 1}
                 </TableCell>
 
                 <TableCell className="py-4 text-center tabular-nums">
@@ -121,7 +121,7 @@ export default function WargaTable({
                 </TableCell>
 
                 <TableCell className="py-4">
-                  {r.arisan_status ? (
+                  {r.arisan_status && r.arisan_status !== "tidak_ikut" ? (
                     <ArisanBadge status={r.arisan_status} />
                   ) : (
                     <button

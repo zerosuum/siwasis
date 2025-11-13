@@ -16,6 +16,7 @@ export default function BlogCard({ item }) {
           alt={item.title || "Berita"}
           fill
           className="object-cover"
+          unoptimized
         />
       </div>
 

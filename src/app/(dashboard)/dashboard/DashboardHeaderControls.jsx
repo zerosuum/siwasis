@@ -7,7 +7,7 @@ import { Calendar as IconCalendar } from "lucide-react";
 import PeriodDropdown from "./kas/rekapitulasi/PeriodDropdown";
 import PeriodModal from "./kas/rekapitulasi/PeriodModal";
 
-export default function DashboardHeaderControls() {
+export default function DashboardHeaderControls( {isLoggedIn}) {
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -53,12 +53,18 @@ export default function DashboardHeaderControls() {
       router.push(`/dashboard?${params.toString()}`);
       router.refresh();
     },
-    [router, sp, range?.from, range?.to]
+    [router, sp]
   );
 
-  React.useEffect(() => {
-    if (range?.from && range?.to) pushWithParams();
-  }, [range?.from, range?.to, pushWithParams]);
+React.useEffect(() => {
+  if (range === undefined) {
+    pushWithParams();
+    return;
+  }
+  if (range?.from) {
+    pushWithParams();
+  }
+}, [range, pushWithParams]);
 
 
   const filterAnchorRef = React.useRef(null);
@@ -82,6 +88,7 @@ export default function DashboardHeaderControls() {
         year={year}
         onSelectYear={handleSelectYear}
         onNew={() => setNewPeriodOpen(true)}
+        showCreateButton={isLoggedIn}
       />
 
       <div className="relative">
@@ -110,9 +117,11 @@ export default function DashboardHeaderControls() {
               apply: "Ya, Simpan",
               range: "Rentang",
             }}
-            align="end"
+            align="center"
             sideOffset={8}
-            contentClassName="mt-2 min-w-[560px] rounded-xl border bg-white p-4 shadow-lg"
+            contentClassName="mt-2 rounded-xl border bg-white p-4 shadow-lg 
+                              min-w-[300px] sm:min-w-[560px]
+                              [&>div>div:last-child]:hidden sm:[&>div>div:last-child]:block"
             footerClassName="mt-3 border-t pt-3 flex justify-end gap-2"
             cancelClassName="rounded-lg bg-gray-100 px-4 py-1.5 text-sm"
             applyClassName="rounded-lg bg-[#6E8649] px-4 py-1.5 text-sm text-white"

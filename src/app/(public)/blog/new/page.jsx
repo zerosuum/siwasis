@@ -40,9 +40,8 @@ function FotoModal({ onClose, onUpload, isUploading }) {
       onClick={onClose}
     >
       <div
-        className="w-[460px] max-w-[90vw] bg-white rounded-2xl shadow-modal p-6
-                   flex flex-col animate-slide-up-and-fade"
-        onClick={(e) => e.stopPropagation()} 
+        className="w-[460px] max-w-[90vw] bg-white rounded-2xl shadow-modal p-6 flex flex-col animate-slide-up-and-fade"
+        onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-xl font-bold font-rem text-wasis-pr80">
           Tambahkan Foto
@@ -51,10 +50,7 @@ function FotoModal({ onClose, onUpload, isUploading }) {
           Pilih foto sampul untuk beritamu.
         </p>
 
-        <div
-          className="w-full h-48 border-2 border-dashed border-gray-300 rounded-lg mt-4
-                        flex flex-col items-center justify-center text-gray-500"
-        >
+        <div className="w-full h-48 border-2 border-dashed border-gray-300 rounded-lg mt-4 flex flex-col items-center justify-center text-gray-500">
           {preview ? (
             <img
               src={preview}
@@ -83,8 +79,7 @@ function FotoModal({ onClose, onUpload, isUploading }) {
           <button
             onClick={handleSimpan}
             disabled={!file || isUploading}
-            className="flex-1 h-10 rounded-lg bg-wasis-pr60 text-white font-semibold text-sm
-                       flex items-center justify-center disabled:opacity-50"
+            className="flex-1 h-10 rounded-lg bg-wasis-pr60 text-white font-semibold text-sm flex items-center justify-center disabled:opacity-50"
           >
             {isUploading ? <Loader2 className="animate-spin" /> : "Simpan"}
           </button>
@@ -96,29 +91,59 @@ function FotoModal({ onClose, onUpload, isUploading }) {
 
 export default function TulisBeritaPage() {
   const router = useRouter();
+  const { show: toast } = useToast();
+
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isFotoModalOpen, setIsFotoModalOpen] = useState(false);
   const [fotoUrl, setFotoUrl] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [file, setFile] = useState(null);
 
   const handleUploadFoto = async (file, previewUrl) => {
     setIsUploading(true);
     await new Promise((res) => setTimeout(res, 1000));
     setFotoUrl(previewUrl);
+    setFile(file);
     setIsUploading(false);
     setIsFotoModalOpen(false);
   };
 
   const handleSubmit = async () => {
+
+      if (!file) {
+        toast({
+          title: "Foto belum dipilih",
+          description: "Silakan pilih foto sampul sebelum mengunggah berita.",
+          variant: "error",
+        });
+        return;
+      }
+
     setIsSubmitting(true);
+
     try {
-      await actionCreateBerita({ title, content, imageUrl: fotoUrl });
-      alert("Berita berhasil diunggah!");
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("content", content);
+      formData.append("image_path", file);
+
+      await actionCreateBerita(formData);
+
+      toast({
+        title: "Berhasil",
+        description: "Berita berhasil diunggah.",
+        variant: "success",
+      });
+
       router.push("/blog");
     } catch (e) {
-      alert("Gagal: " + e.message);
+      toast({
+        title: "Gagal mengunggah berita",
+        description: e.message || "Terjadi kesalahan.",
+        variant: "error",
+      });
       setIsSubmitting(false);
     }
   };
@@ -134,24 +159,37 @@ export default function TulisBeritaPage() {
 
   return (
     <>
-      <div className="w-full bg-wasis-pr40 rounded-b-massive shadow-lg">
-        <div className="max-w-[1320px] mx-auto px-4 sm:px-16 py-8">
+      <div
+        className="w-full bg-wasis-pr40 
+                rounded-b-[40px] sm:rounded-b-[56px] lg:rounded-b-massive 
+                shadow-[0_8px_28px_-6px_rgba(24,39,75,0.12),_0_18px_88px_-4px_rgba(24,39,75,0.14)]"
+      >
+        <div
+          className="w-full max-w-[1320px] mx-auto 
+                  px-4 sm:px-6 lg:px-10 
+                  py-6 sm:py-8 lg:py-10"
+        >
           <h1
-            className="font-rem font-bold text-4xl text-wasis-nt80"
-            style={{ lineHeight: "46px" }}
+            className="font-rem font-bold 
+                 text-2xl sm:text-3xl lg:text-4xl 
+                 text-wasis-nt80"
+            style={{ lineHeight: "1.3" }}
           >
             Tulis Berita Baru
           </h1>
           <p
-            className="font-rem text-xl text-wasis-nt80/90 mt-2"
-            style={{ lineHeight: "26px" }}
+            className="font-rem 
+                 text-sm sm:text-base lg:text-lg 
+                 text-wasis-nt80/90 
+                 mt-2 max-w-2xl"
+            style={{ lineHeight: "1.5" }}
           >
             Bagikan informasi, pengumuman, atau cerita baru.
           </p>
         </div>
       </div>
 
-      <div className="max-w-[1200px] mx-auto px-4 py-12 flex gap-8">
+      <div className="max-w-[1200px] mx-auto px-4 py-12 flex flex-col lg:flex-row gap-8">
         <div className="flex-1 flex flex-col gap-4">
           {fotoUrl && (
             <div className="mb-4">
@@ -168,8 +206,11 @@ export default function TulisBeritaPage() {
             placeholder="Tulis Judul Berita di Sini..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-4 text-3xl font-bold font-rem border-b-2 border-gray-200 
-                       focus:border-wasis-pr60 outline-none bg-transparent"
+            className="w-full p-3 sm:p-4 
+             text-xl sm:text-2xl lg:text-3xl 
+             font-bold font-rem 
+             border-b-2 border-gray-200 
+             focus:border-wasis-pr60 outline-none bg-transparent"
           />
 
           <TextEditor
@@ -184,8 +225,7 @@ export default function TulisBeritaPage() {
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting || !title || content.length < 10}
-                className="h-10 px-6 rounded-lg bg-wasis-pr60 text-white font-semibold text-sm
-                           flex items-center justify-center disabled:opacity-50"
+                className="h-10 px-6 rounded-lg bg-wasis-pr60 text-white font-semibold text-sm flex items-center justify-center disabled:opacity-50"
               >
                 {isSubmitting ? <Loader2 className="animate-spin" /> : "Unggah"}
               </button>

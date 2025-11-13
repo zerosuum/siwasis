@@ -21,8 +21,29 @@ const fallback = {
   dates: [],
   total: 0,
   page: 1,
-  perPage: 15,
+  perPage: 10,
 };
+
+function normalizeArisanRekap(resp) {
+  if (!resp) return fallback;
+
+  const pag = resp.pagination || {};
+  return {
+    ...resp,
+    rows: resp.rows ?? resp.data ?? [],
+    dates: resp.dates ?? [],
+    page: resp.page ?? pag.current_page ?? 1,
+    perPage: resp.perPage ?? pag.per_page ?? 10,
+    total: resp.total ?? pag.total ?? 0,
+    meta: resp.meta ?? {
+      year: resp.filters?.year
+        ? Number(resp.filters.year)
+        : new Date().getFullYear(),
+      nominalFormatted: resp.nominalPerEventFormatted ?? "Rp 0",
+    },
+    kpi: resp.kpi ?? fallback.kpi,
+  };
+}
 
 export default async function Page({ searchParams }) {
   const profile = await getAdminProfile();
@@ -38,22 +59,22 @@ export default async function Page({ searchParams }) {
   const min = sp?.min ? Number(first(sp.min)) : undefined;
   const max = sp?.max ? Number(first(sp.max)) : undefined;
 
-  let initial = fallback;
-  try {
-    const resp = await getArisanRekap({
-      page,
-      year,
-      q,
-      rt,
-      from,
-      to,
-      min,
-      max,
-    });
-    if (resp && resp.kpi) initial = resp;
-  } catch {
-    initial = fallback;
-  }
+let initial = fallback;
+try {
+  const resp = await getArisanRekap({
+    page,
+    year,
+    q,
+    rt,
+    from,
+    to,
+    min,
+    max,
+  });
+  initial = normalizeArisanRekap(resp);
+} catch {
+  initial = fallback;
+}
 
   const kpis = [
     {

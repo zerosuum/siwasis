@@ -10,7 +10,7 @@ const defaultData = {
   rows: [],
   total: 0,
   page: 1,
-  perPage: 15,
+  perPage: 10,
   kpi: {
     pemasukanFormatted: "Rp 0",
     pengeluaranFormatted: "Rp 0",
@@ -18,6 +18,20 @@ const defaultData = {
     rangeLabel: "Tidak ada data",
   },
 };
+
+function normalizeKasLaporan(resp) {
+  if (!resp || resp.ok === false) return defaultData;
+
+  const pag = resp.pagination || {};
+  return {
+    ...resp,
+    rows: resp.rows ?? resp.data ?? [],
+    page: resp.page ?? pag.current_page ?? 1,
+    perPage: resp.perPage ?? pag.per_page ?? 10,
+    total: resp.total ?? pag.total ?? 0,
+    kpi: resp.kpi ?? defaultData.kpi,
+  };
+}
 
 export default async function Page({ searchParams }) {
 
@@ -43,22 +57,22 @@ export default async function Page({ searchParams }) {
   // const resp = await getKasLaporan({ page, year, from, to, q, type, min, max });
   // const initial = resp && resp.ok === false ? defaultData : (resp || defaultData);
 
-  let initial = defaultData;
-  try {
-    const resp = await getKasLaporan({
-      page,
-      year,
-      from,
-      to,
-      q,
-      type,
-      min,
-      max,
-    });
-    initial = resp && resp.ok === false ? defaultData : resp || defaultData;
-  } catch (_) {
-    initial = defaultData;
-  }
+let initial = defaultData;
+try {
+  const resp = await getKasLaporan({
+    page,
+    year,
+    from,
+    to,
+    q,
+    type,
+    min,
+    max,
+  });
+  initial = normalizeKasLaporan(resp);
+} catch (_) {
+  initial = defaultData;
+}
 
   const kpis = [
     {

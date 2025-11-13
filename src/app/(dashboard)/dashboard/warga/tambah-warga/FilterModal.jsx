@@ -185,7 +185,6 @@ export default function FilterModal({
             </div>
           </div>
 
-          {/* Arisan range (tanpa placeholder) */}
           <div>
             <div className="mb-2 font-medium text-[#8B8FA1]">
               Jumlah Setoran Arisan

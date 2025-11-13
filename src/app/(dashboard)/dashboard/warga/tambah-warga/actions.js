@@ -1,6 +1,5 @@
 "use server";
 
-import "server-only";
 import { revalidatePath } from "next/cache";
 import {
   createWarga,
@@ -9,12 +8,8 @@ import {
   addKasMember,
   addArisanMember,
 } from "@/server/queries/warga";
-
-// import { getSession } from "@/lib/session";
-// const checkAuth = async () => {
-//   const session = await getSession();
-//   if (!session) throw new Error("Akses ditolak");
-// };
+import { getAdminProfile } from "@/lib/session";
+import { cookies } from "next/headers";
 
 const revalidateAll = () => {
   revalidatePath("/dashboard/warga/tambah-warga");
@@ -24,26 +19,27 @@ const revalidateAll = () => {
   revalidatePath("/dashboard");
 };
 
+async function getAuth() {
+  const profile = await getAdminProfile();
+  if (!profile) throw new Error("Akses ditolak. Silakan login.");
+
+  const cookieStore = await cookies();
+
+  const token = cookieStore.get("siwasis_token")?.value || null;
+  if (!token) throw new Error("Token tidak ditemukan. Silakan login kembali.");
+
+  return { profile, token };
+}
+
 export async function actionCreateWarga(payload, variant) {
+  const { token } = await getAuth();
   try {
-    const created = await createWarga(payload);
-    if (variant === "KAS") {
-      await addKasMember(created.id);
-    }
-    if (variant === "ARISAN") {
-      await addKasMember(created.id);
-      await addArisanMember(created.id);
-    }
+    const created = await createWarga(token, payload, variant);
 
     revalidateAll();
     return {
       ok: true,
-      message:
-        variant === "KAS"
-          ? "Warga ditambahkan & ditandai anggota Kas."
-          : variant === "ARISAN"
-          ? "Warga ditambahkan & ditandai anggota Arisan & Kas."
-          : "Warga ditambahkan.",
+      message: "Warga berhasil ditambahkan.",
     };
   } catch (err) {
     console.error(err);
@@ -55,9 +51,9 @@ export async function actionCreateWarga(payload, variant) {
 }
 
 export async function actionUpdateWarga(id, payload) {
-  // await checkAuth();
+  const { token } = await getAuth();
   try {
-    await updateWarga(id, payload);
+    await updateWarga(token, id, payload);
     revalidateAll();
     return { ok: true };
   } catch (err) {
@@ -67,9 +63,9 @@ export async function actionUpdateWarga(id, payload) {
 }
 
 export async function actionDeleteWarga(id) {
-  // await checkAuth();
+  const { token } = await getAuth();
   try {
-    await deleteWarga(id);
+    await deleteWarga(token, id);
     revalidateAll();
     return { ok: true };
   } catch (err) {
@@ -77,16 +73,30 @@ export async function actionDeleteWarga(id) {
     throw new Error(err.message || "Gagal menghapus warga.");
   }
 }
+export async function actionAddArisanMember(warga) {
+  const { token } = await getAuth();
 
-export async function actionAddArisanMember(wargaId) {
-  // await checkAuth();
   try {
-    await addKasMember(wargaId);
-    await addArisanMember(wargaId);
+    await addArisanMember(token, { warga_id: warga.id });
+
     revalidateAll();
     return { ok: true };
   } catch (err) {
     console.error(err);
-    throw new Error(err.message || "Gagal menambah anggota arisan.");
+    throw new Error(err.message || "Gagal menandai anggota arisan.");
+  }
+}
+
+export async function actionAddKasMember(warga) {
+  const { token } = await getAuth();
+
+  try {
+    await addKasMember(token, { warga_id: warga.id });
+
+    revalidateAll();
+    return { ok: true };
+  } catch (err) {
+    console.error(err);
+    throw new Error(err.message || "Gagal menambah anggota kas.");
   }
 }

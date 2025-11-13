@@ -5,7 +5,6 @@ import { first } from "@/lib/utils";
 import { getAdminProfile } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
-
 const defaultData = {
   meta: { year: new Date().getFullYear(), nominalFormatted: "Rp 0" },
   kpi: {
@@ -18,8 +17,28 @@ const defaultData = {
   dates: [],
   total: 0,
   page: 1,
-  perPage: 15,
+  perPage: 10,
 };
+
+function normalizeKasRekap(resp) {
+  if (!resp || resp.ok === false) return defaultData;
+
+  const pag = resp.pagination || {};
+  return {
+    ...resp,
+    rows: resp.rows ?? resp.data ?? [],
+    page: resp.page ?? pag.current_page ?? 1,
+    perPage: resp.perPage ?? pag.per_page ?? 10,
+    total: resp.total ?? pag.total ?? 0,
+    meta: resp.meta ?? {
+      year: resp.filters?.year
+        ? Number(resp.filters.year)
+        : new Date().getFullYear(),
+      nominalFormatted: resp.nominalFormatted ?? "Rp 0",
+    },
+    kpi: resp.kpi ?? defaultData.kpi,
+  };
+}
 
 export default async function Page({ searchParams }) {
   const profile = await getAdminProfile();
@@ -32,7 +51,6 @@ export default async function Page({ searchParams }) {
   const from = sp?.from ? String(first(sp.from)) : null;
   const to = sp?.to ? String(first(sp.to)) : null;
   const q = sp?.q ? String(first(sp.q)) : "";
-  const type = sp?.type ? String(first(sp.type)) : null;
   const min = sp?.min ? Number(first(sp.min)) : undefined;
   const max = sp?.max ? Number(first(sp.max)) : undefined;
   const rt = sp?.rt ? String(first(sp.rt)) : "all";
@@ -40,10 +58,11 @@ export default async function Page({ searchParams }) {
   let initial = defaultData;
   try {
     const resp = await getKasRekap({ page, year, q, rt, from, to, min, max });
-    initial = resp && resp.ok === false ? defaultData : resp || defaultData;
-  } catch (_) {
+    initial = normalizeKasRekap(resp);
+  } catch {
     initial = defaultData;
   }
+
   const kpis = [
     {
       label: "Pemasukan",

@@ -29,7 +29,7 @@ export default function Breadcrumbs() {
   const segments = base.filter((seg, i, arr) => i === 0 || seg !== arr[i - 1]);
 
   return (
-    <nav className="text-sm text-gray-600">
+    <nav className="text-sm text-gray-600 truncate">
       {segments.map((seg, i) => {
         const label = LABELS[seg] ?? titleCase(seg);
         const isLast = i === segments.length - 1;
@@ -37,11 +37,13 @@ export default function Breadcrumbs() {
 
         return (
           <span key={href}>
-            {i > 0 && <span className="mx-2 text-gray-300">›</span>}
+            {i > 0 && (
+              <span className="mx-2 text-gray-300 hidden md:inline">›</span>
+            )}
             {isLast ? (
               <span className="font-medium text-gray-700">{label}</span>
             ) : (
-              <Link href={href} className="hover:underline">
+              <Link href={href} className="hover:underline hidden md:inline">
                 {label}
               </Link>
             )}

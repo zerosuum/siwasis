@@ -51,9 +51,9 @@ export default function ChangePasswordModal({ open, onClose, onSubmit }) {
         password: newPwd,
         password_confirmation: newPwd2,
       });
-      onClose?.(); // toast sukses di parent
+      onClose?.();
     } catch {
-      // toast error di parent (karena parent throw e lalu showToast)
+
     } finally {
       setSubmitting(false);
     }

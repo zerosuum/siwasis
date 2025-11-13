@@ -1,21 +1,10 @@
-import { API_BASE, makeURL, setParams } from "./_api";
-export async function getSampahLaporan({
-  page,
-  year,
-  from,
-  to,
-  q,
-  type,
-  min,
-  max,
-} = {}) {
-  const url = new URL(`${API_BASE}/sampah/laporan`);
-  setParams(url, { page, year, from, to, q, type, min, max });
+import { proxyJSON } from "./_api";
 
-  const res = await fetch(url.toString(), {
-    cache: "no-store",
-    headers: { Accept: "application/json" },
+export async function getSampahLaporan(
+  _tokenIgnored,
+  { page, year, from, to, q, type, min, max } = {}
+) {
+  return proxyJSON("/sampah/laporan", {
+    params: { page, year, from, to, q, type, min, max, per_page: 15 },
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-  return res.json();
 }

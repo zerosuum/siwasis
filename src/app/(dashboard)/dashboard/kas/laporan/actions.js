@@ -2,6 +2,21 @@
 
 import { revalidatePath } from "next/cache";
 import { API_BASE } from "@/lib/config";
+import { getAdminProfile } from "@/lib/session";
+import { cookies } from "next/headers";
+
+const checkAuth = async () => {
+  const profile = await getAdminProfile();
+  if (!profile) throw new Error("Akses ditolak. Silakan login.");
+  return profile;
+};
+
+const getAuthToken = async () => {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("siwasis_token")?.value || null;
+  if (!token) throw new Error("Token tidak ditemukan. Silakan login kembali.");
+  return token;
+};
 
 async function assertOk(res) {
   if (!res.ok) {
@@ -14,6 +29,9 @@ async function assertOk(res) {
 
 // CREATE
 export async function actionCreateEntry(payload) {
+  await checkAuth();
+  const token = await getAuthToken();
+
   const { tanggal, keterangan, nominal, type } = payload;
 
   if (!tanggal) throw new Error("Tanggal wajib diisi");
@@ -24,12 +42,16 @@ export async function actionCreateEntry(payload) {
 
   const res = await fetch(`${API_BASE}/kas/laporan/create`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify({
       tanggal,
       keterangan,
-      nominal: Number(nominal), 
-      type, // "IN" | "OUT"
+      nominal: Number(nominal),
+      type,
     }),
     cache: "no-store",
   });
@@ -41,11 +63,18 @@ export async function actionCreateEntry(payload) {
 
 // UPDATE
 export async function actionUpdateEntry(payload) {
+  await checkAuth();
+  const token = await getAuthToken();
+
   const { id, tanggal, keterangan, nominal, type } = payload;
 
   const res = await fetch(`${API_BASE}/kas/laporan/update/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify({
       tanggal,
       keterangan,
@@ -62,9 +91,15 @@ export async function actionUpdateEntry(payload) {
 
 // DELETE
 export async function actionDeleteEntry({ id }) {
+  await checkAuth();
+  const token = await getAuthToken();
+
   const res = await fetch(`${API_BASE}/kas/laporan/delete/${id}`, {
     method: "DELETE",
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     cache: "no-store",
   });
   await assertOk(res);
