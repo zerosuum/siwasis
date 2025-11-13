@@ -5,7 +5,9 @@ import { API_PROXY_BASE, API_BASE } from "@/lib/config";
 const COOKIE_NAME = "siwasis_token";
 const ORIGIN =
   typeof window === "undefined"
-    ? process.env.NEXT_PUBLIC_SITE_ORIGIN || "http://localhost:3000"
+    ? process.env.NEXT_PUBLIC_BASE_URL ||
+      process.env.NEXT_PUBLIC_SITE_ORIGIN ||
+      "http://localhost:3000"
     : window.location.origin;
 
 export function makeURL(path) {
