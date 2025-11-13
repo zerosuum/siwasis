@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { createWarga, addKasMember } from "@/server/queries/warga";
+// import { createWarga, addKasMember } from "@/server/queries/warga";
 import { actionAddKasMember } from "../tambah-warga/actions";
 import { useToast } from "@/components/ui/useToast";
 
@@ -13,7 +13,7 @@ export default function AnggotaKasModal({ warga, onClose, onSuccess }) {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      await actionAddKasMember(warga.id);
+      await actionAddKasMember(warga);
       onClose();
       onSuccess?.();
     } catch (err) {

@@ -221,7 +221,7 @@ const CalendarPopover = React.forwardRef<
         onOpenAutoFocus={(e) => e.preventDefault()}
         className={cx(
           // base
-          "relative z-50 w-fit rounded-xl border text-sm text-sm sm:text-base shadow-xl shadow-black/[2.5%] p-3",
+          "relative z-50 w-fit rounded-xl border text-sm sm:text-base shadow-xl shadow-black/[2.5%] p-3",
           // widths
           "max-w-[95vw] min-w-[calc(var(--radix-select-trigger-width)-2px)]",
           // border color
@@ -489,10 +489,9 @@ const SingleDatePicker = ({
       : new Time(0, 0)
   );
 
-  const initialDate = React.useMemo(() => {
-    return date;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+const initialDate = React.useMemo(() => {
+  return value ?? defaultValue ?? undefined;
+}, [value, defaultValue]);
 
   React.useEffect(() => {
     setDate(value ?? defaultValue ?? undefined);
@@ -522,10 +521,6 @@ const SingleDatePicker = ({
   };
 
   const onOpenChange = (open: boolean) => {
-    if (!open) {
-      onCancel();
-    }
-
     setOpen(open);
   };
 
@@ -664,22 +659,22 @@ const SingleDatePicker = ({
                 </div>
               )}
               <div className="flex items-center gap-x-2 border-t border-gray-200 p-3 ">
-                <Button
-                  variant="secondary"
-                  className="h-8 w-full"
+                <button
                   type="button"
                   onClick={onCancel}
+                  // Style dari RangeDatePicker
+                  className="inline-flex h-9 w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 text-sm text-gray-700 hover:bg-gray-100"
                 >
-                  {translations?.cancel ?? "Cancel"}
-                </Button>
-                <Button
-                  variant="primary"
-                  className="h-8 w-full"
+                  {translations?.cancel ?? "Batal"}
+                </button>
+                <button
                   type="button"
                   onClick={onApply}
+                  // Style dari RangeDatePicker (dengan warna hijau SiWASIS)
+                  className="inline-flex h-9 w-full items-center justify-center rounded-md bg-[#6E8649] px-4 text-sm font-medium text-white hover:bg-[#5c7b3f]"
                 >
-                  {translations?.apply ?? "Apply"}
-                </Button>
+                  {translations?.apply ?? "Ya, Simpan"}
+                </button>
               </div>
             </div>
           </div>
@@ -739,9 +734,9 @@ const RangeDatePicker = ({
   );
 
   const initialRange = React.useMemo(() => {
-    return range;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+    return value ?? defaultValue ?? undefined;
+  }, [value, defaultValue]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
 
   React.useEffect(() => {
     setRange(value ?? defaultValue ?? undefined);
@@ -801,10 +796,6 @@ const RangeDatePicker = ({
   };
 
   const onOpenChange = (open: boolean) => {
-    if (!open) {
-      onCancel();
-    }
-
     setOpen(open);
   };
 

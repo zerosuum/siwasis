@@ -1,15 +1,28 @@
 const nextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "8mb",
+    },
+  },
+
   async rewrites() {
-    return [
+    return [];
+  },
+
+  images: {
+    remotePatterns: [
       {
-        source: "/api/:path*",
-        destination: "http://127.0.0.1:8000/api/:path*",
+        protocol: "https",
+        hostname: "img.youtube.com",
+        pathname: "/vi/**",
       },
       {
-        source: "/storage/:path*",
-        destination: "http://127.0.0.1:8000/storage/:path*",
+        protocol: "https",
+        hostname: "siwasis.novarentech.web.id",
+        pathname: "/storage/**",
       },
-    ];
+    ],
   },
 };
+
 export default nextConfig;

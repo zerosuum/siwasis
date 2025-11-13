@@ -99,7 +99,7 @@ export default function ArisanRekapTable({
                   const key = `${row.id}-${ds}`;
                   const isChecked = optimistic?.has(key)
                     ? optimistic.get(key)
-                    : !!row.kehadiran[ds];
+                    : !!row.kehadiran?.[ds];
                   return (
                     <TableCell key={key} className="text-center py-4">
                       {readOnly || !editing ? (

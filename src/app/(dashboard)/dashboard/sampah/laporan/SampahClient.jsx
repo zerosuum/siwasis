@@ -6,7 +6,8 @@ import { DateRangePicker } from "@/components/DatePicker";
 import SampahTable from "./SampahTable";
 import Pagination from "@/components/Pagination";
 import TransaksiModal from "@/components/TransaksiModal";
-import FilterModal from "@/components/FilterModal";
+import FilterModal from "@/components/GenericFilterModal";
+import PeriodDropdown from "../../kas/rekapitulasi/PeriodDropdown";
 import {
   Calendar as IconCalendar,
   Search as IconSearch,
@@ -32,6 +33,11 @@ export default function SampahClient({ initial, readOnly }) {
   const sp = useSearchParams();
   const { show } = useToast();
 
+  const paginatedData = initial?.data || {};
+  const currentPage = Number(paginatedData?.current_page) || 1;
+  const itemsPerPage = Number(paginatedData?.per_page) || 15;
+  const totalItems = Number(paginatedData?.total) || 0;
+
   const [q, setQ] = React.useState(sp.get("q") || "");
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [year, setYear] = React.useState(
@@ -50,6 +56,7 @@ export default function SampahClient({ initial, readOnly }) {
     data: null,
   });
   const [confirmExport, setConfirmExport] = React.useState(false);
+  const [confirmDelete, setConfirmDelete] = React.useState(null);
 
   const pushWithParams = React.useCallback(
     (extra = {}) => {
@@ -101,43 +108,67 @@ export default function SampahClient({ initial, readOnly }) {
   const handleCloseModal = () =>
     setModalState({ open: false, type: null, data: null });
 
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    try {
+      await actionDeleteEntry({ id: confirmDelete.id });
+      show({ title: "Terhapus", description: "Baris telah dihapus." });
+      setConfirmDelete(null);
+      router.refresh();
+    } catch (e) {
+      show({
+        title: "Gagal",
+        description: String(e.message || "Gagal menghapus."),
+        variant: "error",
+      });
+      setConfirmDelete(null);
+    }
+  };
+
   const handleSubmit = async (payload) => {
     try {
-      if (modalState.type === "pemasukan")
+      if (modalState.type === "pemasukan") {
         await actionCreateEntry({ ...payload, type: "IN" });
-      else if (modalState.type === "pengeluaran")
+        show({ title: "Sukses!", description: "Pemasukan ditambahkan." });
+      } else if (modalState.type === "pengeluaran") {
         await actionCreateEntry({ ...payload, type: "OUT" });
-      else if (modalState.type === "edit") {
-        const type = modalState.data?.pemasukan != null ? "IN" : "OUT";
-        await actionUpdateEntry({ id: modalState.data.id, type, ...payload });
+        show({ title: "Sukses!", description: "Pengeluaran ditambahkan." });
+      } else if (modalState.type === "edit") {
+        const originalTipe = modalState.data?.tipe;
+        const typeToSend = originalTipe === "pemasukan" ? "IN" : "OUT";
+
+        await actionUpdateEntry({
+          id: modalState.data.id,
+          type: typeToSend,
+          ...payload,
+        });
+        show({ title: "Sukses!", description: "Data berhasil diperbarui." });
       }
       handleCloseModal();
-      show({ title: "Sukses!", description: "Perubahan tersimpan." });
       router.refresh();
     } catch (e) {
       console.error(e);
       show({
         title: "Gagal",
-        description: "Terjadi kesalahan.",
+        description: String(e.message || "Terjadi kesalahan."),
         variant: "error",
       });
     }
   };
 
   const initialDataForEdit = React.useMemo(() => {
-    if (modalState.type !== "edit") return undefined;
+    if (modalState.type !== "edit" || !modalState.data) return undefined;
+    const { data } = modalState;
     return {
-      tanggal:
-        modalState.data?.tanggal?.split("T")[0] || modalState.data?.tanggal,
-      keterangan: modalState.data?.keterangan,
-      nominal: modalState.data?.pemasukan ?? modalState.data?.pengeluaran ?? "",
-      type: modalState.data?.pemasukan != null ? "IN" : "OUT",
+      tanggal: data.tanggal?.split("T")[0] || data.tanggal,
+      keterangan: data.keterangan,
+      nominal: data.jumlah,
+      type: data.tipe === "pemasukan" ? "IN" : "OUT",
     };
   }, [modalState]);
 
   return (
     <>
-      {/* Toolbar (nempel header table) */}
       <div className="flex items-center justify-between gap-3 px-4">
         <TabNavigation className="!mb-0 h-6">
           <TabNavigationLink
@@ -150,21 +181,11 @@ export default function SampahClient({ initial, readOnly }) {
         </TabNavigation>
 
         <div className="flex items-center gap-2">
-          <select
-            className="h-8 w-[180px] rounded-[12px] border border-[#E2E7D7] bg-white px-3 text-sm"
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-          >
-            {Array.from({ length: 6 }).map((_, i) => {
-              const y = new Date().getFullYear() - i;
-              return (
-                <option key={y} value={y}>
-                  Periode {y}
-                </option>
-              );
-            })}
-          </select>
-
+          <PeriodDropdown
+            year={year}
+            onSelectYear={(y) => setYear(Number(y))}
+            showCreateButton={false}
+          />
           <div className="relative" onMouseEnter={() => setSearchOpen(true)}>
             <IconSearch
               size={16}
@@ -185,7 +206,6 @@ export default function SampahClient({ initial, readOnly }) {
               }`}
             />
           </div>
-
           <button
             type="button"
             onClick={() => setFilterOpen(true)}
@@ -194,7 +214,6 @@ export default function SampahClient({ initial, readOnly }) {
           >
             <IconFilter size={16} />
           </button>
-
           <div className="relative">
             <button
               type="button"
@@ -228,7 +247,6 @@ export default function SampahClient({ initial, readOnly }) {
               />
             </div>
           </div>
-
           <button
             className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
             title="Export"
@@ -262,21 +280,15 @@ export default function SampahClient({ initial, readOnly }) {
           initial={initial}
           readOnly={readOnly}
           onEdit={(item) => handleOpenModal("edit", item)}
-          onDelete={async (item) => {
-            if (window.confirm(`Hapus "${item.keterangan}"?`)) {
-              await actionDeleteEntry({ id: item.id });
-              show({ title: "Terhapus", description: "Baris telah dihapus." });
-              router.refresh();
-            }
-          }}
+          onDelete={(item) => setConfirmDelete(item)}
         />
       </div>
 
       <div className="flex items-center justify-center px-4 py-3">
         <Pagination
-          page={initial.page}
-          limit={initial.perPage}
-          total={initial.total}
+          page={currentPage}
+          limit={itemsPerPage}
+          total={totalItems}
         />
       </div>
 
@@ -317,7 +329,6 @@ export default function SampahClient({ initial, readOnly }) {
         <FilterModal
           open={filterOpen}
           onClose={() => setFilterOpen(false)}
-          bounds={setoranBounds}
           value={{
             typeIn: sp.get("type") === "IN",
             typeOut: sp.get("type") === "OUT",
@@ -329,6 +340,16 @@ export default function SampahClient({ initial, readOnly }) {
           }
         />
       )}
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        title="Hapus Transaksi"
+        description={`Apakah Anda yakin ingin menghapus "${confirmDelete?.keterangan}"?`}
+        cancelText="Batal"
+        okText="Ya, Hapus"
+        onCancel={() => setConfirmDelete(null)}
+        onOk={handleDelete}
+      />
     </>
   );
 }

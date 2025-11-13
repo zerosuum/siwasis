@@ -1,109 +1,84 @@
 "use client";
-import * as React from "react";
 
-const variants = {
-  success: {
-    wrap: "bg-[#f7fbf2] border-[#ccdfb0]/80",
-    title: "text-[#2d3b17]",
-    desc: "text-[#46552d]",
-    ring: "bg-[#e8f3d8] border-[#bcd298]",
-    check: "stroke-[#6e8649]",
-  },
-  error: {
-    wrap: "bg-[#fff6f6] border-[#f2b8b5]/80",
-    title: "text-[#3b1a1a]",
-    desc: "text-[#5c2a2a]",
-    ring: "bg-[#ffe2e0] border-[#f2b8b5]",
-    check: "stroke-[#d64545]",
-  },
-  info: {
-    wrap: "bg-[#f5f8ff] border-[#cbdafc]/80",
-    title: "text-[#1e2a4a]",
-    desc: "text-[#31456e]",
-    ring: "bg-[#e6edff] border-[#cbdafc]",
-    check: "stroke-[#3b6ef5]",
-  },
-};
+import { useEffect, useMemo } from "react";
+import Image from "next/image";
+import { useToast } from "./useToast";
 
-export default function Toast({
-  open,
-  onClose,
-  title = "Sukses!",
-  desc = "Berhasil menyimpan perubahan.",
-  variant = "success",
-  duration = 2400,
-}) {
-  const v = variants[variant] ?? variants.success;
+export default function Toast() {
+  const { toast, dismiss } = useToast();
 
-  React.useEffect(() => {
-    if (!open) return;
-    if (duration <= 0) return;
-    const t = setTimeout(() => onClose?.(), duration);
+  // auto-dismiss 2.5 detik
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => dismiss(), 2500);
     return () => clearTimeout(t);
-  }, [open, duration, onClose]);
+  }, [toast, dismiss]);
 
-  if (!open) return null;
+  const normalized = useMemo(() => {
+    if (!toast) return null;
+    const v = toast.variant === "destructive" ? "error" : toast.variant;
+    return { ...toast, variant: v || "success" };
+  }, [toast]);
+
+  if (!normalized) return null;
+
+  const { variant, title, description } = normalized;
+
+  const styles = {
+    success: "border-[#81A242] bg-[#FBFEF5]",
+    error: "border-[#DD1122] bg-[#FCE7E9]",
+    warning: "border-[#A1993B] bg-[#FFFEF4]",
+  };
+
+  const icon = {
+    success: "/toast/success.svg",
+    error: "/toast/error.svg",
+    warning: "/toast/warning.svg",
+  };
+
+  const currentStyle = styles[variant] || styles.success;
+  const currentIcon = icon[variant] || icon.success;
 
   return (
-    <div className="fixed inset-0 z-[250] flex items-center justify-center">
-      {/* backdrop tipis biar fokus, tapi ga nge-block klik */}
-      <div className="pointer-events-none absolute inset-0 bg-black/10" />
+    <div
+      className="
+        fixed inset-0 
+        z-[11000] 
+        flex items-center justify-center 
+        pointer-events-none
+      "
+    >
       <div
+        className={`
+          inline-flex min-w-[480px] max-w-[90vw]
+          rounded-[20px] border shadow-card
+          px-[25px] py-[25px] gap-4 items-center
+          animate-slide-up-and-fade
+          ${currentStyle}
+          pointer-events-auto
+        `}
         role="status"
         aria-live="polite"
-        className={`relative mx-4 max-w-[560px] w-[92vw] rounded-2xl border shadow-2xl ${v.wrap} animate-in fade-in zoom-in-95`}
       >
-        <div className="flex gap-4 p-6">
-          {/* icon */}
-          <div
-            className={`h-16 w-16 shrink-0 rounded-full border ${v.ring} grid place-items-center`}
-          >
-            {/* checklist / cross */}
-            {variant === "error" ? (
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                className={v.check}
-              >
-                <path
-                  d="M7 7l10 10M17 7L7 17"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                />
-              </svg>
-            ) : (
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                className={v.check}
-              >
-                <path
-                  d="M20 6L9 17l-5-5"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            )}
-          </div>
+        <Image
+          src={currentIcon}
+          alt={variant}
+          width={72}
+          height={72}
+          className="shrink-0"
+        />
 
-          <div className="min-w-0">
-            <div className={`text-xl font-semibold ${v.title}`}>{title}</div>
-            {desc ? (
-              <div className={`mt-1 text-base leading-6 ${v.desc}`}>{desc}</div>
-            ) : null}
-          </div>
-
-          <button
-            onClick={onClose}
-            className="ml-auto mt-1 rounded-md px-2 py-1 text-sm text-gray-600 hover:bg-black/5"
-          >
-            Tutup
-          </button>
+        <div className="flex flex-col gap-1 text-center">
+          {title && (
+            <p className="font-rem text-[20px] leading-[26px] font-bold text-[#222]">
+              {title}
+            </p>
+          )}
+          {description && (
+            <p className="font-rem text-[16px] leading-[22px] text-[#222]">
+              {description}
+            </p>
+          )}
         </div>
       </div>
     </div>

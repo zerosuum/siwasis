@@ -84,8 +84,8 @@ html.editing-mode [data-page-content] { pointer-events:auto!important; filter:no
   min-height: 400px; 
   padding: 1rem;
   font-family: 'REM', system-ui, sans-serif;
-  font-size: 1.125rem;
-  line-height: 1.75;
+  font-size: 0.95rem;
+  line-height: 1.6;
 }
 
 .prosemirror-editor:focus {
@@ -98,4 +98,18 @@ html.editing-mode [data-page-content] { pointer-events:auto!important; filter:no
   color: #adb5bd;
   pointer-events: none;
   height: 0;
+}
+.tiptap-content p {
+  margin-bottom: 1rem;
+  line-height: 1.7;
+}
+
+.tiptap-content img {
+  border-radius: 12px;
+  margin: 1rem 0;
+}
+@media (min-width: 640px) {
+  .prosemirror-editor {
+    font-size: 1rem;
+  }
 }

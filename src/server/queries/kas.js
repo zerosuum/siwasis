@@ -1,4 +1,4 @@
-import { API_BASE, makeURL, setParams } from "./_api";
+import { proxyJSON } from "./_api";
 
 export async function getKasRekap({
   page,
@@ -10,23 +10,9 @@ export async function getKasRekap({
   min,
   max,
 } = {}) {
-  const url = new URL(`${API_BASE}/kas/rekap`);
-  setParams(url, { page, year, q, rt, from, to, min, max });
-
-  try {
-    const res = await fetch(url.toString(), {
-      cache: "no-store",
-      headers: { Accept: "application/json" },
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    return await res.json();
-  } catch (err) {
-    console.error("getKasRekap fetch failed:", {
-      url: url.toString(),
-      message: err?.message,
-    });
-    throw err;
-  }
+  return proxyJSON("/kas/rekap", {
+    params: { page, year, q, rt, from, to, min, max },
+  });
 }
 
 export async function getKasLaporan({
@@ -39,28 +25,11 @@ export async function getKasLaporan({
   min,
   max,
 } = {}) {
-  const url = new URL(`${API_BASE}/kas/laporan`);
-  setParams(url, { page, year, from, to, q, type, min, max });
-
-  const res = await fetch(url.toString(), {
-    cache: "no-store",
-    headers: { Accept: "application/json" },
+  return proxyJSON("/kas/laporan", {
+    params: { page, year, from, to, q, type, min, max },
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-  return res.json();
 }
 
-export async function saveKasRekap(formData) {
-  const url = `${API_BASE}/kas/rekap/save`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify(formData),
-  });
-  if (!res.ok) {
-    let more = "";
-    try { more = ` — ${await res.text()}`; } catch {}
-    throw new Error(`HTTP ${res.status} ${res.statusText}${more}`);
-  }
-  return res.json()
+export async function saveKasRekap(formData /*, tokenIgnored */) {
+  return proxyJSON("/kas/rekap/save", { method: "POST", json: formData });
 }

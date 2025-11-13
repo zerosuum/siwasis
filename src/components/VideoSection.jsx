@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRef } from "react";
+import SectionPill from "@/components/SectionPill";
 
 function VideoCard({ cover, title, href = "#" }) {
   return (
@@ -14,23 +15,32 @@ function VideoCard({ cover, title, href = "#" }) {
         p-6
       `}
     >
-      <div className="relative w-[312px] h-[200px] rounded-[12px] overflow-hidden">
-        <Image src={cover} alt={title} fill className="object-cover" />
+      <div className="relative w-full aspect-video rounded-[12px] overflow-hidden">
+        <Image
+          src={cover}
+          alt={title}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, 360px"
+        />
       </div>
 
-      <h3 className="mt-3 line-clamp-3 font-rem text-[20px] leading-[26px] font-medium text-wasis-pr80">
-        {title}
-      </h3>
+      <div className="flex flex-col mt-3 flex-1">
+        <h3 className="line-clamp-3 font-rem text-[20px] leading-[26px] font-medium text-wasis-pr80">
+          {title}
+        </h3>
 
-      <Link
-        href={href}
-        className={`
-          inline-flex h-[40px] px-4 items-center justify-center rounded-[10px]
-          bg-wasis-pr60 text-wasis-nt80 font-rem text-[16px] leading-5 font-medium
-        `}
-      >
-        Tonton Video
-      </Link>
+        <div className="mt-auto">
+          <Link
+            href={href}
+            className="inline-flex h-[40px] w-full px-4 items-center justify-center 
+                   rounded-[10px] bg-wasis-pr60 text-wasis-nt80 
+                   font-rem text-[16px] leading-5 font-medium"
+          >
+            Tonton Video
+          </Link>
+        </div>
+      </div>
     </article>
   );
 }
@@ -48,24 +58,13 @@ export default function VideoSection({ items = [] }) {
       `}
     >
       <div className="mx-auto w-full max-w-[1440px] px-4">
-        <div className="mx-auto w-full max-w-[1320px] px-16">
-          <div
-            className={`
-      relative overflow-hidden rounded-massive
-      bg-white/10 backdrop-blur-md border border-white/30
-      shadow-[0_8px_28px_-6px_rgba(24,39,75,0.12),_0_18px_88px_-4px_rgba(24,39,75,0.14)]
-      px-10 py-6
-    `}
-          >
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-[38%] bg-gradient-to-b from-white/35 to-transparent" />
-            <h2 className="font-rem text-[36px] leading-[46px] font-bold text-wasis-pr00">
-              Dokumentasi Video
-            </h2>
-            <p className="mt-1 font-rem text-[18px] md:text-[20px] leading-[26px] font-medium text-wasis-pr00/90">
-              Cek highlight seru dari berbagai acara dan aktivitas WASIS. Semua
-              momen terbaik, terekam di sini!
-            </p>
-          </div>
+        <div className="mx-auto w-full max-w-[1320px] px-4 md:px-16">
+          <SectionPill
+            title="Dokumentasi Video"
+            subtitle="Cek highlight seru dari berbagai acara dan aktivitas WASIS. Semua momen terbaik, terekam di sini!"
+            titleClass="text-wasis-pr00"
+            subtitleClass="text-wasis-pr00/90"
+          />
         </div>
 
         <div className="mt-6">

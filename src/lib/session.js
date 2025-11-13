@@ -1,49 +1,78 @@
 import { cookies } from "next/headers";
-import { API_BASE } from "@/server/queries/_api";
+import { proxyJSON } from "@/server/queries/_api";
 
 const COOKIE_NAME = "siwasis_token";
-const IS_DEV_MODE = process.env.NODE_ENV === "development";
+
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE || "https://siwasis.novarentech.web.id/api";
+const API_ORIGIN = API_BASE.replace(/\/api$/, "");
+const SITE_ORIGIN =
+  process.env.NEXT_PUBLIC_SITE_ORIGIN || "http://localhost:3000";
 
 export async function getSessionToken() {
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get(COOKIE_NAME);
-  return sessionCookie ? sessionCookie.value : null;
+  const jar = await cookies();
+  return jar.get(COOKIE_NAME)?.value || null;
+}
+
+export async function isLoggedIn() {
+  return !!(await getSessionToken());
+}
+
+const _profileCache = new Map();
+function setCache(key, val) {
+  _profileCache.set(key, { at: Date.now(), val });
+}
+function getCache(key, ttl = 5000) {
+  const hit = _profileCache.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.at > ttl) return null;
+  return hit.val;
 }
 
 export async function getAdminProfile() {
-  if (IS_DEV_MODE) {
-    return {
-      id: 99,
-      name: "Admin (Dev)",
-      email: "dev@admin.com",
-      role: "admin", 
-      is_admin: true,
-    };
-  }
+  const jar = await cookies();
+  const token = jar.get(COOKIE_NAME)?.value || null;
+  if (!token) return null;
 
-  const token = await getSessionToken();
-  if (!token) {
-    return null;
-  }
+  const cacheKey = `profile:${token}`;
+  const cached = getCache(cacheKey);
+  if (cached !== null) return cached;
 
   try {
-    const res = await fetch(`${API_BASE}/profile`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-      cache: "no-store",
-    });
+    const payload = await proxyJSON("/profile", {
+      attempts: 1,
+      timeoutMs: 5000,
+    }).catch(() => null);
 
-    if (!res.ok) {
-      console.error(`Gagal fetch profil: ${res.status}`);
-      return null;
-    }
+    const raw = payload?.data ?? payload ?? null;
+    if (!raw || typeof raw !== "object") return null;
 
-    const profile = await res.json();
+    const API_BASE =
+      process.env.NEXT_PUBLIC_API_BASE ||
+      "https://siwasis.novarentech.web.id/api";
+    const API_ORIGIN = API_BASE.replace(/\/api$/, "");
+
+    const photo = raw.photo ?? null;
+    const photo_url = photo ? `${API_ORIGIN}/storage/profile/${photo}` : null;
+
+    const profile = {
+      id: raw.id ?? null,
+      name: raw.name ?? "",
+      email: raw.email ?? "",
+      role: (raw.role ?? "admin") || "admin",
+      is_admin:
+        typeof raw.is_admin === "boolean"
+          ? raw.is_admin
+          : (raw.role ?? "").toLowerCase() === "admin",
+      photo,
+      photo_url,
+      created_at: raw.created_at ?? null,
+    };
+
+    setCache(cacheKey, profile);
     return profile;
-  } catch (error) {
-    console.error("Gagal fetch admin profile:", error);
+  } catch (e) {
+    console.error("Gagal fetch profil:", e);
     return null;
   }
 }

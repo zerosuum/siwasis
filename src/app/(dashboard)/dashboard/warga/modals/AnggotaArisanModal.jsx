@@ -12,7 +12,7 @@ export default function AnggotaArisanModal({ warga, onClose, onSuccess }) {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      await actionAddArisanMember(warga.id);
+      await actionAddArisanMember(warga);
       onClose();
       onSuccess?.(); 
     } catch (err) {
@@ -31,7 +31,7 @@ export default function AnggotaArisanModal({ warga, onClose, onSuccess }) {
       <div className="relative z-10 w-[420px] rounded-2xl bg-white p-5 shadow-xl">
         <h3 className="mb-2 text-lg font-semibold">Tambah Anggota Arisan</h3>
         <p className="text-sm text-gray-600 mb-4">
-          Tandai <b>{warga.nama}</b> sebagai anggota Arisan & Kas?
+          Tandai <b>{warga.nama}</b> sebagai anggota Arisan?
         </p>
         <div className="flex justify-end gap-2">
           <button

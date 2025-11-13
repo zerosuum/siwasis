@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/useToast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import WargaTable from "./WargaTable";
 import WargaFormModal from "./WargaFormModal";
+import FilterModal from "./FilterModal";
 import AnggotaArisanModal from "../modals/AnggotaArisanModal";
 import AnggotaKasModal from "../modals/AnggotaKasModal";
 import {
@@ -15,14 +16,11 @@ import {
   UsersRound as IconArisan,
   IdCard as IconKas,
 } from "lucide-react";
-
 import {
   actionCreateWarga,
   actionUpdateWarga,
   actionDeleteWarga,
 } from "./actions";
-
-import FilterModal from "./FilterModal";
 
 export default function WargaClient({ initial }) {
   const router = useRouter();
@@ -39,11 +37,6 @@ export default function WargaClient({ initial }) {
   const [arisanOnly, setArisanOnly] = React.useState(
     sp.get("arisan_only") === "1"
   );
-
-  const [kasMin, setKasMin] = React.useState(sp.get("kas_min") || "");
-  const [kasMax, setKasMax] = React.useState(sp.get("kas_max") || "");
-  const [ariMin, setAriMin] = React.useState(sp.get("arisan_min") || "");
-  const [ariMax, setAriMax] = React.useState(sp.get("arisan_max") || "");
 
   const [createModal, setCreateModal] = React.useState({
     open: false,
@@ -67,7 +60,7 @@ export default function WargaClient({ initial }) {
         title: "Sukses",
         description: res.message || "Warga ditambahkan.",
       });
-      router.refresh(); 
+      router.refresh();
     } catch (e) {
       show({
         title: "Gagal",
@@ -112,15 +105,6 @@ export default function WargaClient({ initial }) {
     }
   }
 
-  const currentFilter = {
-    rt: sp.get("rt") || "all",
-    arisan_status: sp.get("arisan_status") || "",
-    kas_min: sp.get("kas_min") || "",
-    kas_max: sp.get("kas_max") || "",
-    arisan_min: sp.get("arisan_min") || "",
-    arisan_max: sp.get("arisan_max") || "",
-  };
-
   function pushParams(extra = {}) {
     const params = new URLSearchParams(sp.toString());
     search ? params.set("q", search) : params.delete("q");
@@ -128,10 +112,12 @@ export default function WargaClient({ initial }) {
     role ? params.set("role", role) : params.delete("role");
     kasOnly ? params.set("kas_only", "1") : params.delete("kas_only");
     arisanOnly ? params.set("arisan_only", "1") : params.delete("arisan_only");
+
     Object.entries(extra).forEach(([k, v]) => {
       if (v === undefined || v === null || v === "") params.delete(k);
       else params.set(k, String(v));
     });
+
     params.set("page", "1");
     router.push(`/dashboard/warga/tambah-warga?${params.toString()}`);
   }
@@ -150,6 +136,7 @@ export default function WargaClient({ initial }) {
         </TabNavigation>
 
         <div className="flex items-center gap-2">
+          {/* Search Input */}
           <div
             className="relative"
             onMouseEnter={() => setSearchOpen(true)}
@@ -173,6 +160,7 @@ export default function WargaClient({ initial }) {
             />
           </div>
 
+          {/* Filter Button */}
           <button
             ref={filterBtnRef}
             type="button"
@@ -184,6 +172,7 @@ export default function WargaClient({ initial }) {
             <IconFilter size={16} />
           </button>
 
+          {/* Action Buttons */}
           <button
             type="button"
             onClick={() => setCreateModal({ open: true, variant: "ARISAN" })}
@@ -201,6 +190,8 @@ export default function WargaClient({ initial }) {
           </button>
         </div>
       </div>
+
+      {/* Tabel Data */}
       <div className="rounded-xl bg-white shadow overflow-hidden">
         <WargaTable
           initial={initial}
@@ -209,6 +200,8 @@ export default function WargaClient({ initial }) {
           onAddArisan={(row) => setArisanModal({ open: true, warga: row })}
         />
       </div>
+
+      {/* Pagination */}
       <div className="flex items-center justify-center px-4 py-3">
         <Pagination
           page={initial.page}
@@ -216,6 +209,8 @@ export default function WargaClient({ initial }) {
           total={initial.total}
         />
       </div>
+
+      {/* Modal Buat/Tambah Warga */}
       {createModal.open && (
         <WargaFormModal
           variant={createModal.variant}
@@ -223,6 +218,8 @@ export default function WargaClient({ initial }) {
           onSubmit={(vals) => onCreate(vals, createModal.variant)}
         />
       )}
+
+      {/* Modal Edit Warga */}
       {editRow && (
         <WargaFormModal
           variant="WARGA"
@@ -232,6 +229,8 @@ export default function WargaClient({ initial }) {
           onSubmit={(vals) => onUpdate(editRow.id, vals)}
         />
       )}
+
+      {/* Modal Tambah Anggota Kas */}
       {kasModal.open && (
         <AnggotaKasModal
           warga={kasModal.warga}
@@ -242,6 +241,8 @@ export default function WargaClient({ initial }) {
           }}
         />
       )}
+
+      {/* Modal Tambah Anggota Arisan */}
       {arisanModal.open && (
         <AnggotaArisanModal
           warga={arisanModal.warga}
@@ -255,6 +256,8 @@ export default function WargaClient({ initial }) {
           }}
         />
       )}
+
+      {/* Modal Konfirmasi Hapus */}
       <ConfirmDialog
         open={!!confirmDelete}
         title="Hapus Warga"
@@ -263,7 +266,8 @@ export default function WargaClient({ initial }) {
         okText="Ya, Hapus"
         onCancel={() => setConfirmDelete(null)}
         onOk={() => onDelete(confirmDelete.id)}
-      />{" "}
+      />
+
       {/* Modal Filter */}
       {filterOpen && (
         <FilterModal
@@ -288,6 +292,18 @@ export default function WargaClient({ initial }) {
               kas_max: v.kas_max || undefined,
               arisan_min: v.arisan_min || undefined,
               arisan_max: v.arisan_max || undefined,
+            });
+          }}
+          onReset={() => {
+            setFilterOpen(false);
+            setRt("all");
+            pushParams({
+              rt: undefined,
+              arisan_status: undefined,
+              kas_min: undefined,
+              kas_max: undefined,
+              arisan_min: undefined,
+              arisan_max: undefined,
             });
           }}
         />

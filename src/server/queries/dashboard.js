@@ -1,23 +1,46 @@
-const RAW_API =
-  process.env.NEXT_PUBLIC_API_BASE || process.env.API_BASE || "/api";
-const ORIGIN =
-  typeof window === "undefined"
-    ? process.env.NEXT_PUBLIC_APP_URL ||
-      process.env.NEXT_PUBLIC_SITE_ORIGIN ||
-      "http://localhost:3000"
-    : window.location.origin;
-const API_BASE = RAW_API.replace(/\/+$/, "");
-const makeURL = (p) => new URL(/^https?:\/\//.test(p) ? p : p, ORIGIN);
+import { proxyJSON } from "./_api";
 
 export async function getDashboardSummary({ from, to } = {}) {
-  const url = makeURL(`${API_BASE}/dashboard/summary`);
-  if (from) url.searchParams.set("from", from);
-  if (to) url.searchParams.set("to", to);
-  const res = await fetch(url.toString(), {
-    cache: "no-store",
-    headers: { Accept: "application/json" },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+  const json = await proxyJSON("/dashboard/summary", { params: { from, to } });
+
+  const periode = json.periode || {};
+  const d = json.data || {};
+  const kasTotal = d.kas_total || {};
+
+  const chart = (d.chart_keuangan || []).map((row) => ({
+    label: row.bulan,
+    Pemasukan: Number(row.total_pemasukan || 0),
+    Pengeluaran: Number(row.total_pengeluaran || 0),
+  }));
+
+  const kasTable = (d.rekap_kas_warga || []).map((row) => ({
+    id: row.id,
+    rt: row.rt,
+    nama: row.nama,
+    jumlah_setoran: row.jumlah_setoran ?? 0,
+    total_kas: row.total_setoran ?? 0,
+  }));
+
+  const arisan = (d.status_arisan || []).map((item, idx) => ({
+    id: item.warga_id || idx,
+    nama: item.nama || "-",
+    status: item.status || "-",
+  }));
+
+  return {
+    kpi: {
+      pemasukan: Number(kasTotal.pemasukan || 0),
+      pengeluaran: Number(kasTotal.pengeluaran || 0),
+      saldo: Number(kasTotal.saldo || 0),
+      pemasukan_arisan: Number(kasTotal.pemasukan_arisan || 0),
+    },
+    chart,
+    arisan,
+    kasTable,
+    period: {
+      from: periode.from || null,
+      to: periode.to || null,
+      nama: periode.nama || null,
+    },
+  };
 }
-export { API_BASE };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useToast } from "@/components/ui/useToast"; 
 
 export default function HeroEditable({
   isAdmin = false,
@@ -11,6 +12,8 @@ export default function HeroEditable({
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const inputRef = useRef(null);
+
+  const { show: toast } = useToast();
 
   if (!isAdmin) return null;
 
@@ -32,10 +35,24 @@ export default function HeroEditable({
     const form = new FormData();
     form.append("image", file);
 
-    const res = await fetch("/api/hero", { method: "POST", body: form });
-    if (res.ok) {
+    try {
+      const res = await fetch("/api/hero", { method: "POST", body: form });
+      if (!res.ok) throw new Error("Gagal memperbarui foto sampul.");
+
+      toast({
+        variant: "success",
+        title: "Sukses!",
+        description: "Foto sampul berhasil diperbarui.",
+      });
+
       setOpen(false);
       window.location.reload();
+    } catch (err) {
+      toast({
+        variant: "error",
+        title: "Gagal!",
+        description: err.message || "Gagal memperbarui foto sampul.",
+      });
     }
   };
 

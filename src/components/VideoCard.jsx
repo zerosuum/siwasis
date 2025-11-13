@@ -1,8 +1,35 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Calendar } from "lucide-react";
+import { API_BASE } from "@/lib/config";
 
 export default function VideoCard({ item }) {
+  let imageUrl;
+
+  if (item.image) {
+    const backendOrigin = API_BASE.replace("/api", "");
+    imageUrl = `${backendOrigin}/storage/${item.image}`;
+  }
+  else if (item.thumbnail_url) {
+    imageUrl = item.thumbnail_url;
+  }
+  else if (item.url || item.youtube_url || item.youtube_link) {
+    const raw = item.url || item.youtube_url || item.youtube_link;
+    const match = raw.match(
+      /(?:youtube\.com.*[?&]v=|youtu\.be\/)([^"&?/ ]{11})/
+    );
+    if (match) {
+      const videoId = match[1];
+      imageUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    }
+  }
+
+  if (!imageUrl) {
+    imageUrl = "/video/1.jpg";
+  }
+
+  const youtubeHref = item.youtube_url || item.youtube_link || item.url || "#";
+
   return (
     <div
       className="w-full max-w-[1200px] h-auto p-8
@@ -12,7 +39,7 @@ export default function VideoCard({ item }) {
     >
       <div className="w-full h-[307px] rounded-2xl overflow-hidden relative">
         <Image
-          src={item.thumbnail_url || item.image_url || "/default-video.jpg"}
+          src={imageUrl}
           alt={item.title || "Video Dokumentasi"}
           fill
           className="object-cover"
@@ -39,7 +66,7 @@ export default function VideoCard({ item }) {
         </div>
 
         <Link
-          href={item.youtube_link}
+          href={youtubeHref}
           target="_blank"
           rel="noopener noreferrer"
           className="h-7 px-3 rounded-lg bg-wasis-pr60 text-white flex items-center justify-center

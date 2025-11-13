@@ -67,7 +67,7 @@ function PageInner({ initialProfile, initialAdmins }) {
         title: "Sukses!",
         description: "Berhasil menambahkan admin baru.",
       });
-      router.refresh(); 
+      router.refresh();
     } catch (e) {
       show({ title: "Gagal", description: e.message, variant: "error" });
     } finally {
@@ -75,21 +75,29 @@ function PageInner({ initialProfile, initialAdmins }) {
     }
   }
 
-  async function handleUpdateProfile(p) {
-    setIsMutating(true);
-    try {
-      const updated = await actionUpdateProfile(p);
-      setProfile((old) => ({ ...old, ...updated })); 
-      setOpenEdit(false);
-      show({ title: "Sukses!", description: "Profil berhasil diperbarui." });
-      router.refresh(); 
-    } catch (e) {
-      show({ title: "Gagal", description: e.message, variant: "error" });
-    } finally {
-      setIsMutating(false);
-    }
-  }
+async function handleUpdateProfile(p) {
+  setIsMutating(true);
+  try {
+    const fd = new FormData();
+    fd.append("_method", "PUT");
+    fd.append("name", p.name);
+    fd.append("email", p.email);
+    if (p.photo) fd.append("photo", p.photo);
 
+    const updated = await actionUpdateProfile(fd);
+    const updatedProfile = updated?.data ?? updated ?? {};
+
+    setProfile((old) => ({ ...old, ...updatedProfile }));
+
+    router.refresh();
+
+    show({ title: "Sukses!", description: "Profil berhasil diperbarui." });
+  } catch (e) {
+    show({ title: "Gagal", description: e.message, variant: "error" });
+  } finally {
+    setIsMutating(false);
+  }
+}
   async function handleChangePassword(p) {
     setIsMutating(true);
     try {
@@ -106,11 +114,7 @@ function PageInner({ initialProfile, initialAdmins }) {
   return (
     <div className="grid grid-cols-12 gap-6">
       <div className="col-span-12 lg:col-span-7 flex flex-col gap-6">
-        <ProfileCard
-          profile={profile}
-          loading={!profile}
-          onEdit={() => setOpenEdit(true)}
-        />
+        <ProfileCard profile={profile} onEdit={() => setOpenEdit(true)} />
 
         <div>
           <h2 className="mb-3 text-2xl font-semibold">Detail Akun</h2>
@@ -125,24 +129,27 @@ function PageInner({ initialProfile, initialAdmins }) {
 
       <div className="col-span-12 lg:col-span-5">
         <h2 className="mb-3 text-2xl font-semibold">Daftar Admin</h2>
-        <AdminList admins={admins} loading={!admins} />
+        <AdminList admins={admins} />
       </div>
 
       <AddAdminModal
         open={openAdd}
         onClose={() => setOpenAdd(false)}
         onSubmit={handleCreateAdmin}
+        loading={isMutating}
       />
       <ChangePasswordModal
         open={openPwd}
         onClose={() => setOpenPwd(false)}
         onSubmit={handleChangePassword}
+        loading={isMutating}
       />
       <EditProfileModal
         open={openEdit}
         onClose={() => setOpenEdit(false)}
         onSubmit={handleUpdateProfile}
-        initial={{ name: profile?.name, email: profile?.email }}
+        initial={{ name: profile?.name ?? "", email: profile?.email ?? "" }}
+        loading={isMutating}
       />
     </div>
   );

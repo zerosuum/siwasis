@@ -39,7 +39,7 @@ export default function PeriodModal({ open, onClose, onSubmit }) {
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
-      <div className="w-[460px] rounded-2xl bg-white px-10 py-10 shadow-2xl border border-gray-100">
+      <div className="w-full max-w-[460px] rounded-2xl bg-white px-6 py-8 md:px-10 md:py-10 shadow-2xl border border-gray-100">
         <div className="mb-6 flex items-center gap-3">
           <IconPencil size={20} className="text-gray-800" />
           <h3 className="text-lg font-semibold text-gray-800">
@@ -53,7 +53,7 @@ export default function PeriodModal({ open, onClose, onSubmit }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Periode 2027"
-              className="h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 text-sm focus:border-gray-400 focus:ring-0"
+              className="h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 text-sm placeholder-gray-400 focus:border-gray-400 focus:ring-0"
             />
             <p className="mt-1 text-xs text-gray-400">
               Nama periode wajib diisi!
@@ -67,13 +67,13 @@ export default function PeriodModal({ open, onClose, onSubmit }) {
               value={nominal}
               onChange={(e) => setNominal(e.target.value)}
               placeholder="Rp. 10.000"
-              className="h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 text-sm focus:border-gray-400 focus:ring-0"
+              className="h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 text-sm placeholder-gray-400 focus:border-gray-400 focus:ring-0"
             />
             <p className="mt-1 text-xs text-gray-400">Nominal wajib diisi!</p>
           </Field>
 
           <Field label="Tanggal *">
-            <div className="relative">
+            <div>
               <button
                 type="button"
                 onClick={(e) => {
@@ -93,18 +93,20 @@ export default function PeriodModal({ open, onClose, onSubmit }) {
                       )
                   );
                 }}
-                className="h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 text-sm text-left"
+                className="relative flex items-center justify-between h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 text-sm placeholder-gray-400 focus:border-gray-400 focus:ring-0"
               >
-                {range?.from && range?.to
-                  ? `${range.from.toLocaleDateString(
-                      "id-ID"
-                    )} – ${range.to.toLocaleDateString("id-ID")}`
-                  : "pilih rentang waktu"}
+                <span
+                  className={range?.from ? "text-gray-900" : "text-gray-400"}
+                >
+                  {range?.from && range?.to
+                    ? `${range.from.toLocaleDateString(
+                        "id-ID"
+                      )} – ${range.to.toLocaleDateString("id-ID")}`
+                    : "pilih rentang waktu"}
+                </span>
+
+                <IconCalendar size={16} className="text-gray-400" />
               </button>
-              <IconCalendar
-                size={16}
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
 
               <div
                 className="absolute inset-0 opacity-0 pointer-events-none"

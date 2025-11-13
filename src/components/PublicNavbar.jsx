@@ -18,7 +18,6 @@ export default function PublicNavbar({ profile }) {
   const [isLoginModalOpen, setLoginModalOpen] = useState(false);
   const [isLogoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-
   const [forcedRole, setForcedRole] = useState(null);
 
   useEffect(() => {
@@ -50,7 +49,11 @@ export default function PublicNavbar({ profile }) {
   }, []);
 
   const isLoggedIn =
-    forcedRole === "guest" ? false : forcedRole === "admin" ? true : !!profile;
+    forcedRole === "admin"
+      ? true
+      : forcedRole === "guest"
+      ? false
+      : !!(profile && (profile.is_admin || profile.id));
 
   if (pathname.startsWith("/dashboard")) return null;
 
@@ -80,10 +83,25 @@ export default function PublicNavbar({ profile }) {
     }
   `;
 
-  const activeLinkClass =
-    "text-lg font-rem font-medium text-wasis-pr00 transition-all";
-  const inactiveLinkClass =
-    "text-lg font-rem text-wasis-nt80/90 hover:text-wasis-pr00 transition-all";
+  const baseLinkStyle = `
+    flex h-9 items-center justify-center px-4 rounded-full
+    relative overflow-hidden 
+    text-lg font-rem font-medium 
+    transition-colors duration-200 ease-in-out
+  `;
+
+  const inactiveLinkClass = `
+    ${baseLinkStyle}
+    text-wasis-nt80/90 
+    bg-transparent 
+    hover:bg-white/10 hover:text-wasis-pr00
+  `;
+
+  const activeLinkClass = `
+    ${baseLinkStyle}
+    text-wasis-pr00 
+    bg-white/20
+  `;
 
   function NavLink({ href, children }) {
     const isActive = pathname === href;
@@ -92,7 +110,14 @@ export default function PublicNavbar({ profile }) {
         href={href}
         className={isActive ? activeLinkClass : inactiveLinkClass}
       >
-        {children}
+        {isActive && (
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 
+                       h-[50%] bg-gradient-to-b from-white/35 to-transparent"
+          />
+        )}
+
+        <span className="relative z-10">{children}</span>
       </Link>
     );
   }
@@ -118,11 +143,11 @@ export default function PublicNavbar({ profile }) {
             <span className="font-bold text-2xl">SiWASIS</span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-4 p-3">
+          <div className="hidden md:flex items-center gap-2 p-3">
             <NavLink href="/">Beranda</NavLink>
             <NavLink href="/blog">Berita</NavLink>
-            <NavLink href="/dokumentasi-video">Dokumentasi Video</NavLink>
-            <NavLink href="/dashboard">Transparansi Keuangan</NavLink>
+            <NavLink href="/dokumentasi-video">Video</NavLink>
+            <NavLink href="/dashboard">Keuangan</NavLink>
           </div>
 
           <div className="hidden md:flex">
@@ -160,8 +185,8 @@ export default function PublicNavbar({ profile }) {
         >
           <NavLink href="/">Beranda</NavLink>
           <NavLink href="/blog">Berita</NavLink>
-          <NavLink href="/dokumentasi-video">Dokumentasi Video</NavLink>
-          <NavLink href="/dashboard">Transparansi Keuangan</NavLink>
+          <NavLink href="/dokumentasi-video">Video</NavLink>
+          <NavLink href="/dashboard">Keuangan</NavLink>
 
           {isLoggedIn ? (
             <button

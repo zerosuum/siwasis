@@ -37,9 +37,13 @@ function SourceChip({ source }) {
 }
 
 export default function JimpitanTable({ initial, onEdit, onDelete, readOnly }) {
-  const rows = initial?.rows || [];
+  const paginatedData = initial?.data || {};
+  const rows = paginatedData?.data || [];
   const hasData = rows.length > 0;
   const colCount = readOnly ? 6 : 7;
+
+  const currentPage = Number(paginatedData?.current_page) || 1;
+  const itemsPerPage = Number(paginatedData?.per_page) || 15;
 
   return (
     <TableRoot className="overflow-auto max-h-[600px]">
@@ -55,9 +59,6 @@ export default function JimpitanTable({ initial, onEdit, onDelete, readOnly }) {
             <TableHeaderCell className="w-[320px] text-left py-3 font-semibold text-gray-600">
               Keterangan
             </TableHeaderCell>
-            {/* <TableHeaderCell className="w-[110px] text-center py-3 font-semibold text-gray-600">
-              Sumber
-            </TableHeaderCell> */}
             <TableHeaderCell className="w-[160px] text-center py-3 font-semibold text-gray-600">
               Pemasukan
             </TableHeaderCell>
@@ -82,7 +83,7 @@ export default function JimpitanTable({ initial, onEdit, onDelete, readOnly }) {
                 className="odd:bg-white even:bg-[#FAFBF7] border-b-0"
               >
                 <TableCell className="py-4 text-center text-gray-500">
-                  {(initial.page - 1) * initial.perPage + idx + 1}
+                  {(currentPage - 1) * itemsPerPage + idx + 1}
                 </TableCell>
                 <TableCell className="py-4 text-center tabular-nums">
                   {r.tanggal
@@ -96,14 +97,16 @@ export default function JimpitanTable({ initial, onEdit, onDelete, readOnly }) {
                 <TableCell className="py-4 text-left">
                   {r.keterangan || "—"}
                 </TableCell>
+
                 <TableCell className="py-4 text-center tabular-nums font-medium text-[#6E8649]">
-                  {r.pemasukan ? rp(r.pemasukan) : "—"}
+                  {r.tipe === "pemasukan" ? rp(r.jumlah) : "—"}
                 </TableCell>
                 <TableCell className="py-4 text-center tabular-nums font-medium text-[#B24949]">
-                  {r.pengeluaran ? rp(r.pengeluaran) : "—"}
+                  {r.tipe === "pengeluaran" ? rp(r.jumlah) : "—"}
                 </TableCell>
+
                 <TableCell className="py-4 text-center tabular-nums font-semibold">
-                  {r.saldo ? rp(r.saldo) : "—"}
+                  {/* saldo per baris tidak disediakan be */}—
                 </TableCell>
                 {!readOnly && (
                   <TableCell className="py-4">

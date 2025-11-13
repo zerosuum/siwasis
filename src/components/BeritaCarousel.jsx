@@ -13,9 +13,8 @@ import Link from "next/link";
 import Image from "next/image";
 
 function NewsCard({ item, isCenter }) {
-  const WRAP_W = isCenter ? 422 : 350;
-  const MIN_H = isCenter ? 470 : 398;
-  const TITLE_MIN_H = isCenter ? 96 : 72;
+  const TITLE_MIN_H = 96;
+  const sizeClasses = "w-[320px] min-h-[420px] md:w-[422px] md:min-h-[470px]";
 
   return (
     <div
@@ -23,8 +22,8 @@ function NewsCard({ item, isCenter }) {
         "relative inline-flex flex-col overflow-hidden rounded-[24px] bg-wasis-nt80",
         "shadow-[0_6px_14px_-6px_rgba(24,39,75,0.12),_0_10px_32px_-4px_rgba(24,39,75,0.10)]",
         "p-5 md:p-6",
+        sizeClasses,
       ].join(" ")}
-      style={{ width: WRAP_W, minHeight: MIN_H }}
     >
       <div className="relative w-full rounded-2xl overflow-hidden aspect-[16/10]">
         <Image
@@ -32,6 +31,7 @@ function NewsCard({ item, isCenter }) {
           alt={item.title || "Berita"}
           fill
           className="object-cover"
+          unoptimized
           sizes="(max-width: 768px) 84vw, 422px"
           priority={isCenter}
         />
@@ -79,10 +79,17 @@ function CardWrapper({ card, index, activeIndex, totalCards }) {
 
   const isCenter = offset === 0;
 
-  const X_STEP = 62;
+  const X_STEP_PERCENT = 45;
+  const SCALE_STEP = 0.15;
+  const OPACITY_STEP = 0.3;
+
+  const absOffset = Math.abs(offset);
+
   const animate = {
-    x: `${offset * X_STEP}%`,
-    zIndex: totalCards - Math.abs(offset),
+    x: `${offset * X_STEP_PERCENT}%`,
+    scale: 1 - absOffset * SCALE_STEP,
+    opacity: 1 - absOffset * OPACITY_STEP,
+    zIndex: totalCards - absOffset,
     transition: { type: "spring", stiffness: 220, damping: 26, mass: 0.8 },
   };
 
@@ -166,14 +173,14 @@ export default function BeritaCarousel({ berita = [] }) {
   };
 
   return (
-    <section className={`w-full font-sans`}>
+    <section className={`w-full font-rem`}>
       <div
         className="w-full max-w-[1100px] mx-auto"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
         <div className="relative w-full flex flex-col p-4 md:p-6">
-          <div className="relative w-full h-[560px] md:h-[600px] flex items-center justify-center overflow-visible">
+          <div className="relative w-full h-[500px] md:h-[600px] flex items-center justify-center overflow-visible">
             <motion.div
               className="w-full h-full"
               drag="x"
@@ -193,16 +200,16 @@ export default function BeritaCarousel({ berita = [] }) {
             </motion.div>
           </div>
 
-          <div className="flex items-center justify-center gap-6">
+          <div className="flex items-center justify-center gap-2 md:gap-6">
             <button
               onClick={() => changeSlide(activeIndex - 1)}
-              className="w-24 h-24 flex items-center justify-center rounded-full transition"
+              className="w-16 h-16 md:w-24 md:h-24 flex items-center justify-center rounded-full transition"
               aria-label="Sebelumnya"
             >
               <img
                 src="/icons/arrow-left.svg"
                 alt="Previous"
-                className="w-24 h-24"
+                className="w-16 h-16 md:w-24 md:h-24"
               />
             </button>
 
@@ -221,13 +228,13 @@ export default function BeritaCarousel({ berita = [] }) {
 
             <button
               onClick={() => changeSlide(activeIndex + 1)}
-              className="w-24 h-24 flex items-center justify-center rounded-full transition"
+              className="w-16 h-16 md:w-24 md:h-24 flex items-center justify-center rounded-full transition"
               aria-label="Berikutnya"
             >
               <img
                 src="/icons/arrow-right.svg"
                 alt="Next"
-                className="w-24 h-24"
+                className="w-16 h-16 md:w-24 md:h-24"
               />
             </button>
           </div>

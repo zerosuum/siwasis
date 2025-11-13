@@ -4,11 +4,16 @@ import { toRp } from "@/lib/format";
 import DashboardChartWrapper from "./DashboardChartWrapper";
 import DashboardHeaderControls from "./DashboardHeaderControls";
 import DashboardSyncRow from "./DashboardSyncRow";
+import { getAdminProfile } from "@/lib/session";
+
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage({ searchParams }) {
-  const sp = await searchParams; 
+  const profile = await getAdminProfile();
+  const isLoggedIn = !!profile;
+
+  const sp = await searchParams;
   const from = sp?.from || null;
   const to = sp?.to || null;
 
@@ -35,18 +40,20 @@ export default async function DashboardPage({ searchParams }) {
           year: "numeric",
         })}`
       : "—";
-    const isSudahDapat = (status) =>
-      String(status || "")
-        .toLowerCase()
-        .includes("sudah");
+  const isSudahDapat = (status) =>
+    String(status || "")
+      .toLowerCase()
+      .includes("sudah");
 
   return (
     <div className="pb-10 space-y-4">
-      <div className="grid grid-cols-[1fr_auto] items-center">
-        <h2 className="text-xl font-semibold text-[#46552D]">
+      <div className="grid grid-cols-[1fr_auto] items-center gap-4">
+        <h2 className="text-lg md:text-xl font-semibold text-[#46552D]">
           Ringkasan aktivitas keuangan WASIS
         </h2>
-        <DashboardHeaderControls />
+        <div className="flex-shrink-0">
+          <DashboardHeaderControls isLoggedIn={isLoggedIn} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -64,7 +71,7 @@ export default async function DashboardPage({ searchParams }) {
       </div>
 
       <DashboardSyncRow chartData={data.chart} arisan={data.arisan} />
-  
+
       <div className="rounded-2xl bg-white border border-[#EEF0E8] shadow-sm overflow-hidden">
         <div className="overflow-auto">
           <table className="min-w-[800px] w-full text-sm table-fixed">

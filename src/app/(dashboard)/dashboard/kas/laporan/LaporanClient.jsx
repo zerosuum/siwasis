@@ -201,8 +201,8 @@ export default function LaporanClient({ initial, readOnly }) {
           <PeriodDropdown
             year={Number(year)}
             onSelectYear={handleSelectYear}
-            onNew={() => setNewPeriodOpen(true)}
-            isLoggedIn={!readOnly} 
+            // onNew={() => setNewPeriodOpen(true)}
+            showCreateButton={false}
           />
 
           <div

@@ -1,20 +1,41 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { getProfile, getAdmins } from "@/server/queries/settings";
 import SettingsClient from "./SettingsClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const profileData = getProfile().catch(() => null);
-  const adminsData = getAdmins({ page: 1, perPage: 50 }).catch(() => ({
-    rows: [],
-  }));
+  // Ambil cookie token
+  const cookieStore = await cookies();
+  const token = cookieStore.get("siwasis_token")?.value;
 
-  const [profile, admins] = await Promise.all([profileData, adminsData]);
+  // Redirect ke login kalau belum login
+  if (!token) {
+    redirect("/login");
+  }
 
+  // Ambil data profil dan daftar admin paralel
+  const [profileRes, adminsRes] = await Promise.all([
+    getProfile().catch((e) => {
+      console.error("Gagal ambil profile:", e);
+      return null;
+    }),
+    getAdmins(null, { page: 1, perPage: 50 }).catch((e) => {
+      console.error("Gagal ambil admins:", e);
+      return { data: [], rows: [] };
+    }),
+  ]);
+
+  // Normalisasi hasil api
+  const initialProfile = profileRes?.data ?? profileRes ?? null;
+  const initialAdmins = adminsRes?.data ?? adminsRes?.rows ?? [];
+
+  // Render client component
   return (
     <SettingsClient
-      initialProfile={profile}
-      initialAdmins={admins.rows ?? []}
+      initialProfile={initialProfile}
+      initialAdmins={initialAdmins}
     />
   );
 }
