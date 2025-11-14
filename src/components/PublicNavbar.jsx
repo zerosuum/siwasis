@@ -48,6 +48,16 @@ export default function PublicNavbar({ profile }) {
     if (open === "logout") setLogoutConfirmOpen(true);
   }, []);
 
+  useEffect(() => {
+    const handler = (e) => {
+      const loggedIn = !!e.detail?.loggedIn;
+      setForcedRole(loggedIn ? "admin" : "guest");
+    };
+
+    window.addEventListener("AUTH_STATE", handler);
+    return () => window.removeEventListener("AUTH_STATE", handler);
+  }, []);
+
   const isLoggedIn =
     forcedRole === "admin"
       ? true
@@ -126,6 +136,13 @@ export default function PublicNavbar({ profile }) {
     setIsLoggingOut(true);
     try {
       await fetch("/api/session/logout", { method: "POST" });
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("AUTH_STATE", { detail: { loggedIn: false } })
+        );
+      }
+
       router.refresh();
     } catch {
       alert("Gagal logout.");
