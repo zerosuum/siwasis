@@ -1,4 +1,5 @@
 "use client";
+
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TabNavigation, TabNavigationLink } from "@/components/TabNavigation";
@@ -27,19 +28,15 @@ import { API_BASE } from "@/lib/config";
 
 export default function SampahClient({ initial, readOnly }) {
   const [filterOpen, setFilterOpen] = React.useState(false);
-  const setoranBounds = React.useMemo(() => ({ min: 0, max: 10000000 }), []);
 
   const router = useRouter();
   const sp = useSearchParams();
   const { show } = useToast();
 
-  const paginatedData = initial?.data || {};
-  const currentPage = Number(paginatedData?.current_page) || 1;
-  const itemsPerPage = Number(paginatedData?.per_page) || 15;
-  const totalItems = Number(paginatedData?.total) || 0;
-
-  const [q, setQ] = React.useState(sp.get("q") || "");
+  const [q, setQ] = React.useState("");
+  const [searchInput, setSearchInput] = React.useState("");
   const [searchOpen, setSearchOpen] = React.useState(false);
+
   const [year, setYear] = React.useState(
     Number(sp.get("year")) || new Date().getFullYear()
   );
@@ -61,6 +58,9 @@ export default function SampahClient({ initial, readOnly }) {
   const pushWithParams = React.useCallback(
     (extra = {}) => {
       const params = new URLSearchParams(sp.toString());
+
+      params.delete("q");
+
       if (year) params.set("year", String(year));
       if (range?.from && range?.to) {
         params.set("from", range.from.toISOString().slice(0, 10));
@@ -69,24 +69,22 @@ export default function SampahClient({ initial, readOnly }) {
         params.delete("from");
         params.delete("to");
       }
-      if (q) params.set("q", q);
-      else params.delete("q");
-      params.set("page", "1");
+
       Object.entries(extra).forEach(([k, v]) => {
         if (v === undefined || v === null || v === "") params.delete(k);
         else params.set(k, String(v));
       });
+
       router.push(`/dashboard/sampah/laporan?${params.toString()}`);
     },
-    [sp, year, range?.from, range?.to, q, router]
+    [sp, year, range?.from, range?.to, router]
   );
 
   React.useEffect(() => {
-    pushWithParams();
-  }, [year]);
-  React.useEffect(() => {
-    if (range?.from && range?.to) pushWithParams();
-  }, [range?.from, range?.to]);
+    if (range?.from && range?.to) {
+      pushWithParams({ page: 1 });
+    }
+  }, [range?.from, range?.to, pushWithParams]);
 
   const filterAnchorRef = React.useRef(null);
   const openFilterCalendar = React.useCallback(() => {
@@ -105,6 +103,7 @@ export default function SampahClient({ initial, readOnly }) {
 
   const handleOpenModal = (type, data = null) =>
     setModalState({ open: true, type, data });
+
   const handleCloseModal = () =>
     setModalState({ open: false, type: null, data: null });
 
@@ -129,10 +128,18 @@ export default function SampahClient({ initial, readOnly }) {
     try {
       if (modalState.type === "pemasukan") {
         await actionCreateEntry({ ...payload, type: "IN" });
-        show({ title: "Sukses!", description: "Pemasukan ditambahkan." });
+        show({
+          variant: "success",
+          title: "Sukses!",
+          description: "Pemasukan ditambahkan.",
+        });
       } else if (modalState.type === "pengeluaran") {
         await actionCreateEntry({ ...payload, type: "OUT" });
-        show({ title: "Sukses!", description: "Pengeluaran ditambahkan." });
+        show({
+          variant: "success",
+          title: "Sukses!",
+          description: "Pengeluaran ditambahkan.",
+        });
       } else if (modalState.type === "edit") {
         const originalTipe = modalState.data?.tipe;
         const typeToSend = originalTipe === "pemasukan" ? "IN" : "OUT";
@@ -142,7 +149,11 @@ export default function SampahClient({ initial, readOnly }) {
           type: typeToSend,
           ...payload,
         });
-        show({ title: "Sukses!", description: "Data berhasil diperbarui." });
+        show({
+          variant: "success",
+          title: "Sukses!",
+          description: "Data berhasil diperbarui.",
+        });
       }
       handleCloseModal();
       router.refresh();
@@ -158,7 +169,7 @@ export default function SampahClient({ initial, readOnly }) {
 
   const initialDataForEdit = React.useMemo(() => {
     if (modalState.type !== "edit" || !modalState.data) return undefined;
-    const { data } = modalState;
+    const data = modalState.data;
     return {
       tanggal: data.tanggal?.split("T")[0] || data.tanggal,
       keterangan: data.keterangan,
@@ -167,39 +178,114 @@ export default function SampahClient({ initial, readOnly }) {
     };
   }, [modalState]);
 
+  const tipeParam = sp.get("type") || "";
+  const minParam = sp.get("min");
+  const maxParam = sp.get("max");
+  const fromParam = sp.get("from");
+  const toParam = sp.get("to");
+
+  const filteredInitial = React.useMemo(() => {
+    if (!initial) return initial;
+
+    const paginated = initial.data || {};
+    const rows = paginated.data || [];
+
+    let result = rows;
+
+    if (tipeParam === "IN" || tipeParam === "OUT") {
+      const target = tipeParam === "IN" ? "pemasukan" : "pengeluaran";
+      result = result.filter((r) => r.tipe === target);
+    }
+
+    if (q) {
+      const lower = q.toLowerCase();
+      result = result.filter((r) =>
+        (r.keterangan || "").toLowerCase().includes(lower)
+      );
+    }
+
+    const minNumber =
+      typeof minParam === "string" && minParam !== ""
+        ? Number(minParam)
+        : undefined;
+    const maxNumber =
+      typeof maxParam === "string" && maxParam !== ""
+        ? Number(maxParam)
+        : undefined;
+
+    if (!Number.isNaN(minNumber) && minNumber !== undefined) {
+      result = result.filter((r) => Number(r.jumlah || 0) >= minNumber);
+    }
+    if (!Number.isNaN(maxNumber) && maxNumber !== undefined) {
+      result = result.filter((r) => Number(r.jumlah || 0) <= maxNumber);
+    }
+
+    if (fromParam && toParam) {
+      const fromDate = new Date(fromParam);
+      const toDate = new Date(toParam);
+      result = result.filter((r) => {
+        if (!r.tanggal) return false;
+        const d = new Date(r.tanggal);
+        if (Number.isNaN(d.getTime())) return false;
+        return d >= fromDate && d <= toDate;
+      });
+    }
+
+    return {
+      ...initial,
+      data: {
+        ...paginated,
+        data: result,
+      },
+    };
+  }, [initial, q, tipeParam, minParam, maxParam, fromParam, toParam]);
+
+  const paginatedForMeta = filteredInitial?.data || initial?.data || {};
+
+  const currentPage = Number(paginatedForMeta.current_page || 1);
+  const itemsPerPage = Number(paginatedForMeta.per_page || 15);
+  const totalItems =
+    typeof paginatedForMeta.total === "number"
+      ? paginatedForMeta.total
+      : paginatedForMeta.data?.length ?? 0;
+
   return (
     <>
-      <div className="flex items-center justify-between gap-3 px-4">
-        <TabNavigation className="!mb-0 h-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between px-4">
+        <TabNavigation className="!mb-0 border-b-0">
           <TabNavigationLink
             href="/dashboard/sampah/laporan"
             active
-            className="inline-flex h-6 items-center border-b-2 !border-[#6E8649] px-2 text-sm font-medium !text-[#6E8649]"
+            className="inline-flex h-6 items-center border-b-2 !border-[#6E8649] px-2 text-sm font-medium !text-[#6E8649] !pb-0 !mb-0"
           >
             Laporan Keuangan
           </TabNavigationLink>
         </TabNavigation>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2 pt-2 md:pt-0">
           <PeriodDropdown
             year={year}
-            onSelectYear={(y) => setYear(Number(y))}
+            onSelectYear={(y) => {
+              const num = Number(y);
+              setYear(num);
+              pushWithParams({ year: num, page: 1 });
+            }}
             showCreateButton={false}
           />
+
           <div className="relative" onMouseEnter={() => setSearchOpen(true)}>
             <IconSearch
               size={16}
               className="pointer-events-none absolute left-1.5 top-1/2 -translate-y-1/2 text-gray-500"
             />
             <input
-              value={q}
-              onChange={(e) => {
-                setQ(e.target.value);
-                if (e.target.value === "") {
-                  pushWithParams({ q: "" });
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setQ(searchInput.trim());
                 }
               }}
-              onKeyDown={(e) => e.key === "Enter" && pushWithParams()}
               placeholder="Cari keterangan..."
               className={`h-8 border rounded-[10px] border-gray-300 bg-white pl-7 pr-2 text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-gray-200 ${
                 searchOpen || q ? "w-48" : "w-6"
@@ -247,6 +333,7 @@ export default function SampahClient({ initial, readOnly }) {
               />
             </div>
           </div>
+
           <button
             className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
             title="Export"
@@ -254,6 +341,7 @@ export default function SampahClient({ initial, readOnly }) {
           >
             <IconDownload size={16} />
           </button>
+
           {!readOnly && (
             <>
               <button
@@ -275,9 +363,9 @@ export default function SampahClient({ initial, readOnly }) {
         </div>
       </div>
 
-      <div className="rounded-xl bg-white shadow overflow-hidden">
+      <div className="overflow-hidden md:rounded-xl md:bg-white md:shadow">
         <SampahTable
-          initial={initial}
+          initial={filteredInitial}
           readOnly={readOnly}
           onEdit={(item) => handleOpenModal("edit", item)}
           onDelete={(item) => setConfirmDelete(item)}
@@ -320,7 +408,17 @@ export default function SampahClient({ initial, readOnly }) {
         onCancel={() => setConfirmExport(false)}
         onOk={() => {
           setConfirmExport(false);
+
           const params = new URLSearchParams(sp.toString());
+          params.delete("q");
+
+          show({
+            variant: "warning",
+            title: "Mengunduh laporan",
+            description:
+              "Jika unduhan tidak mulai otomatis, coba ulangi beberapa saat lagi.",
+          });
+
           window.location.href = `${API_BASE}/sampah/laporan/export?${params.toString()}`;
         }}
       />
@@ -335,9 +433,16 @@ export default function SampahClient({ initial, readOnly }) {
             min: sp.get("min") ? Number(sp.get("min")) : undefined,
             max: sp.get("max") ? Number(sp.get("max")) : undefined,
           }}
-          onApply={({ type, min, max }) =>
-            pushWithParams({ type: type ?? "", min, max })
-          }
+          onApply={({ type, min, max }) => {
+            pushWithParams({
+              type: type ?? "",
+              min,
+              max,
+              tipe: "",
+              page: 1,
+            });
+            setFilterOpen(false);
+          }}
         />
       )}
 

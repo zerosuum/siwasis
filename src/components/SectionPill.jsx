@@ -21,13 +21,12 @@ export default function SectionPill({
                    h-[40%] bg-gradient-to-b from-white/35 to-transparent 
                    rounded-[inherit]"
       />
-
       <div className="px-4 md:px-8">
         {" "}
         <h2
           className={[
             "font-rem font-bold",
-            "text-[28px] leading-[36px]", 
+            "text-[28px] leading-[36px]",
             "md:text-[36px] md:leading-[46px]",
             titleClass,
           ].join(" ")}
