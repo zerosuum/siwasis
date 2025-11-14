@@ -53,6 +53,12 @@ export default function LoginModal({ open, onClose }) {
         description: `Berhasil login ke akun @${username || "admin"}.`,
       });
 
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("AUTH_STATE", { detail: { loggedIn: true } })
+        );
+      }
+
       onClose();
 
       router.refresh();
