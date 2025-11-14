@@ -44,17 +44,17 @@ export default function TransaksiModal({
   );
   const [nominal, setNominal] = React.useState(initialData?.nominal || "");
 
-  React.useEffect(() => {
-    if (!open) return;
+ React.useEffect(() => {
+   if (!open) return;
 
-    setTanggal(parseYMD(initialData?.tanggal));
-    setKeterangan(initialData?.keterangan || "");
-    setNominal(
-      initialData?.nominal !== undefined && initialData?.nominal !== null
-        ? String(initialData.nominal)
-        : ""
-    );
-  }, [open, initialData]);
+   setTanggal(parseYMD(initialData?.tanggal));
+   setKeterangan(initialData?.keterangan || "");
+   setNominal(
+     initialData?.nominal !== undefined && initialData?.nominal !== null
+       ? String(initialData.nominal)
+       : ""
+  );
+ }, [open]);
 
   if (!open) return null;
 

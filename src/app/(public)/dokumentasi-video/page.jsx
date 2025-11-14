@@ -27,9 +27,9 @@ export default async function DokumentasiVideoPage() {
               <SectionPill
                 title="Dokumentasi Video"
                 subtitle="Kumpulan rekaman kegiatan dan momen penting WASIS yang bisa kamu tonton kembali kapan saja."
-                className="w-full bg-transparent !border-0 !shadow-none p-0 text-center md:text-left"
+                className="w-full !max-w-none bg-transparent !border-0 !shadow-none p-0 text-center md:text-left"
                 titleClass="text-wasis-nt80 text-2xl md:text-3xl font-rem font-bold"
-                subtitleClass="text-wasis-nt80/90 mt-2 max-w-2xl mx-auto md:mx-0"
+                subtitleClass="text-wasis-nt80/90 mt-2"
               >
                 {isLoggedIn && (
                   <div className="mt-4 flex justify-center md:justify-start">

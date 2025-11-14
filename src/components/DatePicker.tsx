@@ -524,19 +524,22 @@ const initialDate = React.useMemo(() => {
     setOpen(open);
   };
 
-  const onDateChange = (date: Date | undefined) => {
-    const newDate = date;
-    if (showTimePicker) {
-      if (newDate && !time) {
-        setTime(new Time(0, 0));
-      }
-      if (newDate && time) {
-        newDate.setHours(time.hour);
-        newDate.setMinutes(time.minute);
-      }
+const onDateChange = (date: Date | undefined) => {
+  let newDate = date;
+
+  if (showTimePicker) {
+    if (newDate && !time) {
+      setTime(new Time(0, 0));
     }
-    setDate(newDate);
-  };
+    if (newDate && time) {
+      newDate.setHours(time.hour);
+      newDate.setMinutes(time.minute);
+    }
+  }
+
+  setDate(newDate);
+  onChange?.(newDate);
+};
 
   const onTimeChange = (time: TimeValue | null) => {
     setTime(time);

@@ -35,6 +35,18 @@ const httpsAgent = new https.Agent({
 const REVALIDATE_PATH = "/dashboard/sampah/laporan";
 const API_PREFIX = "/sampah";
 
+async function assertOkOrThrow(res) {
+  if (res.ok) return;
+  let msg = `HTTP ${res.status}`;
+  try {
+    const data = await res.json();
+    if (data?.message) msg = data.message;
+  } catch (_) {
+    // biarin pakai msg default
+  }
+  throw new Error(msg);
+}
+
 // CREATE
 export async function actionCreateEntry(payload) {
   const { token } = await getAuth();
@@ -44,7 +56,6 @@ export async function actionCreateEntry(payload) {
   const backendTipe = type === "IN" ? "pemasukan" : "pengeluaran";
 
   const res = await fetch(`${API_BASE}${API_PREFIX}/create`, {
-    // <-- UBAH
     method: "POST",
     headers: authHeaders,
     body: JSON.stringify({
@@ -56,9 +67,14 @@ export async function actionCreateEntry(payload) {
     agent: httpsAgent,
   });
 
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    throw new Error(data?.message || `HTTP ${res.status} saat create sampah`);
+  }
+
   revalidatePath(REVALIDATE_PATH);
-  return { ok: true };
+  return { ok: true, data };
 }
 
 // UPDATE
@@ -70,7 +86,6 @@ export async function actionUpdateEntry(payload) {
   const backendTipe = type === "IN" ? "pemasukan" : "pengeluaran";
 
   const res = await fetch(`${API_BASE}${API_PREFIX}/update/${id}`, {
-    // <-- UBAH
     method: "PUT",
     headers: authHeaders,
     body: JSON.stringify({
@@ -82,7 +97,7 @@ export async function actionUpdateEntry(payload) {
     agent: httpsAgent,
   });
 
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  await assertOkOrThrow(res);
   revalidatePath(REVALIDATE_PATH);
   return { ok: true };
 }
@@ -90,15 +105,19 @@ export async function actionUpdateEntry(payload) {
 // DELETE
 export async function actionDeleteEntry({ id }) {
   const { token } = await getAuth();
-  const authHeaders = await createAuthHeaders(token);
+
+  const headers = {
+    Accept: "application/json",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
 
   const res = await fetch(`${API_BASE}${API_PREFIX}/delete/${id}`, {
     method: "DELETE",
-    headers: { ...authHeaders, "Content-Type": undefined },
+    headers,
     agent: httpsAgent,
   });
 
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  await assertOkOrThrow(res);
   revalidatePath(REVALIDATE_PATH);
   return { ok: true };
 }
