@@ -10,7 +10,12 @@ function first(v) {
 }
 
 const fallback = {
-  meta: { year: new Date().getFullYear(), nominalFormatted: "Rp 0" },
+  meta: {
+    year: new Date().getFullYear(),
+    nominalPerEventFormatted: "Rp 0",
+    periodeId: null,
+    nominal: 0,
+  },
   kpi: {
     pemasukanFormatted: "Rp 0",
     pengeluaranFormatted: "Rp 0",
@@ -22,59 +27,42 @@ const fallback = {
   total: 0,
   page: 1,
   perPage: 10,
+  periodes: [],
+  periodeId: null,
 };
-
-function normalizeArisanRekap(resp) {
-  if (!resp) return fallback;
-
-  const pag = resp.pagination || {};
-  return {
-    ...resp,
-    rows: resp.rows ?? resp.data ?? [],
-    dates: resp.dates ?? [],
-    page: resp.page ?? pag.current_page ?? 1,
-    perPage: resp.perPage ?? pag.per_page ?? 10,
-    total: resp.total ?? pag.total ?? 0,
-    meta: resp.meta ?? {
-      year: resp.filters?.year
-        ? Number(resp.filters.year)
-        : new Date().getFullYear(),
-      nominalFormatted: resp.nominalPerEventFormatted ?? "Rp 0",
-    },
-    kpi: resp.kpi ?? fallback.kpi,
-  };
-}
 
 export default async function Page({ searchParams }) {
   const profile = await getAdminProfile();
-  const isLoggedIn = !!profile; 
+  const isLoggedIn = !!profile;
 
   const sp = await searchParams;
+
   const page = sp?.page ? Number(first(sp.page)) : 1;
-  const year = sp?.year ? Number(first(sp.year)) : new Date().getFullYear();
   const q = sp?.q ? String(first(sp.q)) : "";
-  const rt = sp?.rt ? String(first(sp.rt)) : "all";
+  const rt = sp?.rt ? String(first(sp.rt)) : undefined;
   const from = sp?.from ? String(first(sp.from)) : undefined;
   const to = sp?.to ? String(first(sp.to)) : undefined;
   const min = sp?.min ? Number(first(sp.min)) : undefined;
   const max = sp?.max ? Number(first(sp.max)) : undefined;
+  const periodeIdFromUrl = sp?.periode_id
+    ? Number(first(sp.periode_id))
+    : undefined;
 
-let initial = fallback;
-try {
-  const resp = await getArisanRekap({
-    page,
-    year,
-    q,
-    rt,
-    from,
-    to,
-    min,
-    max,
-  });
-  initial = normalizeArisanRekap(resp);
-} catch {
-  initial = fallback;
-}
+  let initial = fallback;
+  try {
+    initial = await getArisanRekap({
+      page,
+      q,
+      rt,
+      from,
+      to,
+      min,
+      max,
+      periode_id: periodeIdFromUrl,
+    });
+  } catch {
+    initial = fallback;
+  }
 
   const kpis = [
     {

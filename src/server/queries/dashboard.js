@@ -1,9 +1,12 @@
 import { proxyJSON } from "./_api";
 
-export async function getDashboardSummary({ from, to } = {}) {
-  const json = await proxyJSON("/dashboard/summary", { params: { from, to } });
+export async function getDashboardSummary({ from, to, periode } = {}) {
 
-  const periode = json.periode || {};
+  const json = await proxyJSON("/dashboard/summary", {
+    params: { from, to, periode },
+  });
+
+  const periodeMeta = json.periode || {};
   const d = json.data || {};
   const kasTotal = d.kas_total || {};
 
@@ -38,9 +41,9 @@ export async function getDashboardSummary({ from, to } = {}) {
     arisan,
     kasTable,
     period: {
-      from: periode.from || null,
-      to: periode.to || null,
-      nama: periode.nama || null,
+      from: periodeMeta.from || null,
+      to: periodeMeta.to || null,
+      nama: periodeMeta.nama || null,
     },
   };
 }

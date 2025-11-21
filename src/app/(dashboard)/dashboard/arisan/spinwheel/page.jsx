@@ -3,6 +3,7 @@
 import KPICard from "@/components/KPICard";
 import SpinwheelClient from "./SpinwheelClient";
 import { getArisanRekap, getSpinCandidates } from "@/server/queries/arisan";
+import { getPeriodes } from "@/server/queries/periode";
 
 function first(v) {
   return Array.isArray(v) ? v[0] : v;
@@ -10,14 +11,30 @@ function first(v) {
 
 export default async function Page({ searchParams }) {
   const sp = await searchParams;
-  const year = sp?.year ? Number(first(sp.year)) : new Date().getFullYear();
 
-  // KPI
-  const rekap = await getArisanRekap({ page: 1, year });
-  const kpi = rekap.kpi;
+  const periodeResp = await getPeriodes().catch(() => null);
+  const periodes = Array.isArray(periodeResp?.data) ? periodeResp.data : [];
 
-  // semua kandidat
-  const segments = await getSpinCandidates({ year });
+  let periodeId = sp?.periode ? Number(first(sp.periode)) : null;
+  if (!periodeId && periodes.length) {
+    periodeId = periodes[0].id;
+  }
+
+  let kpi = {
+    pemasukanFormatted: "Rp 0",
+    pengeluaranFormatted: "Rp 0",
+    saldoFormatted: "Rp 0",
+    rangeLabel: "",
+  };
+  let segments = [];
+
+  if (periodeId) {
+
+    const rekap = await getArisanRekap({ page: 1, periode_id: periodeId });
+    kpi = rekap.kpi;
+
+    segments = await getSpinCandidates({ periode_id: periodeId });
+  }
 
   const kpis = [
     {
@@ -45,7 +62,12 @@ export default async function Page({ searchParams }) {
           />
         ))}
       </div>
-      <SpinwheelClient initialSegments={segments} />
+
+      <SpinwheelClient
+        initialSegments={segments}
+        periodes={periodes}
+        activePeriodeId={periodeId}
+      />
     </div>
   );
 }

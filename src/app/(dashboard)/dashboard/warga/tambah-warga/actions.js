@@ -5,8 +5,8 @@ import {
   createWarga,
   updateWarga,
   deleteWarga,
-  addKasMember,
-  addArisanMember,
+  // addKasMember,
+  // addArisanMember,
 } from "@/server/queries/warga";
 import { getAdminProfile } from "@/lib/session";
 import { cookies } from "next/headers";
@@ -73,30 +73,30 @@ export async function actionDeleteWarga(id) {
     throw new Error(err.message || "Gagal menghapus warga.");
   }
 }
-export async function actionAddArisanMember(warga) {
-  const { token } = await getAuth();
+// export async function actionAddArisanMember(warga) {
+//   const { token } = await getAuth();
 
-  try {
-    await addArisanMember(token, { warga_id: warga.id });
+//   try {
+//     await addArisanMember(token, { warga_id: warga.id });
 
-    revalidateAll();
-    return { ok: true };
-  } catch (err) {
-    console.error(err);
-    throw new Error(err.message || "Gagal menandai anggota arisan.");
-  }
-}
+//     revalidateAll();
+//     return { ok: true };
+//   } catch (err) {
+//     console.error(err);
+//     throw new Error(err.message || "Gagal menandai anggota arisan.");
+//   }
+// }
 
-export async function actionAddKasMember(warga) {
-  const { token } = await getAuth();
+// export async function actionAddKasMember(warga) {
+//   const { token } = await getAuth();
 
-  try {
-    await addKasMember(token, { warga_id: warga.id });
+//   try {
+//     await addKasMember(token, { warga_id: warga.id });
 
-    revalidateAll();
-    return { ok: true };
-  } catch (err) {
-    console.error(err);
-    throw new Error(err.message || "Gagal menambah anggota kas.");
-  }
-}
+//     revalidateAll();
+//     return { ok: true };
+//   } catch (err) {
+//     console.error(err);
+//     throw new Error(err.message || "Gagal menambah anggota kas.");
+//   }
+// }

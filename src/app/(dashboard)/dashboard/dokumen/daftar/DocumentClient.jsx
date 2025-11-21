@@ -32,7 +32,7 @@ const publicFileURL = (file_path) =>
     .map(encodeURIComponent)
     .join("/")}`;
 
-const downloadURL = (id) => `${BE_ORIGIN}/api/documents/${id}/download`;
+const downloadURL = (id) => `/api/proxy/documents/${id}/download`;
 
 export default function DocumentClient({ initial, readOnly }) {
   const router = useRouter();
@@ -140,7 +140,7 @@ export default function DocumentClient({ initial, readOnly }) {
 
   return (
     <>
-      <div className="flex items-center justify-between gap-3 px-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4">
         <TabNavigation className="!mb-0 h-6">
           <TabNavigationLink
             href="/dashboard/dokumen/daftar"
@@ -151,7 +151,7 @@ export default function DocumentClient({ initial, readOnly }) {
           </TabNavigationLink>
         </TabNavigation>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-start md:justify-end mt-2 md:mt-0">
           <div
             className="relative"
             onMouseEnter={() => setSearchOpen(true)}
@@ -171,8 +171,8 @@ export default function DocumentClient({ initial, readOnly }) {
               onKeyDown={(e) => e.key === "Enter" && pushWithParams()}
               placeholder="Cari nama/keterangan…"
               className={`h-8 rounded-[10px] border border-gray-300 bg-white pl-7 pr-2 text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-gray-200 ${
-                searchOpen || search ? "w-56" : "w-6"
-              }`}
+                searchOpen || search ? "w-48" : "w-24"
+              } md:${searchOpen || search ? "w-56" : "w-6"}`}
             />
           </div>
 
@@ -186,7 +186,7 @@ export default function DocumentClient({ initial, readOnly }) {
                 );
                 trigger?.click();
               }}
-              className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white hover:bg-[#F8FAF5]"
+              className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white hover:bg-[#F8FAF5]"
               title="Pilih rentang tanggal"
             >
               <IconCalendar size={16} />
@@ -197,6 +197,7 @@ export default function DocumentClient({ initial, readOnly }) {
               className="absolute left-0 top-0 h-0 w-0 overflow-hidden opacity-0"
               aria-hidden="true"
             >
+              {/* DateRangePicker */}
               <DateRangePicker
                 value={range}
                 onChange={(val) => {
@@ -218,10 +219,11 @@ export default function DocumentClient({ initial, readOnly }) {
               />
             </div>
           </div>
+
           {!readOnly && (
             <button
               onClick={() => setModalState({ open: true, data: null })}
-              className="flex h-8 items-center gap-1 rounded-[10px] bg-[#6E8649] px-3 text-sm text-white"
+              className="flex h-8 sm:h-9 items-center gap-1 rounded-[10px] bg-[#6E8649] px-3 sm:px-4 text-xs sm:text-sm text-white"
             >
               <IconPlus size={16} /> Upload
             </button>
@@ -229,7 +231,7 @@ export default function DocumentClient({ initial, readOnly }) {
         </div>
       </div>
 
-      <div className="rounded-xl bg-white shadow overflow-hidden">
+      <div className="overflow-hidden md:rounded-xl md:bg-white md:shadow">
         <DocumentTable
           initial={initial}
           readOnly={readOnly}
@@ -238,7 +240,9 @@ export default function DocumentClient({ initial, readOnly }) {
           }
           onEdit={(row) => setModalState({ open: true, data: row })}
           onDelete={(row) => setConfirmDelete(row)}
-          onDownload={(row) => (window.location.href = downloadURL(row.id))}
+          onDownload={(row) => {
+            window.location.href = downloadURL(row.id);
+          }}
         />
       </div>
 

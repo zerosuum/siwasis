@@ -26,20 +26,26 @@ export default function RekapClient({ initial, readOnly }) {
   const sp = useSearchParams();
   const { show } = useToast();
 
-  // URL state
   const page = initial?.page || 1;
-  const year = initial?.meta?.year || new Date().getFullYear();
+
+  const metaYear = initial?.meta?.year;
+  const urlYear = sp.get("year") ? Number(sp.get("year")) : null;
+  const year = metaYear || urlYear || new Date().getFullYear();
+
   const q = sp.get("q") || "";
   const rt = sp.get("rt") || "all";
   const from = sp.get("from");
   const to = sp.get("to");
 
-  // UI state
+  const periodeId =
+    initial?.meta?.periodeId || sp.get("periode_id")
+      ? Number(initial?.meta?.periodeId || sp.get("periode_id"))
+      : null;
+
   const [searchQuery, setSearchQuery] = React.useState(q);
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [filterOpen, setFilterOpen] = React.useState(false);
 
-  // Edit state
   const [editing, setEditing] = React.useState(false);
   const [updates, setUpdates] = React.useState([]);
   const [confirmSave, setConfirmSave] = React.useState(false);
@@ -47,14 +53,12 @@ export default function RekapClient({ initial, readOnly }) {
   const [confirmDownload, setConfirmDownload] = React.useState(false);
   const [successOpen, setSuccessOpen] = React.useState(false);
 
-  // Range tanggal
   const initRange =
     sp.get("from") && sp.get("to")
       ? { from: new Date(sp.get("from")), to: new Date(sp.get("to")) }
       : undefined;
   const [range, setRange] = React.useState(initRange);
 
-  // Buka DateRangePicker
   const filterAnchorRef = React.useRef(null);
   const openFilterCalendar = React.useCallback(() => {
     if (!filterAnchorRef.current) return;
@@ -71,16 +75,14 @@ export default function RekapClient({ initial, readOnly }) {
     });
   }, []);
 
-  // Apply range (preserve rt/q, reset page)
   React.useEffect(() => {
     if (!range?.from || !range?.to) return;
 
     const params = new URLSearchParams(sp.toString());
-    // preserve yang sudah ada
+
     if (sp.get("rt")) params.set("rt", sp.get("rt"));
     if (sp.get("q")) params.set("q", sp.get("q"));
 
-    // set range baru + year sekarang
     params.set("year", String(year));
     const toLocalYMD = (d) =>
       [
@@ -91,13 +93,11 @@ export default function RekapClient({ initial, readOnly }) {
     params.set("from", toLocalYMD(range.from));
     params.set("to", toLocalYMD(range.to));
 
-    // reset page biar server fetch page 1 dgn header baru
     params.set("page", "1");
 
     router.push(`/dashboard/kas/rekapitulasi?${params.toString()}`);
   }, [range?.from, range?.to]);
 
-  // Navigate helper
   const navigate = (newParams) => {
     const params = new URLSearchParams(sp.toString());
     Object.entries(newParams).forEach(([k, v]) => {
@@ -108,7 +108,6 @@ export default function RekapClient({ initial, readOnly }) {
     router.push(`/dashboard/kas/rekapitulasi?${params.toString()}`);
   };
 
-  // Toggle checkbox
   const onToggle = React.useCallback((wargaId, tanggal, checked) => {
     setUpdates((prev) => {
       const key = `${wargaId}-${tanggal}`;
@@ -118,20 +117,22 @@ export default function RekapClient({ initial, readOnly }) {
     });
   }, []);
 
-  // Save
   const onSave = async () => {
     setConfirmSave(false);
     startTransition(async () => {
       try {
+        const nominal = Number(initial?.meta?.nominal ?? 0);
+
         const normalized = updates.map((u) => ({
           wargaId: u.wargaId,
           tanggal: u.tanggal,
-          checked: u.checked ? 1 : 0,
+          checked: u.checked,
+          status: u.checked ? "sudah_bayar" : "belum_bayar",
+          jumlah: u.checked ? nominal : 0,
         }));
+
         await actionSaveRekap({
-          year,
-          from,
-          to,
+          periodeId: initial.periodeId,
           updates: normalized,
         });
 
@@ -139,12 +140,12 @@ export default function RekapClient({ initial, readOnly }) {
         setUpdates([]);
         setSuccessOpen(true);
 
-        // force refresh URL sekarang
         const params = new URLSearchParams(sp.toString());
-        params.set("_v", String(Date.now())); // cache-buster
+        params.set("_v", String(Date.now()));
         router.replace(`/dashboard/kas/rekapitulasi?${params.toString()}`);
         router.refresh();
       } catch (e) {
+        console.error(e);
         show({
           title: "Gagal",
           description: "Gagal menyimpan perubahan.",
@@ -233,10 +234,17 @@ export default function RekapClient({ initial, readOnly }) {
 
         <div className="flex items-center gap-2">
           <PeriodDropdown
-            year={Number(year)}
-            onSelectYear={(y) => handleSelectYear(Number(y))}
-            // onNew={() => setNewPeriodOpen(true)}
-            showCreateButton={false}
+            activeId={initial.periodeId}
+            options={initial.periodes || []}
+            onSelect={(id) => {
+              const params = new URLSearchParams(sp.toString());
+
+              if (id) params.set("periode_id", String(id));
+              else params.delete("periode_id");
+
+              params.set("page", "1");
+              router.push(`/dashboard/kas/rekapitulasi?${params.toString()}`);
+            }}
           />
 
           <div

@@ -19,24 +19,14 @@ const rp = (n) =>
   }).format(Number(n || 0));
 
 export default function SampahTable({ initial, onEdit, onDelete, readOnly }) {
-  const rawData = initial?.data ?? [];
-
-  const paginatedData = Array.isArray(rawData)
-    ? {
-        data: rawData,
-        current_page: 1,
-        per_page: rawData.length || 15,
-        total: rawData.length || 0,
-      }
-    : rawData || {};
-
-  const rows = paginatedData.data || [];
+  const paginatedData = initial?.data || {};
+  const rows = paginatedData?.data || [];
   const hasData = rows.length > 0;
   const colCount = readOnly ? 6 : 7;
 
-  const currentPage = Number(paginatedData.current_page) || 1;
+  const currentPage = Number(paginatedData?.current_page) || 1;
   const itemsPerPage =
-    Number(paginatedData.per_page) || (hasData ? rows.length : 15);
+    Number(paginatedData?.per_page) || (hasData ? rows.length : 15);
 
   const formatTanggal = (tgl) =>
     tgl
@@ -49,8 +39,8 @@ export default function SampahTable({ initial, onEdit, onDelete, readOnly }) {
 
   return (
     <>
-      <TableRoot className="hidden w-full overflow-x-auto md:block">
-        <Table className="w-full min-w-[960px] table-fixed">
+      <TableRoot className="hidden max-h-[600px] w-full overflow-auto md:block">
+        <Table className="w-full table-fixed min-w-[1200px]">
           <TableHead className="sticky top-0 z-10 border-0 bg-[#F4F6EE]">
             <TableRow className="border-b border-gray-200">
               <TableHeaderCell className="w-[56px] py-3 text-center font-semibold text-gray-600">
@@ -78,6 +68,7 @@ export default function SampahTable({ initial, onEdit, onDelete, readOnly }) {
               )}
             </TableRow>
           </TableHead>
+
           <TableBody className="text-sm">
             {hasData ? (
               rows.map((r, idx) => (
@@ -88,24 +79,31 @@ export default function SampahTable({ initial, onEdit, onDelete, readOnly }) {
                   <TableCell className="py-4 text-center text-gray-500">
                     {(currentPage - 1) * itemsPerPage + idx + 1}
                   </TableCell>
+
                   <TableCell className="py-4 text-center tabular-nums">
                     {formatTanggal(r.tanggal)}
                   </TableCell>
+
                   <TableCell className="py-4 text-left">
                     {r.keterangan || "—"}
                   </TableCell>
+
                   <TableCell className="py-4 text-center font-medium tabular-nums text-[#6E8649]">
                     {r.tipe === "pemasukan" ? rp(r.jumlah) : "—"}
                   </TableCell>
+
                   <TableCell className="py-4 text-center font-medium tabular-nums text-[#B24949]">
                     {r.tipe === "pengeluaran" ? rp(r.jumlah) : "—"}
                   </TableCell>
-                  <TableCell className="py-4 text-center font-semibold tabular-nums">
-                    —
+
+                  <TableCell className="py-4 text-center tabular-nums font-semibold">
+                    {typeof r.saldo_sementara === "number"
+                      ? rp(r.saldo_sementara)
+                      : "—"}
                   </TableCell>
+
                   {!readOnly && (
                     <TableCell className="py-4">
-                      {/* PERBAIKAN POIN 4 (Tombol Aksi) */}
                       <div className="flex items-center justify-center gap-2">
                         <button
                           type="button"
@@ -149,6 +147,10 @@ export default function SampahTable({ initial, onEdit, onDelete, readOnly }) {
             const isIn = r.tipe === "pemasukan";
             const nominalLabel = isIn ? "Pemasukan" : "Pengeluaran";
             const nominalColor = isIn ? "text-[#6E8649]" : "text-[#B24949]";
+            const saldoLabel =
+              typeof r.saldo_sementara === "number"
+                ? rp(r.saldo_sementara)
+                : "—";
 
             return (
               <div
@@ -207,7 +209,7 @@ export default function SampahTable({ initial, onEdit, onDelete, readOnly }) {
                   <div className="flex flex-col gap-0.5 text-right">
                     <span className="text-[11px] text-gray-500">Saldo</span>
                     <span className="text-[13px] font-semibold tabular-nums">
-                      —
+                      {saldoLabel}
                     </span>
                   </div>
                 </div>

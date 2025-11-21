@@ -38,7 +38,7 @@ export async function actionUpdate(id, form) {
   fd.set("_method", "PUT");
 
   for (const [k, v] of form.entries()) {
-    if (k === "file" && v instanceof File && !v.size) continue;
+    if (k === "file_path" && v instanceof File && !v.size) continue;
     fd.set(k, v);
   }
 
@@ -62,6 +62,7 @@ export async function actionUpdate(id, form) {
       }`
     );
   }
+
   revalidateTag("documents");
   return { ok: true, data: payload };
 }
@@ -75,11 +76,14 @@ export async function actionDelete(id) {
     method: "DELETE",
     headers: authHeaders,
   });
+
   if (!res.ok) throw new Error(`Delete gagal (${res.status})`);
+
   revalidateTag("documents");
   return { ok: true };
 }
 
+// CREATE
 export async function actionUploadDocument(form) {
   const { token } = await getAuth();
   const authHeaders = await createAuthHeaders(token);
@@ -90,21 +94,23 @@ export async function actionUploadDocument(form) {
     body: form,
   });
 
-  const responseData = await res.json().catch(() => null);
-  console.log(" Response");
-  console.log(responseData);
-  console.log(" - ");
+  const ct = res.headers.get("content-type") || "";
+  const responseData = ct.includes("application/json")
+    ? await res.json().catch(() => null)
+    : null;
 
-  // Cek jika status tidak ok
   if (!res.ok) {
+    if (res.status === 413) {
+      throw new Error("Ukuran file terlalu besar. Maksimal 5 MB.");
+    }
+
     console.error("Upload gagal (res not ok):", responseData);
     throw new Error(responseData?.message || `Upload gagal (${res.status})`);
   }
 
-  // Cek jika Laravel bilang gagal meskipun status 200 OK
   if (responseData && responseData.success === false) {
     console.error(
-      "Upload gagal (Laravel bilang success=false):",
+      "Upload gagal",
       responseData.message
     );
     throw new Error(responseData.message || "Backend menolak upload.");

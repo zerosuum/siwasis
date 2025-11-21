@@ -27,6 +27,12 @@ async function assertOk(res) {
   }
 }
 
+function mapTypeToTipe(type) {
+  if (type === "IN") return "pemasukan";
+  if (type === "OUT") return "pengeluaran";
+  throw new Error("Type harus IN atau OUT");
+}
+
 // CREATE
 export async function actionCreateEntry(payload) {
   await checkAuth();
@@ -35,10 +41,15 @@ export async function actionCreateEntry(payload) {
   const { tanggal, keterangan, nominal, type } = payload;
 
   if (!tanggal) throw new Error("Tanggal wajib diisi");
-  if (nominal === "" || Number.isNaN(Number(nominal)))
+  if (nominal === "" || Number.isNaN(Number(nominal))) {
     throw new Error("Nominal tidak valid");
-  if (type !== "IN" && type !== "OUT")
+  }
+  if (type !== "IN" && type !== "OUT") {
     throw new Error("Type harus IN atau OUT");
+  }
+
+  const tipe = mapTypeToTipe(type);
+  const jumlah = Number(nominal);
 
   const res = await fetch(`${API_BASE}/kas/laporan/create`, {
     method: "POST",
@@ -50,11 +61,12 @@ export async function actionCreateEntry(payload) {
     body: JSON.stringify({
       tanggal,
       keterangan,
-      nominal: Number(nominal),
-      type,
+      tipe,
+      jumlah,
     }),
     cache: "no-store",
   });
+
   await assertOk(res);
 
   revalidatePath("/dashboard/kas/laporan");
@@ -68,6 +80,18 @@ export async function actionUpdateEntry(payload) {
 
   const { id, tanggal, keterangan, nominal, type } = payload;
 
+  if (!id) throw new Error("ID transaksi wajib diisi");
+  if (!tanggal) throw new Error("Tanggal wajib diisi");
+  if (nominal === "" || Number.isNaN(Number(nominal))) {
+    throw new Error("Nominal tidak valid");
+  }
+  if (type !== "IN" && type !== "OUT") {
+    throw new Error("Type harus IN atau OUT");
+  }
+
+  const tipe = mapTypeToTipe(type);
+  const jumlah = Number(nominal);
+
   const res = await fetch(`${API_BASE}/kas/laporan/update/${id}`, {
     method: "PUT",
     headers: {
@@ -78,11 +102,12 @@ export async function actionUpdateEntry(payload) {
     body: JSON.stringify({
       tanggal,
       keterangan,
-      nominal: Number(nominal),
-      type,
+      tipe,
+      jumlah,
     }),
     cache: "no-store",
   });
+
   await assertOk(res);
 
   revalidatePath("/dashboard/kas/laporan");

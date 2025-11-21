@@ -44,11 +44,11 @@ export default function WargaClient({ initial }) {
   });
   const [editRow, setEditRow] = React.useState(null);
   const [confirmDelete, setConfirmDelete] = React.useState(null);
-  const [kasModal, setKasModal] = React.useState({ open: false, warga: null });
-  const [arisanModal, setArisanModal] = React.useState({
-    open: false,
-    warga: null,
-  });
+  // const [kasModal, setKasModal] = React.useState({ open: false, warga: null });
+  // const [arisanModal, setArisanModal] = React.useState({
+  //   open: false,
+  //   warga: null,
+  // });
 
   const filterBtnRef = React.useRef(null);
 
@@ -136,7 +136,6 @@ export default function WargaClient({ initial }) {
         </TabNavigation>
 
         <div className="flex items-center gap-2">
-          {/* Search Input */}
           <div
             className="relative"
             onMouseEnter={() => setSearchOpen(true)}
@@ -160,7 +159,6 @@ export default function WargaClient({ initial }) {
             />
           </div>
 
-          {/* Filter Button */}
           <button
             ref={filterBtnRef}
             type="button"
@@ -172,7 +170,6 @@ export default function WargaClient({ initial }) {
             <IconFilter size={16} />
           </button>
 
-          {/* Action Buttons */}
           <button
             type="button"
             onClick={() => setCreateModal({ open: true, variant: "ARISAN" })}
@@ -191,17 +188,15 @@ export default function WargaClient({ initial }) {
         </div>
       </div>
 
-      {/* Tabel Data */}
       <div className="rounded-xl bg-white shadow overflow-hidden">
         <WargaTable
           initial={initial}
           onEdit={(row) => setEditRow(row)}
           onDelete={(row) => setConfirmDelete(row)}
-          onAddArisan={(row) => setArisanModal({ open: true, warga: row })}
+          // onAddArisan={(row) => setArisanModal({ open: true, warga: row })}
         />
       </div>
 
-      {/* Pagination */}
       <div className="flex items-center justify-center px-4 py-3">
         <Pagination
           page={initial.page}
@@ -210,7 +205,6 @@ export default function WargaClient({ initial }) {
         />
       </div>
 
-      {/* Modal Buat/Tambah Warga */}
       {createModal.open && (
         <WargaFormModal
           variant={createModal.variant}
@@ -219,7 +213,6 @@ export default function WargaClient({ initial }) {
         />
       )}
 
-      {/* Modal Edit Warga */}
       {editRow && (
         <WargaFormModal
           variant="WARGA"
@@ -230,7 +223,7 @@ export default function WargaClient({ initial }) {
         />
       )}
 
-      {/* Modal Tambah Anggota Kas */}
+      {/* Modal Tambah Anggota Kas
       {kasModal.open && (
         <AnggotaKasModal
           warga={kasModal.warga}
@@ -240,9 +233,9 @@ export default function WargaClient({ initial }) {
             router.refresh();
           }}
         />
-      )}
+      )} */}
 
-      {/* Modal Tambah Anggota Arisan */}
+      {/* Modal Tambah Anggota Arisan
       {arisanModal.open && (
         <AnggotaArisanModal
           warga={arisanModal.warga}
@@ -255,9 +248,8 @@ export default function WargaClient({ initial }) {
             router.refresh();
           }}
         />
-      )}
+      )} */}
 
-      {/* Modal Konfirmasi Hapus */}
       <ConfirmDialog
         open={!!confirmDelete}
         title="Hapus Warga"
@@ -268,7 +260,6 @@ export default function WargaClient({ initial }) {
         onOk={() => onDelete(confirmDelete.id)}
       />
 
-      {/* Modal Filter */}
       {filterOpen && (
         <FilterModal
           open={filterOpen}

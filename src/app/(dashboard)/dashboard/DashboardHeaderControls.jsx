@@ -7,7 +7,7 @@ import { Calendar as IconCalendar } from "lucide-react";
 import PeriodDropdown from "./kas/rekapitulasi/PeriodDropdown";
 import PeriodModal from "./kas/rekapitulasi/PeriodModal";
 
-export default function DashboardHeaderControls( {isLoggedIn}) {
+export default function DashboardHeaderControls({ isLoggedIn, periodes = [] }) {
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -27,6 +27,14 @@ export default function DashboardHeaderControls( {isLoggedIn}) {
 
   const [range, setRange] = React.useState(initRange);
 
+  const handleSelectPeriode = (periodeId) => {
+    const params = new URLSearchParams(sp.toString());
+    if (periodeId) params.set("periode", String(periodeId));
+    else params.delete("periode");
+
+    router.push(`/dashboard?${params.toString()}`);
+    router.refresh();
+  };
   const pushWithParams = React.useCallback(
     (extra = {}) => {
       const params = new URLSearchParams(sp.toString());
@@ -56,16 +64,15 @@ export default function DashboardHeaderControls( {isLoggedIn}) {
     [router, sp]
   );
 
-React.useEffect(() => {
-  if (range === undefined) {
-    pushWithParams();
-    return;
-  }
-  if (range?.from) {
-    pushWithParams();
-  }
-}, [range, pushWithParams]);
-
+  React.useEffect(() => {
+    if (range === undefined) {
+      pushWithParams();
+      return;
+    }
+    if (range?.from) {
+      pushWithParams();
+    }
+  }, [range, pushWithParams]);
 
   const filterAnchorRef = React.useRef(null);
   const openCalendar = React.useCallback(() => {
@@ -85,8 +92,13 @@ React.useEffect(() => {
   return (
     <div className="flex items-center gap-2">
       <PeriodDropdown
-        year={year}
-        onSelectYear={handleSelectYear}
+        options={periodes}
+        activeId={
+          sp.get("periode")
+            ? Number(sp.get("periode"))
+            : periodes[0]?.id ?? null
+        } 
+        onSelect={handleSelectPeriode}
         onNew={() => setNewPeriodOpen(true)}
         showCreateButton={isLoggedIn}
       />

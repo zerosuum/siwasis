@@ -17,7 +17,7 @@ const defaultData = {
 };
 
 export default async function Page({ searchParams }) {
- const sp = (await searchParams) || {};
+  const sp = (await searchParams) || {};
 
   const profile = await getAdminProfile();
   const isLoggedIn = !!profile;
@@ -29,6 +29,7 @@ export default async function Page({ searchParams }) {
   const year = sp.year ? Number(sp.year) : new Date().getFullYear();
   const from = sp.from ?? null;
   const to = sp.to ?? null;
+  const q = sp.q ?? ""; // ✅ BACA q dari URL
   const type = sp.tipe ?? sp.type ?? null;
   const min = sp.min ? Number(sp.min) : undefined;
   const max = sp.max ? Number(sp.max) : undefined;
@@ -42,6 +43,7 @@ export default async function Page({ searchParams }) {
       year,
       from,
       to,
+      q,
       type,
       min,
       max,
@@ -87,12 +89,12 @@ export default async function Page({ searchParams }) {
 
   const kpis = [
     {
-      label: "Pemasukan",
+      label: "Pemasukan Sampah",
       value: formatRpCompact(pemasukan),
       range: `Halaman ${initial.data?.current_page || 1}`,
     },
     {
-      label: "Pengeluaran",
+      label: "Pengeluaran Sampah",
       value: formatRpCompact(pengeluaran),
       range: `Halaman ${initial.data?.current_page || 1}`,
     },

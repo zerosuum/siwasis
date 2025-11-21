@@ -1,13 +1,18 @@
 "use client";
 import * as React from "react";
 import { useMemo } from "react";
+import { getProfilePhotoUrl } from "@/lib/profilePhoto";
 
-const getStorageUrl = (filename) => {
-  if (!filename) return null;
+const getStorageUrl = (path) => {
+  if (!path) return null;
   const base = (
     process.env.NEXT_PUBLIC_API_BASE || "https://siwasis.novarentech.web.id"
   ).replace(/\/api$/, "");
-  return `${base}/storage/profile/${filename}`;
+
+  const cleanPath = String(path)
+    .replace(/^storage\//, "")
+    .replace(/^\/+/, "/");
+  return `${base}/storage/${cleanPath}`;
 };
 
 function Card({ className = "", children }) {
@@ -54,11 +59,7 @@ export default function ProfileCard({ profile, loading, error, onEdit }) {
     );
   }
 
-  const photoUrl = useMemo(() => {
-    return profile.photo
-      ? getStorageUrl(profile.photo)
-      : profile.photo_url ?? null;
-  }, [profile]);
+  const photoUrl = useMemo(() => getProfilePhotoUrl(profile), [profile]);
 
   return (
     <Card className="p-5">

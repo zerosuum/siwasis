@@ -30,24 +30,27 @@ import PeriodModal from "../rekapitulasi/PeriodModal";
 import { actionCreatePeriod } from "../rekapitulasi/actions";
 
 export default function LaporanClient({ initial, readOnly }) {
-  const [filterOpen, setFilterOpen] = React.useState(false);
-  const setoranBounds = React.useMemo(() => ({ min: 0, max: 10000000 }), []);
-
   const router = useRouter();
   const sp = useSearchParams();
   const { show } = useToast();
 
+  const metaYear = initial?.meta?.year;
+  const urlYear = sp.get("year") ? Number(sp.get("year")) : null;
+  const [year, setYear] = React.useState(
+    urlYear || metaYear || new Date().getFullYear()
+  );
+
   const [q, setQ] = React.useState(sp.get("q") || "");
   const [searchOpen, setSearchOpen] = React.useState(false);
-  const [year, setYear] = React.useState(
-    Number(sp.get("year")) || new Date().getFullYear()
-  );
-  const [newPeriodOpen, setNewPeriodOpen] = React.useState(false);
+
   const initRange =
     sp.get("from") && sp.get("to")
       ? { from: new Date(sp.get("from")), to: new Date(sp.get("to")) }
       : undefined;
   const [range, setRange] = React.useState(initRange);
+
+  const [filterOpen, setFilterOpen] = React.useState(false);
+  const setoranBounds = React.useMemo(() => ({ min: 0, max: 10_000_000 }), []);
 
   const [modalState, setModalState] = React.useState({
     open: false,
@@ -55,17 +58,24 @@ export default function LaporanClient({ initial, readOnly }) {
     data: null,
   });
   const [confirmExport, setConfirmExport] = React.useState(false);
+  const [newPeriodOpen, setNewPeriodOpen] = React.useState(false);
+
+  const toLocalYMD = (d) =>
+    [
+      d.getFullYear(),
+      String(d.getMonth() + 1).padStart(2, "0"),
+      String(d.getDate()).padStart(2, "0"),
+    ].join("-");
 
   const pushWithParams = React.useCallback(
     (extra = {}) => {
       const params = new URLSearchParams(sp.toString());
+
+      // year
       if (year) params.set("year", String(year));
-      const toLocalYMD = (d) =>
-        [
-          d.getFullYear(),
-          String(d.getMonth() + 1).padStart(2, "0"),
-          String(d.getDate()).padStart(2, "0"),
-        ].join("-");
+      else params.delete("year");
+
+      // range tanggal
       if (range?.from && range?.to) {
         params.set("from", toLocalYMD(range.from));
         params.set("to", toLocalYMD(range.to));
@@ -73,48 +83,43 @@ export default function LaporanClient({ initial, readOnly }) {
         params.delete("from");
         params.delete("to");
       }
-      if (q) params.set("q", q);
+
+      // search
+      const trimmed = q.trim();
+      if (trimmed) params.set("q", trimmed);
       else params.delete("q");
+
+      // reset page kalau ada perubahan
       params.set("page", "1");
+
+      // extra
       Object.entries(extra).forEach(([k, v]) => {
         if (v === undefined || v === null || v === "") params.delete(k);
         else params.set(k, String(v));
       });
+
       router.push(`/dashboard/kas/laporan?${params.toString()}`);
     },
     [sp, year, range?.from, range?.to, q, router]
   );
 
-  React.useEffect(() => {
-    pushWithParams();
-  }, [year]);
-  const handleSelectYear = (y) => setYear(Number(y));
-
-  const handleCreatePeriod = async ({ name, nominal, from, to }) => {
-    try {
-      const res = await actionCreatePeriod({ name, nominal, from, to });
-      setNewPeriodOpen(false);
-      show({ title: "Sukses!", description: "Periode baru dibuat." });
-      const y = Number(res?.year) || new Date().getFullYear();
-      const params = new URLSearchParams(sp.toString());
-      params.set("year", String(y));
-      params.delete("from");
-      params.delete("to");
-      params.set("page", "1");
-      router.push(`/dashboard/kas/laporan?${params.toString()}`);
-      router.refresh();
-    } catch (e) {
-      console.error(e);
-      show({
-        title: "Gagal",
-        description: "Tidak dapat membuat periode baru.",
-        variant: "error",
-      });
-    }
+  // ganti tahun via dropdown
+  const handleSelectYear = (y) => {
+    setYear(Number(y));
   };
   React.useEffect(() => {
-    if (range?.from && range?.to) pushWithParams();
-  }, [range?.from, range?.to]);
+    const currentYear = sp.get("year") ? Number(sp.get("year")) : null;
+    if (currentYear !== year) {
+      pushWithParams();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [year]);
+
+  React.useEffect(() => {
+    if (range?.from && range?.to) {
+      pushWithParams();
+    }
+  }, [range?.from, range?.to, pushWithParams]);
 
   const filterAnchorRef = React.useRef(null);
   const openFilterCalendar = React.useCallback(() => {
@@ -178,6 +183,23 @@ export default function LaporanClient({ initial, readOnly }) {
     };
   }, [modalState]);
 
+  const handleCreatePeriod = async ({ name, nominal, from, to }) => {
+    try {
+      const res = await actionCreatePeriod({ name, nominal, from, to });
+      setNewPeriodOpen(false);
+      show({ title: "Sukses!", description: "Periode baru dibuat." });
+      const y = Number(res?.year) || new Date().getFullYear();
+      setYear(y);
+    } catch (e) {
+      console.error(e);
+      show({
+        title: "Gagal",
+        description: "Tidak dapat membuat periode baru.",
+        variant: "error",
+      });
+    }
+  };
+
   return (
     <>
       <div className="flex items-center justify-between gap-3 px-4">
@@ -201,15 +223,10 @@ export default function LaporanClient({ initial, readOnly }) {
           <PeriodDropdown
             year={Number(year)}
             onSelectYear={handleSelectYear}
-            // onNew={() => setNewPeriodOpen(true)}
             showCreateButton={false}
           />
 
-          <div
-            className="relative"
-            onMouseEnter={() => setSearchOpen(true)}
-            // onMouseLeave={() => (q ? null : setSearchOpen(false))}
-          >
+          <div className="relative" onMouseEnter={() => setSearchOpen(true)}>
             <IconSearch
               size={16}
               className="pointer-events-none absolute left-1.5 top-1/2 -translate-y-1/2 text-gray-500"
@@ -218,7 +235,9 @@ export default function LaporanClient({ initial, readOnly }) {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") pushWithParams();
+                if (e.key === "Enter") {
+                  pushWithParams();
+                }
               }}
               placeholder="Cari keterangan..."
               className={`h-8 border rounded-[10px] border-gray-300 bg-white pl-7 pr-2 text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-gray-200 ${
@@ -325,7 +344,7 @@ export default function LaporanClient({ initial, readOnly }) {
 
       <TransaksiModal
         open={modalState.open}
-        onClose={() => setModalState({ open: false, type: null, data: null })}
+        onClose={handleCloseModal}
         onSubmit={handleSubmit}
         initialData={initialDataForEdit}
         {...(modalState.type === "pemasukan" && {
@@ -368,7 +387,8 @@ export default function LaporanClient({ initial, readOnly }) {
             max: sp.get("max") ? Number(sp.get("max")) : undefined,
           }}
           onApply={({ type, min, max }) => {
-            pushWithParams({ type: type ?? "", min, max });
+            const mappedType = type === "IN" || type === "OUT" ? type : "";
+            pushWithParams({ type: mappedType, min, max });
           }}
         />
       )}

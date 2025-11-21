@@ -12,6 +12,13 @@ import {
 } from "@/components/Table";
 import { Checkbox } from "@/components/Checkbox";
 
+const rp = (n) =>
+  Number(n ?? 0).toLocaleString("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  });
+
 export default function RekapTable({
   initial,
   editing,
@@ -75,17 +82,18 @@ export default function RekapTable({
                 <TableCell className="text-center py-4">{row.rt}</TableCell>
                 <TableCell className="text-left py-4">{row.nama}</TableCell>
                 <TableCell className="text-center py-4 tabular-nums">
-                  {row.jumlahSetoran}
+                  {row.jumlahSetoran != null ? row.jumlahSetoran : "—"}
                 </TableCell>
-                <TableCell className="text-center font-medium py-4 tabular-nums">
-                  {row.totalSetoranFormatted}
+                <TableCell className="text-right font-medium py-4 tabular-nums">
+                  {row.totalSetoranFormatted ??
+                    (row.totalSetoran != null ? rp(row.totalSetoran) : "Rp 0")}
                 </TableCell>
 
                 {dates.map((dateString) => {
                   const key = `${row.id}-${dateString}`;
                   const isChecked = optimisticUpdates?.has(key)
                     ? optimisticUpdates.get(key)
-                    : !!row.kehadiran[dateString];
+                    : !!(row.kehadiran && row.kehadiran[dateString]);
 
                   return (
                     <TableCell key={key} className="text-center py-4">

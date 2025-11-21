@@ -1,12 +1,19 @@
-import { getKasRekap } from "@/server/queries/kas";
+import { getPeriodes } from "@/server/queries/periode";
+import { getArisanRekap } from "@/server/queries/arisan";
 import RekapClient from "./RekapClient";
 import KPICard from "@/components/KPICard";
 import { first } from "@/lib/utils";
 import { getAdminProfile } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
-const defaultData = {
-  meta: { year: new Date().getFullYear(), nominalFormatted: "Rp 0" },
+
+const fallback = {
+  meta: {
+    nominal: 0,
+    nominalPerEventFormatted: "Rp 0",
+    year: new Date().getFullYear(),
+    periodeId: null,
+  },
   kpi: {
     pemasukanFormatted: "Rp 0",
     pengeluaranFormatted: "Rp 0",
@@ -18,50 +25,52 @@ const defaultData = {
   total: 0,
   page: 1,
   perPage: 10,
+  periodes: [],
 };
-
-function normalizeKasRekap(resp) {
-  if (!resp || resp.ok === false) return defaultData;
-
-  const pag = resp.pagination || {};
-  return {
-    ...resp,
-    rows: resp.rows ?? resp.data ?? [],
-    page: resp.page ?? pag.current_page ?? 1,
-    perPage: resp.perPage ?? pag.per_page ?? 10,
-    total: resp.total ?? pag.total ?? 0,
-    meta: resp.meta ?? {
-      year: resp.filters?.year
-        ? Number(resp.filters.year)
-        : new Date().getFullYear(),
-      nominalFormatted: resp.nominalFormatted ?? "Rp 0",
-    },
-    kpi: resp.kpi ?? defaultData.kpi,
-  };
-}
 
 export default async function Page({ searchParams }) {
   const profile = await getAdminProfile();
   const isLoggedIn = !!profile;
 
   const sp = await searchParams;
-
   const page = sp?.page ? Number(first(sp.page)) : 1;
-  const year = sp?.year ? Number(first(sp.year)) : new Date().getFullYear();
-  const from = sp?.from ? String(first(sp.from)) : null;
-  const to = sp?.to ? String(first(sp.to)) : null;
   const q = sp?.q ? String(first(sp.q)) : "";
+  const rt = sp?.rt ? String(first(sp.rt)) : "all";
+  const from = sp?.from ? String(first(sp.from)) : undefined;
+  const to = sp?.to ? String(first(sp.to)) : undefined;
   const min = sp?.min ? Number(first(sp.min)) : undefined;
   const max = sp?.max ? Number(first(sp.max)) : undefined;
-  const rt = sp?.rt ? String(first(sp.rt)) : "all";
+  const periodeIdFromUrl = sp?.periode_id ? Number(first(sp.periode_id)) : null;
 
-  let initial = defaultData;
+  const periodeResp = await getPeriodes();
+  const periodes = Array.isArray(periodeResp?.data) ? periodeResp.data : [];
+
+  let activePeriode =
+    periodes.find((p) => p.id === periodeIdFromUrl) ||
+    periodes.find((p) => p.is_active) ||
+    periodes[0] ||
+    null;
+
+  const periodeId = activePeriode?.id ?? null;
+
+  let initial = fallback;
   try {
-    const resp = await getKasRekap({ page, year, q, rt, from, to, min, max });
-    initial = normalizeKasRekap(resp);
-  } catch {
-    initial = defaultData;
+    initial = await getArisanRekap({
+      page,
+      q,
+      rt,
+      from,
+      to,
+      min,
+      max,
+      periode_id: periodeId,
+    });
+  } catch (err) {
+    initial = fallback;
   }
+
+  initial.periodeId = periodeId;
+  initial.periodes = periodes;
 
   const kpis = [
     {
@@ -93,6 +102,7 @@ export default async function Page({ searchParams }) {
           />
         ))}
       </div>
+
       <div className="mt-2">
         <RekapClient initial={initial} readOnly={!isLoggedIn} />
       </div>

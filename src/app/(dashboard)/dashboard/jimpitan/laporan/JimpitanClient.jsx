@@ -23,11 +23,9 @@ import {
 } from "./actions";
 import { useToast } from "@/components/ui/useToast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import { API_BASE } from "@/lib/config";
 
 export default function JimpitanClient({ initial, readOnly }) {
   const [filterOpen, setFilterOpen] = React.useState(false);
-  const setoranBounds = React.useMemo(() => ({ min: 0, max: 10000000 }), []);
 
   const router = useRouter();
   const sp = useSearchParams();
@@ -62,6 +60,7 @@ export default function JimpitanClient({ initial, readOnly }) {
   const pushWithParams = React.useCallback(
     (extra = {}) => {
       const params = new URLSearchParams(sp.toString());
+
       if (year) params.set("year", String(year));
       if (range?.from && range?.to) {
         params.set("from", range.from.toISOString().slice(0, 10));
@@ -70,13 +69,17 @@ export default function JimpitanClient({ initial, readOnly }) {
         params.delete("from");
         params.delete("to");
       }
+
       if (q) params.set("q", q);
       else params.delete("q");
+
       params.set("page", "1");
+
       Object.entries(extra).forEach(([k, v]) => {
         if (v === undefined || v === null || v === "") params.delete(k);
         else params.set(k, String(v));
       });
+
       router.push(`/dashboard/jimpitan/laporan?${params.toString()}`);
     },
     [sp, year, range?.from, range?.to, q, router]
@@ -84,10 +87,11 @@ export default function JimpitanClient({ initial, readOnly }) {
 
   React.useEffect(() => {
     pushWithParams();
-  }, [year]);
+  }, [year]); // eslint-disable-line react-hooks/exhaustive-deps
+
   React.useEffect(() => {
     if (range?.from && range?.to) pushWithParams();
-  }, [range?.from, range?.to]);
+  }, [range?.from, range?.to]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filterAnchorRef = React.useRef(null);
   const openFilterCalendar = React.useCallback(() => {
@@ -106,6 +110,7 @@ export default function JimpitanClient({ initial, readOnly }) {
 
   const handleOpenModal = (type, data = null) =>
     setModalState({ open: true, type, data });
+
   const handleCloseModal = () =>
     setModalState({ open: false, type: null, data: null });
 
@@ -159,7 +164,7 @@ export default function JimpitanClient({ initial, readOnly }) {
 
   const initialDataForEdit = React.useMemo(() => {
     if (modalState.type !== "edit" || !modalState.data) return undefined;
-    const { data } = modalState;
+    const data = modalState.data;
     return {
       tanggal: data.tanggal?.split("T")[0] || data.tanggal,
       keterangan: data.keterangan,
@@ -181,7 +186,7 @@ export default function JimpitanClient({ initial, readOnly }) {
           </TabNavigationLink>
         </TabNavigation>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2 sm:justify-end justify-start">
           <PeriodDropdown
             year={year}
             onSelectYear={(y) => setYear(Number(y))}
@@ -280,7 +285,7 @@ export default function JimpitanClient({ initial, readOnly }) {
         </div>
       </div>
 
-      <div className="rounded-xl bg-white shadow overflow-hidden">
+      <div className="overflow-hidden md:rounded-xl md:bg-white md:shadow">
         <JimpitanTable
           initial={initial}
           readOnly={readOnly}
@@ -325,8 +330,20 @@ export default function JimpitanClient({ initial, readOnly }) {
         onCancel={() => setConfirmExport(false)}
         onOk={() => {
           setConfirmExport(false);
+
           const params = new URLSearchParams(sp.toString());
-          window.location.href = `${API_BASE}/jimpitan/laporan/export?${params.toString()}`;
+          // opsional: kalau mau bersihin q / page:
+          // params.delete("page");
+
+          show({
+            variant: "warning",
+            title: "Mengunduh laporan",
+            description:
+              "Jika unduhan tidak mulai otomatis, coba ulangi beberapa saat lagi.",
+          });
+
+          // lewat proxy Next, sama kayak sampah
+          window.location.href = `/api/proxy/jimpitan/laporan/export?${params.toString()}`;
         }}
       />
 
@@ -334,7 +351,6 @@ export default function JimpitanClient({ initial, readOnly }) {
         <FilterModal
           open={filterOpen}
           onClose={() => setFilterOpen(false)}
-          // bounds={setoranBounds}
           value={{
             typeIn: sp.get("type") === "IN",
             typeOut: sp.get("type") === "OUT",

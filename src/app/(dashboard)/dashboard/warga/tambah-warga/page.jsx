@@ -4,7 +4,6 @@ import WargaClient from "./WargaClient";
 
 export const dynamic = "force-dynamic";
 
-
 function normalizeWarga(resp) {
   const pag = resp.pagination || {};
   return {
@@ -36,6 +35,7 @@ export default async function Page({ searchParams }) {
     kas_max,
     arisan_min,
     arisan_max,
+    arisan_status,
   } = sp;
 
   const toNum = (v) =>
@@ -57,6 +57,7 @@ export default async function Page({ searchParams }) {
     kas_max: toNum(kas_max),
     arisan_min: toNum(arisan_min),
     arisan_max: toNum(arisan_max),
+    arisan_status,
   });
 
   const initial = normalizeWarga(raw);

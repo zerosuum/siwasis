@@ -17,28 +17,23 @@ import {
 import ArisanRekapTable from "./RekapTable";
 import { actionSaveArisanRekap } from "./actions";
 import { useToast } from "@/components/ui/useToast";
+import PeriodDropdown from "../../kas/rekapitulasi/PeriodDropdown";
 
 export default function ArisanRekapClient({ initial, readOnly }) {
   const router = useRouter();
   const sp = useSearchParams();
   const { show } = useToast();
 
-  // URL
   const page = initial?.page || 1;
-  // const year = initial?.meta?.year || new Date().getFullYear();
-  const yearFromUrl = Number(sp.get("year"));
-  const year = Number.isFinite(yearFromUrl) ? yearFromUrl : (initial?.meta?.year || new Date().getFullYear());
   const q = sp.get("q") || "";
   const rt = sp.get("rt") || "all";
   const from = sp.get("from");
   const to = sp.get("to");
 
-  // UI state
   const [searchQuery, setSearchQuery] = React.useState(q);
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [filterOpen, setFilterOpen] = React.useState(false);
 
-  // Edit state
   const [editing, setEditing] = React.useState(false);
   const [updates, setUpdates] = React.useState([]);
   const [confirmSave, setConfirmSave] = React.useState(false);
@@ -46,12 +41,10 @@ export default function ArisanRekapClient({ initial, readOnly }) {
   const [confirmDownload, setConfirmDownload] = React.useState(false);
   const [successOpen, setSuccessOpen] = React.useState(false);
 
-  // Range
   const initRange =
     from && to ? { from: new Date(from), to: new Date(to) } : undefined;
   const [range, setRange] = React.useState(initRange);
 
-  // DateRange
   const filterAnchorRef = React.useRef(null);
   const openFilterCalendar = React.useCallback(() => {
     const root = filterAnchorRef.current;
@@ -68,8 +61,6 @@ export default function ArisanRekapClient({ initial, readOnly }) {
     );
   }, []);
 
-  const [yearState, setYearState] = React.useState(year);
-
   React.useEffect(() => {
     if (!range?.from || !range?.to) return;
 
@@ -77,19 +68,16 @@ export default function ArisanRekapClient({ initial, readOnly }) {
     if (sp.get("rt")) params.set("rt", sp.get("rt"));
     if (sp.get("q")) params.set("q", sp.get("q"));
 
-    params.set("year", String(yearState));
     params.set("from", range.from.toISOString().slice(0, 10));
     params.set("to", range.to.toISOString().slice(0, 10));
     params.set("page", "1");
 
     router.push(`/dashboard/arisan/rekapitulasi?${params.toString()}`);
   }, [
-    yearState,
     range?.from ? range.from.getTime() : null,
     range?.to ? range.to.getTime() : null,
   ]);
 
-  // Navigate helper
   const navigate = (patch) => {
     const params = new URLSearchParams(sp.toString());
     Object.entries(patch).forEach(([k, v]) => {
@@ -100,7 +88,6 @@ export default function ArisanRekapClient({ initial, readOnly }) {
     router.push(`/dashboard/arisan/rekapitulasi?${params.toString()}`);
   };
 
-  // Toggle checkbox
   const onToggle = React.useCallback((wargaId, tanggal, checked) => {
     setUpdates((prev) => {
       const key = `${wargaId}-${tanggal}`;
@@ -114,8 +101,31 @@ export default function ArisanRekapClient({ initial, readOnly }) {
     setConfirmSave(false);
     startTransition(async () => {
       try {
-        // Panggil Server Action
-        await actionSaveArisanRekap({ year: yearState, updates, from, to });
+        const periodeId = initial?.meta?.periodeId;
+        const nominal = initial?.meta?.nominal ?? 0;
+
+        if (!periodeId) {
+          show({
+            title: "Gagal Menyimpan",
+            description:
+              "Periode aktif tidak diketahui. Coba muat ulang halaman atau pilih periode terlebih dahulu.",
+            variant: "error",
+          });
+          return;
+        }
+
+        const payloadUpdates = updates.map((u) => ({
+          warga_id: u.wargaId,
+          tanggal: u.tanggal,
+          status: u.checked ? "sudah_bayar" : "belum_bayar",
+          jumlah: u.checked ? nominal : 0,
+        }));
+
+        await actionSaveArisanRekap({
+          periode_id: periodeId,
+          updates: payloadUpdates,
+        });
+
         setEditing(false);
         setUpdates([]);
         setSuccessOpen(true);
@@ -130,7 +140,6 @@ export default function ArisanRekapClient({ initial, readOnly }) {
     });
   };
 
-  // Lock/unlock sidebar saat editing
   React.useEffect(() => {
     const aside = document.querySelector("aside");
     if (editing) aside?.classList.add("pointer-events-none", "opacity-60");
@@ -138,7 +147,6 @@ export default function ArisanRekapClient({ initial, readOnly }) {
     return () => aside?.classList.remove("pointer-events-none", "opacity-60");
   }, [editing]);
 
-  // Peringatan ketika close tab saat editing
   React.useEffect(() => {
     const onBeforeUnload = (e) => {
       if (!editing) return;
@@ -174,24 +182,23 @@ export default function ArisanRekapClient({ initial, readOnly }) {
         </TabNavigation>
 
         <div className="flex items-center gap-2">
-          <select
-            className="h-8 w-[180px] rounded-[12px] border border-[#E2E7D7] bg-white px-3 text-sm"
-            value={year}
-            onChange={(e) => {
-              const y = e.target.value;
-              setYearState(Number(y));
-              navigate({ year: y });
-            }}
-          >
-            {Array.from({ length: 6 }).map((_, i) => {
-              const y = new Date().getFullYear() - i;
-              return (
-                <option key={y} value={y}>
-                  Periode {y}
-                </option>
+          <PeriodDropdown
+            activeId={initial.periodeId}
+            options={initial.periodes || []}
+            onSelect={(id) => {
+              const params = new URLSearchParams(sp.toString());
+
+              if (id) params.set("periode_id", String(id));
+              else params.delete("periode_id");
+
+              params.set("page", "1");
+
+              router.push(
+                `/dashboard/arisan/rekapitulasi?${params.toString()}`
               );
-            })}
-          </select>
+            }}
+          />
+
           <div
             className="relative"
             onMouseEnter={() => setSearchOpen(true)}
@@ -213,6 +220,7 @@ export default function ArisanRekapClient({ initial, readOnly }) {
               }`}
             />
           </div>
+
           <button
             onClick={() => setFilterOpen(true)}
             className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
@@ -256,6 +264,7 @@ export default function ArisanRekapClient({ initial, readOnly }) {
               </div>
             </div>
           </div>
+
           <button
             onClick={() => setConfirmDownload(true)}
             className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
@@ -263,6 +272,7 @@ export default function ArisanRekapClient({ initial, readOnly }) {
           >
             <IconDownload size={16} />
           </button>
+
           {!readOnly && (
             <>
               {!editing ? (
@@ -308,6 +318,7 @@ export default function ArisanRekapClient({ initial, readOnly }) {
           onToggle={onToggle}
         />
       </div>
+
       <div className="grid grid-cols-[1fr_auto_1fr] items-center px-4 py-2 text-xs text-gray-500">
         <div className="justify-self-start">
           Nominal: {initial.meta?.nominalPerEventFormatted ?? "Rp 0"}

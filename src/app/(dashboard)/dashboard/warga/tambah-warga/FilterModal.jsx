@@ -17,35 +17,36 @@ function Chip({ active, children, onClick }) {
 export default function FilterModal({
   open,
   onClose,
-  anchorEl, 
+  anchorEl,
   value = {},
   onApply,
   onReset,
-  align = "left", 
+  align = "left",
   offset = 8,
 }) {
   const [rt, setRt] = React.useState(value.rt ?? "all");
   const [statusSudah, setStatusSudah] = React.useState(
-    value.arisan_status === "sudah"
+    value.arisan_status === "sudah_dapat"
   );
   const [statusBelum, setStatusBelum] = React.useState(
-    value.arisan_status === "belum"
+    value.arisan_status === "belum_dapat"
   );
+
   const [kasMin, setKasMin] = React.useState(value.kas_min ?? "");
   const [kasMax, setKasMax] = React.useState(value.kas_max ?? "");
   const [arMin, setArMin] = React.useState(value.arisan_min ?? "");
   const [arMax, setArMax] = React.useState(value.arisan_max ?? "");
 
-  React.useEffect(() => {
-    if (!open) return;
-    setRt(value.rt ?? "all");
-    setStatusSudah(value.arisan_status === "sudah");
-    setStatusBelum(value.arisan_status === "belum");
-    setKasMin(value.kas_min ?? "");
-    setKasMax(value.kas_max ?? "");
-    setArMin(value.arisan_min ?? "");
-    setArMax(value.arisan_max ?? "");
-  }, [open, value]);
+React.useEffect(() => {
+  if (!open) return;
+  setRt(value.rt ?? "all");
+  setStatusSudah(value.arisan_status === "sudah_dapat");
+  setStatusBelum(value.arisan_status === "belum_dapat");
+  setKasMin(value.kas_min ?? "");
+  setKasMax(value.kas_max ?? "");
+  setArMin(value.arisan_min ?? "");
+  setArMax(value.arisan_max ?? "");
+}, [open, value]);
 
   const panelRef = React.useRef(null);
   const [pos, setPos] = React.useState({ top: 0, left: 0, ready: false });
@@ -74,7 +75,11 @@ export default function FilterModal({
   if (!open) return null;
 
   const chosenStatus =
-    statusSudah === statusBelum ? "" : statusSudah ? "sudah" : "belum";
+    statusSudah === statusBelum
+      ? ""
+      : statusSudah
+      ? "sudah_dapat"
+      : "belum_dapat";
 
   const onlyNum = (s) => s.replace(/\D+/g, "");
 
