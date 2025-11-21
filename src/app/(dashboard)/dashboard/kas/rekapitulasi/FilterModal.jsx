@@ -34,7 +34,11 @@ export default function FilterModal({
   };
 
   const apply = () => {
-    onApply({ rt, min: range[0], max: range[1] });
+    onApply({
+      rt: rt === "all" ? undefined : rt, 
+      min: range[0],
+      max: range[1],
+    });
     onClose();
   };
 
@@ -153,6 +157,7 @@ function Chip({ selected, onClick, children }) {
     </button>
   );
 }
+
 function NumberBox({ label, value, onChange }) {
   return (
     <label className="flex items-center gap-2 rounded-md border px-3 py-2">
@@ -166,7 +171,9 @@ function NumberBox({ label, value, onChange }) {
     </label>
   );
 }
+
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
 const fmt = (n) =>
   n.toLocaleString("id-ID", {
     style: "currency",

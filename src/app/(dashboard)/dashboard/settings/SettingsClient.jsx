@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ToastProvider, useToast } from "@/components/ui/useToast";
+import { useToast } from "@/components/ui/useToast";
 
 import {
   actionCreateAdmin,
@@ -75,29 +75,29 @@ function PageInner({ initialProfile, initialAdmins }) {
     }
   }
 
-async function handleUpdateProfile(p) {
-  setIsMutating(true);
-  try {
-    const fd = new FormData();
-    fd.append("_method", "PUT");
-    fd.append("name", p.name);
-    fd.append("email", p.email);
-    if (p.photo) fd.append("photo", p.photo);
+  async function handleUpdateProfile(p) {
+    setIsMutating(true);
+    try {
+      const fd = new FormData();
+      fd.append("_method", "PUT");
+      fd.append("name", p.name);
+      fd.append("email", p.email);
+      if (p.photo) fd.append("photo", p.photo);
 
-    const updated = await actionUpdateProfile(fd);
-    const updatedProfile = updated?.data ?? updated ?? {};
+      const updated = await actionUpdateProfile(fd);
+      const updatedProfile = updated?.data ?? updated ?? {};
 
-    setProfile((old) => ({ ...old, ...updatedProfile }));
+      setProfile((old) => ({ ...old, ...updatedProfile }));
 
-    router.refresh();
+      router.refresh();
 
-    show({ title: "Sukses!", description: "Profil berhasil diperbarui." });
-  } catch (e) {
-    show({ title: "Gagal", description: e.message, variant: "error" });
-  } finally {
-    setIsMutating(false);
+      show({ title: "Sukses!", description: "Profil berhasil diperbarui." });
+    } catch (e) {
+      show({ title: "Gagal", description: e.message, variant: "error" });
+    } finally {
+      setIsMutating(false);
+    }
   }
-}
   async function handleChangePassword(p) {
     setIsMutating(true);
     try {
@@ -156,9 +156,5 @@ async function handleUpdateProfile(p) {
 }
 
 export default function SettingsClient(props) {
-  return (
-    <ToastProvider>
-      <PageInner {...props} />
-    </ToastProvider>
-  );
+  return <PageInner {...props} />;
 }

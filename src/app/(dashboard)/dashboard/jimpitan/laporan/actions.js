@@ -6,6 +6,13 @@ import { getAdminProfile } from "@/lib/session";
 import { cookies } from "next/headers";
 import https from "https";
 
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false,
+});
+
+const REVALIDATE_PATH = "/dashboard/jimpitan/laporan";
+const API_PREFIX = "/jimpitan";
+
 async function getAuth() {
   const profile = await getAdminProfile();
   if (!profile) throw new Error("Akses ditolak. Silakan login.");
@@ -28,21 +35,27 @@ async function createAuthHeaders(token) {
   return headers;
 }
 
-const httpsAgent = new https.Agent({
-  rejectUnauthorized: false,
-});
+async function assertOkOrThrow(res, fallbackMsg) {
+  if (res.ok) return;
+  let msg = fallbackMsg || `HTTP ${res.status}`;
+  try {
+    const data = await res.json();
+    if (data?.message) msg = data.message;
+  } catch (_) {
+
+  }
+  throw new Error(msg);
+}
 
 // CREATE
 export async function actionCreateEntry(payload) {
   const { token } = await getAuth();
   const authHeaders = await createAuthHeaders(token);
 
-  const { tanggal, keterangan, nominal, type } = payload; // type is "IN" or "OUT"
-
-
+  const { tanggal, keterangan, nominal, type } = payload;
   const backendTipe = type === "IN" ? "pemasukan" : "pengeluaran";
 
-  const res = await fetch(`${API_BASE}/jimpitan/create`, {
+  const res = await fetch(`${API_BASE}${API_PREFIX}/create`, {
     method: "POST",
     headers: authHeaders,
     body: JSON.stringify({
@@ -54,8 +67,8 @@ export async function actionCreateEntry(payload) {
     agent: httpsAgent,
   });
 
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  revalidatePath("/dashboard/jimpitan/laporan");
+  await assertOkOrThrow(res, `HTTP ${res.status}`);
+  revalidatePath(REVALIDATE_PATH);
   return { ok: true };
 }
 
@@ -64,11 +77,10 @@ export async function actionUpdateEntry(payload) {
   const { token } = await getAuth();
   const authHeaders = await createAuthHeaders(token);
 
-  const { id, tanggal, keterangan, nominal, type } = payload; // type is "IN" or "OUT"
-
+  const { id, tanggal, keterangan, nominal, type } = payload;
   const backendTipe = type === "IN" ? "pemasukan" : "pengeluaran";
 
-  const res = await fetch(`${API_BASE}/jimpitan/update/${id}`, {
+  const res = await fetch(`${API_BASE}${API_PREFIX}/update/${id}`, {
     method: "PUT",
     headers: authHeaders,
     body: JSON.stringify({
@@ -80,23 +92,29 @@ export async function actionUpdateEntry(payload) {
     agent: httpsAgent,
   });
 
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  revalidatePath("/dashboard/jimpitan/laporan");
+  await assertOkOrThrow(res, `HTTP ${res.status}`);
+  revalidatePath(REVALIDATE_PATH);
   return { ok: true };
 }
 
 // DELETE
 export async function actionDeleteEntry({ id }) {
   const { token } = await getAuth();
-  const authHeaders = await createAuthHeaders(token);
 
-  const res = await fetch(`${API_BASE}/jimpitan/delete/${id}`, {
+  const headers = {
+    Accept: "application/json",
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE}${API_PREFIX}/delete/${id}`, {
     method: "DELETE",
-    headers: { ...authHeaders, "Content-Type": undefined },
+    headers,
     agent: httpsAgent,
   });
 
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  revalidatePath("/dashboard/jimpitan/laporan");
+  await assertOkOrThrow(res, `HTTP ${res.status}`);
+  revalidatePath(REVALIDATE_PATH);
   return { ok: true };
 }

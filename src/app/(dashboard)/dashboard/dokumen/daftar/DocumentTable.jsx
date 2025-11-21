@@ -1,4 +1,5 @@
 "use client";
+
 import {
   Table,
   TableBody,
@@ -15,25 +16,6 @@ import {
   Download as IconDownload,
 } from "lucide-react";
 
-function ActionIcon({ title, onClick, variant = "default", children }) {
-  const theme =
-    variant === "danger"
-      ? "bg-[#B24949] focus:ring-[#F0C5C5]"
-      : "bg-[#6E8649] focus:ring-[#C9D6B4]";
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      aria-label={title}
-      className={`inline-flex aspect-square h-8 items-center justify-center rounded-full text-white shadow-sm
-      transition active:scale-95 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 ${theme}`}
-    >
-      {children}
-    </button>
-  );
-}
-
 export default function DocumentTable({
   initial,
   onView,
@@ -47,11 +29,12 @@ export default function DocumentTable({
   const colCount = 5;
 
   const currentPage = Number(initial?.current_page) || 1;
-  const itemsPerPage = Number(initial?.per_page) || 15;
+  const itemsPerPage =
+    Number(initial?.per_page) || (hasData ? rows.length : 15);
 
-  const fmtDate = (s) =>
-    s
-      ? new Date(s).toLocaleDateString("id-ID", {
+  const formatTanggal = (tgl) =>
+    tgl
+      ? new Date(tgl).toLocaleDateString("id-ID", {
           day: "2-digit",
           month: "2-digit",
           year: "numeric",
@@ -59,100 +42,182 @@ export default function DocumentTable({
       : "—";
 
   return (
-    <TableRoot className="overflow-auto max-h-[700px]">
-      <Table className="w-full table-fixed min-w-[1000px]">
-        <TableHead className="bg-[#F4F6EE] sticky top-0 z-10 border-0">
-          <TableRow className="border-b border-gray-200">
-            <TableHeaderCell className="w-[56px] text-center py-3 font-semibold text-gray-600">
-              No
-            </TableHeaderCell>
-            <TableHeaderCell className="w-[320px] text-left py-3 font-semibold text-gray-600">
-              Nama Dokumen
-            </TableHeaderCell>
-            <TableHeaderCell className="w-[180px] text-center py-3 font-semibold text-gray-600">
-              Tanggal Upload
-            </TableHeaderCell>
-            <TableHeaderCell className="text-left py-3 font-semibold text-gray-600">
-              Keterangan
-            </TableHeaderCell>
-            <TableHeaderCell className="w-[160px] text-center py-3 font-semibold text-gray-600">
-              Aksi
-            </TableHeaderCell>
-          </TableRow>
-        </TableHead>
+    <>
+      <TableRoot className="hidden max-h-[600px] w-full overflow-auto md:block">
+        <Table className="w-full min-w-[1100px]">
+          <TableHead className="sticky top-0 z-10 border-0 bg-[#F4F6EE]">
+            <TableRow className="border-b border-gray-200">
+              <TableHeaderCell className="w-[56px] py-3 text-center font-semibold text-gray-600">
+                No
+              </TableHeaderCell>
+              <TableHeaderCell className="w-[320px] py-3 text-left font-semibold text-gray-600">
+                Nama Dokumen
+              </TableHeaderCell>
+              <TableHeaderCell className="w-[180px] py-3 text-center font-semibold text-gray-600">
+                Tanggal Upload
+              </TableHeaderCell>
+              <TableHeaderCell className="py-3 text-left font-semibold text-gray-600">
+                Keterangan
+              </TableHeaderCell>
+              <TableHeaderCell className="w-[220px] min-w-[220px] py-3 text-center font-semibold text-gray-600">
+                Aksi
+              </TableHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody className="text-sm">
+            {hasData ? (
+              rows.map((r, idx) => (
+                <TableRow
+                  key={r.id || idx}
+                  className="border-b-0 odd:bg-white even:bg-[#FAFBF7]"
+                >
+                  <TableCell className="py-4 text-center text-gray-500">
+                    {(currentPage - 1) * itemsPerPage + idx + 1}
+                  </TableCell>
+                  <TableCell className="py-4 text-left font-medium">
+                    {r.title || r.filename}
+                  </TableCell>
+                  <TableCell className="py-4 text-center tabular-nums">
+                    {formatTanggal(r.uploaded_at)}
+                  </TableCell>
+                  <TableCell className="py-4 text-left">
+                    {r.description || "—"}
+                  </TableCell>
+                  <TableCell className="py-4 min-w-[220px]">
+                    <div className="flex items-center justify-center gap-2 flex-wrap md:flex-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => onView?.(r)}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#6E8649] bg-white text-[#6E8649] shadow-sm transition hover:bg-[#6E8649]/5"
+                        title="Lihat"
+                      >
+                        <IconEye size={14} />
+                      </button>
 
-        <TableBody className="text-sm">
-          {hasData ? (
-            rows.map((r, idx) => (
-              <TableRow
-                key={r.id || idx}
-                className="odd:bg-white even:bg-[#FAFBF7] border-b-0"
-              >
-                <TableCell className="py-4 text-center text-gray-500">
-                  {(currentPage - 1) * itemsPerPage + idx + 1}
-                </TableCell>
-                <TableCell className="py-4 text-left font-medium">
-                  {r.title || r.filename}
-                </TableCell>
-                <TableCell className="py-4 text-center tabular-nums">
-                  {fmtDate(r.uploaded_at)}
-                </TableCell>
-                <TableCell className="py-4 text-left">
-                  {r.description || "—"}
-                </TableCell>
-                <TableCell className="py-4">
-                  <div className="flex items-center justify-center gap-1.5">
-                    <ActionIcon title="Lihat" onClick={() => onView?.(r)}>
-                      <IconEye size={16} strokeWidth={2} className="shrink-0" />
-                    </ActionIcon>
-                    {!readOnly && (
-                      <>
-                        <ActionIcon title="Edit" onClick={() => onEdit?.(r)}>
-                          <IconEdit
-                            size={16}
-                            strokeWidth={2}
-                            className="shrink-0"
-                          />
-                        </ActionIcon>
-                        <ActionIcon
-                          title="Hapus"
-                          variant="danger"
-                          onClick={() => onDelete?.(r)}
-                        >
-                          <IconDelete
-                            size={16}
-                            strokeWidth={2}
-                            className="shrink-0"
-                          />
-                        </ActionIcon>
-                      </>
-                    )}
-                    <ActionIcon
-                      title="Download"
-                      onClick={() => onDownload?.(r)}
-                    >
-                      <IconDownload
-                        size={16}
-                        strokeWidth={2}
-                        className="shrink-0"
-                      />
-                    </ActionIcon>
-                  </div>
+                      {!readOnly && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => onEdit?.(r)}
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#6E8649] bg-white text-[#6E8649] shadow-sm transition hover:bg-[#6E8649]/5"
+                            title="Edit"
+                          >
+                            <IconEdit size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDelete?.(r)}
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#B24949] bg-white text-[#B24949] shadow-sm transition hover:bg-[#B24949]/5"
+                            title="Hapus"
+                          >
+                            <IconDelete size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDownload?.(r)}
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#6E8649] bg-white text-[#6E8649] shadow-sm transition hover:bg-[#6E8649]/5"
+                            title="Download"
+                          >
+                            <IconDownload size={14} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={colCount}
+                  className="py-10 text-center text-gray-500"
+                >
+                  Tidak ada data.
                 </TableCell>
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell
-                colSpan={colCount}
-                className="text-center py-10 text-gray-500"
+            )}
+          </TableBody>
+        </Table>
+      </TableRoot>
+
+      <div className="mt-3 space-y-3 md:hidden">
+        {hasData ? (
+          rows.map((r, idx) => {
+            const nomor = (currentPage - 1) * itemsPerPage + idx + 1;
+
+            return (
+              <div
+                key={r.id || idx}
+                className="rounded-xl border border-[#E2E7D7] bg-white px-3 py-3 shadow-sm"
               >
-                Tidak ada data.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </TableRoot>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[11px] text-gray-400">
+                      No. {nomor}
+                    </span>
+                    <p className="text-sm font-medium text-gray-800">
+                      {r.title || r.filename}
+                    </p>
+                    <span className="text-[12px] text-gray-500">
+                      {formatTanggal(r.uploaded_at)}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="inline-flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => onView?.(r)}
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-[#6E8649] bg-white text-[#6E8649] shadow-sm transition hover:bg-[#6E8649]/5"
+                        title="Lihat"
+                      >
+                        <IconEye size={14} />
+                      </button>
+
+                      {!readOnly && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => onEdit?.(r)}
+                            className="flex h-8 w-8 items-center justify-center rounded-full border border-[#6E8649] bg-white text-[#6E8649] shadow-sm transition hover:bg-[#6E8649]/5"
+                            title="Edit"
+                          >
+                            <IconEdit size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDelete?.(r)}
+                            className="flex h-8 w-8 items-center justify-center rounded-full border border-[#B24949] bg-white text-[#B24949] shadow-sm transition hover:bg-[#B24949]/5"
+                            title="Hapus"
+                          >
+                            <IconDelete size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDownload?.(r)}
+                            className="flex h-8 w-8 items-center justify-center rounded-full border border-[#6E8649] bg-white text-[#6E8649] shadow-sm transition hover:bg-[#6E8649]/5"
+                            title="Download"
+                          >
+                            <IconDownload size={14} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-2 text-[13px] text-gray-600">
+                  {r.description || "—"}
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <p className="py-6 text-center text-sm text-gray-500">
+            Tidak ada data.
+          </p>
+        )}
+      </div>
+    </>
   );
 }

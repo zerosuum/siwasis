@@ -10,11 +10,7 @@ import {
   TableRow,
   TableCell,
 } from "@/components/Table";
-import {
-  Pencil as IconEdit,
-  Trash as IconDelete,
-  Plus as IconPlus,
-} from "lucide-react";
+import { Pencil as IconEdit, Trash as IconDelete } from "lucide-react";
 
 const rp = (n) =>
   new Intl.NumberFormat("id-ID", {
@@ -45,10 +41,11 @@ function ArisanBadge({ status }) {
   );
 }
 
-export default function WargaTable({ initial, onEdit, onDelete, onAddArisan }) {
+export default function WargaTable({ initial, onEdit, onDelete }) {
   const rows = initial?.data ?? initial?.rows ?? [];
   const hasData = rows.length > 0;
-  const colCount = 10;
+  
+  const colCount = 8;
 
   const currentPage = Number(initial?.page || initial?.current_page) || 1;
   const itemsPerPage = Number(initial?.perPage || initial?.per_page) || 15;
@@ -58,7 +55,7 @@ export default function WargaTable({ initial, onEdit, onDelete, onAddArisan }) {
       className="overflow-auto"
       style={{ maxHeight: "calc(100vh - 72px - 24px - 56px - 72px)" }}
     >
-      <Table className="w-full table-fixed min-w-[1200px]">
+      <Table className="w-full table-fixed min-w-[960px]">
         <TableHead className="bg-[#F4F6EE] sticky top-0 z-10">
           <TableRow>
             <TableHeaderCell className="w-[56px] text-center py-3 font-semibold text-gray-600">
@@ -77,15 +74,9 @@ export default function WargaTable({ initial, onEdit, onDelete, onAddArisan }) {
               Status Arisan
             </TableHeaderCell>
             <TableHeaderCell className="w-[150px] text-center py-3 font-semibold text-gray-600">
-              Jumlah Setoran Kas
-            </TableHeaderCell>
-            <TableHeaderCell className="w-[150px] text-center py-3 font-semibold text-gray-600">
               Total Kas
             </TableHeaderCell>
             <TableHeaderCell className="w-[160px] text-center py-3 font-semibold text-gray-600">
-              Jumlah Setoran Arisan
-            </TableHeaderCell>
-            <TableHeaderCell className="w-[150px] text-center py-3 font-semibold text-gray-600">
               Total Arisan
             </TableHeaderCell>
             <TableHeaderCell className="w-[126px] text-center py-3 font-semibold text-gray-600">
@@ -121,32 +112,19 @@ export default function WargaTable({ initial, onEdit, onDelete, onAddArisan }) {
                 </TableCell>
 
                 <TableCell className="py-4">
-                  {r.arisan_status && r.arisan_status !== "tidak_ikut" ? (
-                    <ArisanBadge status={r.arisan_status} />
+                  {r.status_arisan && r.status_arisan !== "tidak_ikut" ? (
+                    <ArisanBadge status={r.status_arisan} />
                   ) : (
-                    <button
-                      className="inline-flex items-center gap-1 text-xs text-[#6E8649] underline"
-                      onClick={() => onAddArisan?.(r)}
-                      title="Tandai sebagai anggota arisan"
-                    >
-                      <IconPlus size={12} />
-                      Tandai anggota
-                    </button>
+                    <span className="text-sm text-gray-400">—</span>
                   )}
                 </TableCell>
 
-                <TableCell className="py-4 text-center tabular-nums">
-                  {r.kas_setoran_count ?? 0}
-                </TableCell>
                 <TableCell className="py-4 text-center tabular-nums font-medium">
-                  {r.kas_total ? rp(r.kas_total) : "—"}
+                  {r.setoran_kas ? rp(r.setoran_kas) : "—"}
                 </TableCell>
 
-                <TableCell className="py-4 text-center tabular-nums">
-                  {r.arisan_setoran_count ?? 0}
-                </TableCell>
                 <TableCell className="py-4 text-center tabular-nums font-medium">
-                  {r.arisan_total ? rp(r.arisan_total) : "—"}
+                  {r.setoran_arisan ? rp(r.setoran_arisan) : "—"}
                 </TableCell>
 
                 <TableCell className="py-3">

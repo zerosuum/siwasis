@@ -53,7 +53,7 @@ export default async function BlogPage() {
 
       <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 md:px-4 py-10 sm:py-12 flex flex-col items-center gap-8">
         {list.length > 0 ? (
-          list.map((item) => <BlogCard key={item.id} item={item} />)
+          list.map((item) => (<BlogCard key={item.id} item={item} canManage={isLoggedIn} />))
         ) : (
           <p className="text-gray-500 text-center py-24">
             Belum ada berita untuk ditampilkan.

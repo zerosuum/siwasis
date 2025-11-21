@@ -1,9 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { Plus as IconPlus, ChevronDown } from "lucide-react";
+import { ChevronDown, Plus as IconPlus } from "lucide-react";
 
-export default function PeriodDropdown({ year, onSelectYear, onNew, showCreateButton }) {
+export default function PeriodDropdown({
+  activeId,
+  options,
+  onSelect,
+  onNew,
+  showCreateButton,
+}) {
   const [open, setOpen] = React.useState(false);
   const ref = React.useRef(null);
 
@@ -16,43 +22,51 @@ export default function PeriodDropdown({ year, onSelectYear, onNew, showCreateBu
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
-  const years = React.useMemo(() => {
-    const now = new Date().getFullYear();
-    return Array.from({ length: 6 }).map((_, i) => now - i);
-  }, []);
+  const active = React.useMemo(() => {
+    if (!Array.isArray(options)) return null;
+    return options.find((p) => p.id === activeId) || options[0] || null;
+  }, [options, activeId]);
 
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="h-9 w-[180px] rounded-[12px] border border-[#E2E7D7] bg-white px-3 text-sm flex items-center justify-between"
+        className="h-9 w-[220px] rounded-[12px] border border-[#E2E7D7] bg-white px-3 text-sm flex items-center justify-between"
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        <span>{`Periode ${year}`}</span>
+        <span>{active ? active.nama : "Pilih periode"}</span>
         <ChevronDown size={16} className="opacity-70" />
       </button>
 
       {open && (
         <div
           role="listbox"
-          className="absolute right-0 z-50 mt-1 w-[220px] rounded-xl border border-[#E2E7D7] bg-white p-1.5 shadow-xl"
+          className="absolute right-0 z-50 mt-1 w-[260px] rounded-xl border border-[#E2E7D7] bg-white p-1.5 shadow-xl"
         >
-          {years.map((y) => (
-            <button
-              key={y}
-              onClick={() => {
-                onSelectYear?.(y);
-                setOpen(false);
-              }}
-              className={`w-full text-left rounded-lg px-3 py-2 text-sm hover:bg-[#F4F6EE] ${
-                y === year ? "font-semibold text-[#6E8649]" : "text-gray-700"
-              }`}
-            >
-              {`Periode ${y}`}
-            </button>
-          ))}
+          {Array.isArray(options) && options.length > 0 ? (
+            options.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => {
+                  onSelect?.(p.id);
+                  setOpen(false);
+                }}
+                className={`w-full text-left rounded-lg px-3 py-2 text-sm hover:bg-[#F4F6EE] ${
+                  p.id === active?.id
+                    ? "font-semibold text-[#6E8649]"
+                    : "text-gray-700"
+                }`}
+              >
+                {p.nama}
+              </button>
+            ))
+          ) : (
+            <div className="px-3 py-2 text-sm text-gray-500">
+              Belum ada periode.
+            </div>
+          )}
 
           {showCreateButton && (
             <>

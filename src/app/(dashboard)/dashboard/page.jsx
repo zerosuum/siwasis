@@ -1,11 +1,10 @@
 import KPICard from "@/components/KPICard";
 import { getDashboardSummary } from "@/server/queries/dashboard";
 import { toRp } from "@/lib/format";
-import DashboardChartWrapper from "./DashboardChartWrapper";
 import DashboardHeaderControls from "./DashboardHeaderControls";
 import DashboardSyncRow from "./DashboardSyncRow";
 import { getAdminProfile } from "@/lib/session";
-
+import { getPeriodes } from "@/server/queries/periode";
 
 export const dynamic = "force-dynamic";
 
@@ -14,19 +13,42 @@ export default async function DashboardPage({ searchParams }) {
   const isLoggedIn = !!profile;
 
   const sp = await searchParams;
-  const from = sp?.from || null;
-  const to = sp?.to || null;
+
+  const urlFrom = sp?.from ?? null;
+  const urlTo = sp?.to ?? null;
+  const periodeId = sp?.periode ? Number(sp.periode) : null;
+
+  let periodes = [];
+  let defaultFrom = null;
+  let defaultTo = null;
+
+  try {
+    const periodeResp = await getPeriodes().catch(() => null);
+    periodes = Array.isArray(periodeResp?.data) ? periodeResp.data : [];
+    const latest = periodes[0];
+    if (latest) {
+      defaultFrom = latest.tanggal_mulai ?? null;
+      defaultTo = latest.tanggal_selesai ?? null;
+    }
+  } catch {
+    periodes = [];
+  }
+
+  const from = urlFrom || defaultFrom;
+  const to = urlTo || defaultTo;
 
   let data = {
     kpi: { pemasukan: 0, pengeluaran: 0, saldo: 0 },
     chart: [],
     arisan: [],
     kasTable: [],
-    period: { from: null, to: null },
+    period: { from: null, to: null, nama: null },
   };
+
   try {
-    data = await getDashboardSummary({ from, to });
-  } catch {}
+    data = await getDashboardSummary({ from, to, periode: periodeId });
+  } catch {
+  }
 
   const periodStr =
     data?.period?.from && data?.period?.to
@@ -40,10 +62,6 @@ export default async function DashboardPage({ searchParams }) {
           year: "numeric",
         })}`
       : "—";
-  const isSudahDapat = (status) =>
-    String(status || "")
-      .toLowerCase()
-      .includes("sudah");
 
   return (
     <div className="pb-10 space-y-4">
@@ -52,7 +70,10 @@ export default async function DashboardPage({ searchParams }) {
           Ringkasan aktivitas keuangan WASIS
         </h2>
         <div className="flex-shrink-0">
-          <DashboardHeaderControls isLoggedIn={isLoggedIn} />
+          <DashboardHeaderControls
+            isLoggedIn={isLoggedIn}
+            periodes={periodes}
+          />
         </div>
       </div>
 

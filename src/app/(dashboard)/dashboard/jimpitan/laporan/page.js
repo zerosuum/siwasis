@@ -7,8 +7,13 @@ import { cookies } from "next/headers";
 export const dynamic = "force-dynamic";
 
 const defaultData = {
-  data: [],
   saldo_akhir_total: 0,
+  data: {
+    data: [],
+    current_page: 1,
+    per_page: 15,
+    total: 0,
+  },
 };
 
 export default async function Page({ searchParams }) {
@@ -21,14 +26,14 @@ export default async function Page({ searchParams }) {
   const sp = await searchParams;
   const page = sp?.page ? Number(sp.page) : 1;
   const year = sp?.year ? Number(sp.year) : new Date().getFullYear();
-  const from = sp?.from ?? null;
+  const from = sp?.from ?? null; // sekarang tidak dipakai BE, tapi aman di URL
   const to = sp?.to ?? null;
   const q = sp?.q ?? "";
-  const type = sp?.type ?? null;
+  const type = sp?.type ?? null; // "IN" / "OUT"
   const min = sp?.min ? Number(sp.min) : undefined;
   const max = sp?.max ? Number(sp.max) : undefined;
 
-  let initial;
+  let initial = defaultData;
   let kpiSaldo = 0;
 
   try {
@@ -46,16 +51,18 @@ export default async function Page({ searchParams }) {
     kpiSaldo = resp.saldo_akhir_total || 0;
   } catch (e) {
     console.error("Gagal getJimpitanLaporan:", e.message);
-    initial = defaultData;
   }
 
   const kpiData = initial.data?.data || [];
+
   const pemasukan = kpiData
     .filter((t) => t.tipe === "pemasukan")
-    .reduce((acc, t) => acc + Number(t.jumlah), 0);
+    .reduce((acc, t) => acc + Number(t.jumlah || 0), 0);
+
   const pengeluaran = kpiData
     .filter((t) => t.tipe === "pengeluaran")
-    .reduce((acc, t) => acc + Number(t.jumlah), 0);
+    .reduce((acc, t) => acc + Number(t.jumlah || 0), 0);
+
   const formatRp = (n) =>
     new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -65,12 +72,12 @@ export default async function Page({ searchParams }) {
 
   const kpis = [
     {
-      label: "Pemasukan (Halaman Ini)",
+      label: "Pemasukan Jimpitan",
       value: formatRp(pemasukan),
       range: `Halaman ${initial.data?.current_page || 1}`,
     },
     {
-      label: "Pengeluaran (Halaman Ini)",
+      label: "Pengeluaran Jimpitan",
       value: formatRp(pengeluaran),
       range: `Halaman ${initial.data?.current_page || 1}`,
     },

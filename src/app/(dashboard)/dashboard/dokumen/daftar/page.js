@@ -32,7 +32,7 @@ export default async function Page({ searchParams }) {
       search,
       from,
       to,
-      per_page: 15,
+      perPage: 15,
       tags: ["documents"],
     });
 

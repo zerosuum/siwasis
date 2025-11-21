@@ -41,21 +41,23 @@ export default function Toast() {
 
   return (
     <div
-      className="
-        fixed inset-0 
-        z-[11000] 
-        flex items-center justify-center 
+      className={`
         pointer-events-none
-      "
+        fixed inset-x-0 top-4 sm:top-6
+        z-[11000]
+        flex justify-center px-4
+        lg:justify-end lg:pr-8
+      `}
     >
       <div
         className={`
-          inline-flex min-w-[480px] max-w-[90vw]
+          w-full max-w-sm sm:max-w-md
           rounded-[20px] border shadow-card
-          px-[25px] py-[25px] gap-4 items-center
-          animate-slide-up-and-fade
+          px-4 sm:px-[25px] py-4 sm:py-[25px] gap-3 sm:gap-4
+          flex items-center
           ${currentStyle}
           pointer-events-auto
+          animate-slide-up-and-fade
         `}
         role="status"
         aria-live="polite"
@@ -63,19 +65,19 @@ export default function Toast() {
         <Image
           src={currentIcon}
           alt={variant}
-          width={72}
-          height={72}
-          className="shrink-0"
+          width={56}
+          height={56}
+          className="shrink-0 sm:w-[72px] sm:h-[72px]"
         />
 
-        <div className="flex flex-col gap-1 text-center">
+        <div className="flex flex-col gap-1 text-left">
           {title && (
-            <p className="font-rem text-[20px] leading-[26px] font-bold text-[#222]">
+            <p className="font-rem text-[16px] sm:text-[20px] leading-[22px] sm:leading-[26px] font-bold text-[#222]">
               {title}
             </p>
           )}
           {description && (
-            <p className="font-rem text-[16px] leading-[22px] text-[#222]">
+            <p className="font-rem text-[14px] sm:text-[16px] leading-[20px] sm:leading-[22px] text-[#222]">
               {description}
             </p>
           )}

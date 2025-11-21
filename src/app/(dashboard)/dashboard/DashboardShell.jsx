@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import {
   LayoutDashboard as IconDashboard,
@@ -21,6 +21,7 @@ import {
 import { createAvatar } from "@dicebear/core";
 import { lorelei } from "@dicebear/collection";
 import Image from "next/image";
+import { getProfilePhotoUrl } from "@/lib/profilePhoto";
 
 function Avatar({ seed }) {
   const svg = createAvatar(lorelei, {
@@ -56,20 +57,22 @@ function SidebarLink({ href, icon: Icon, children, exact = false }) {
   );
 }
 
-const getStorageUrl = (filename) => {
-  if (!filename) return null;
+// const getStorageUrl = (filename) => {
+//   if (!filename) return null;
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE
-    ? process.env.NEXT_PUBLIC_API_BASE.replace("/api", "")
-    : "https://siwasis.novarentech.web.id";
+//   const baseUrl = process.env.NEXT_PUBLIC_API_BASE
+//     ? process.env.NEXT_PUBLIC_API_BASE.replace("/api", "")
+//     : "https://siwasis.novarentech.web.id";
 
-  return `${baseUrl}/storage/profile/${filename}`;
-};
+//   return `${baseUrl}/storage/profile/${filename}`;
+// };
 
 export default function DashboardShell({ profile, children }) {
   const isLoggedIn = !!profile;
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const photoUrl = useMemo(() => getProfilePhotoUrl(profile), [profile]);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -153,7 +156,8 @@ export default function DashboardShell({ profile, children }) {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden lg:ml-[220px]">
-        <header className="sticky top-0 z-30 flex h-[72px] items-center gap-4 border-b border-[#EEF0E8] bg-white px-6">
+        {/* <header className="sticky top-0 z-30 flex h-[72px] items-center gap-4 border-b border-[#EEF0E8] bg-white px-6"> */}
+        <header className="sticky top-0 z-30 flex items-center gap-4 border-b border-[#EEF0E8] bg-white px-6 py-3 min-h-[72px]">
           <button
             onClick={() => setIsMobileMenuOpen(true)}
             className="lg:hidden"
@@ -170,9 +174,9 @@ export default function DashboardShell({ profile, children }) {
 
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center">
-              {profile?.photo_url ? (
+              {photoUrl ? (
                 <img
-                  src={profile.photo_url}
+                  src={photoUrl}
                   alt={profile?.name || "avatar"}
                   className="h-full w-full object-cover"
                 />

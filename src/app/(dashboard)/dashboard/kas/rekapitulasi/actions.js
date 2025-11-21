@@ -22,11 +22,12 @@ const getAuthToken = async () => {
 
 export async function actionSaveRekap(payload) {
   await checkAuth();
-  const token = await getAuthToken();
+  await getAuthToken(); 
+  const res = await saveKasRekap(payload);
 
-  const res = await saveKasRekap(payload, token);
   revalidatePath("/dashboard/kas/rekapitulasi");
   revalidatePath("/dashboard/kas/laporan");
+
   return res;
 }
 
@@ -34,7 +35,7 @@ export async function actionCreatePeriod(payload) {
   await checkAuth();
   const token = await getAuthToken();
 
-  const res = await fetch(`${API_BASE}/kas/periode/create`, {
+  const res = await fetch(`${API_BASE}/periode`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -42,10 +43,10 @@ export async function actionCreatePeriod(payload) {
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
-      name: payload.name,
+      nama: payload.name,
       nominal: Number(payload.nominal || 0),
-      from: payload.from,
-      to: payload.to,
+      tanggal_mulai: payload.from,
+      tanggal_selesai: payload.to,
     }),
     cache: "no-store",
   });
@@ -56,14 +57,30 @@ export async function actionCreatePeriod(payload) {
   }
 
   const json = await res.json().catch(() => ({}));
-  const newYear =
-    json?.year ??
-    json?.period?.year ??
-    (() => {
-      const m = String(payload.name || "").match(/\b(20\d{2})\b/);
-      return m ? Number(m[1]) : new Date().getFullYear();
-    })();
+  const data = json?.data ?? json?.periode ?? json ?? {};
+
+  const fromDate = data.tanggal_mulai || data.start_date || payload.from;
+  let newYear;
+
+  if (fromDate && typeof fromDate === "string" && fromDate.length >= 4) {
+    const y = Number(fromDate.slice(0, 4));
+    newYear = Number.isFinite(y) ? y : undefined;
+  }
+
+  if (!newYear) {
+    const nameSource = data.nama || payload.name || "";
+    const match = String(nameSource).match(/\b(20\d{2})\b/);
+    if (match) {
+      newYear = Number(match[1]);
+    }
+  }
+
+  if (!newYear) {
+    newYear = new Date().getFullYear();
+  }
 
   revalidatePath("/dashboard/kas/rekapitulasi");
+  revalidatePath("/dashboard/kas/laporan");
+
   return { ok: true, year: Number(newYear) };
 }

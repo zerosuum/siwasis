@@ -5,61 +5,43 @@ import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TabNavigation, TabNavigationLink } from "@/components/TabNavigation";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-// import { getSpinCandidates } from "@/server/queries/arisan";
 import { actionPostSpinDraw } from "./actions";
 import { useToast } from "@/components/ui/useToast";
 
-export default function SpinwheelClient({ initialSegments }) {
+export default function SpinwheelClient({
+  initialSegments,
+  periodes,
+  activePeriodeId,
+}) {
   const router = useRouter();
   const sp = useSearchParams();
   const { show } = useToast();
 
-  // Hydration guard
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 
-  // URL state
-  const [year, setYear] = React.useState(
-    Number(sp.get("year")) || new Date().getFullYear()
-  );
-  const [rt, setRt] = React.useState(sp.get("rt") || "all");
+  const [periodeId, setPeriodeId] = React.useState(activePeriodeId ?? null);
 
-  // Data & UI state
+  React.useEffect(() => {
+    setPeriodeId(activePeriodeId ?? null);
+  }, [activePeriodeId]);
+
+  const handleChangePeriode = (id) => {
+    const params = new URLSearchParams(sp.toString());
+    if (id) params.set("periode", String(id));
+    else params.delete("periode");
+    router.push(`/dashboard/arisan/spinwheel?${params.toString()}`);
+  };
+
   const [list, setList] = React.useState(
     Array.isArray(initialSegments) ? initialSegments : []
   );
+
   const [isSpinning, setIsSpinning] = React.useState(false);
   const [rotation, setRotation] = React.useState(0);
 
-  // Modal sukses
   const [successOpen, setSuccessOpen] = React.useState(false);
   const [winnerName, setWinnerName] = React.useState("");
-
-  // Refresh kandidat saat year/rt berubah
-  React.useEffect(() => {
-    let aborted = false;
-    (async () => {
-      try {
-        const res = await fetch(
-          `/api/arisan/spin-candidates?year=${year}&rt=${rt || "all"}`,
-          { cache: "no-store" }
-        );
-        const segs = await res.json();
-        if (!aborted) setList(Array.isArray(segs) ? segs : []);
-      } catch {}
-    })();
-    return () => {
-      aborted = true;
-    };
-  }, [year, rt]);
-
-  // Sinkronkan URL
-  React.useEffect(() => {
-    const params = new URLSearchParams(sp.toString());
-    params.set("year", String(year));
-    params.set("rt", rt || "all");
-    router.replace(`/dashboard/arisan/spinwheel?${params.toString()}`);
-  }, [year, rt]);
 
   const wheelSize = 520;
   const borderColor = "#000";
@@ -69,10 +51,13 @@ export default function SpinwheelClient({ initialSegments }) {
   const wheelRadius = wheelSize / 2;
 
   async function persistWinner(winner) {
+    if (!periodeId) {
+      throw new Error("Periode belum dipilih.");
+    }
+
     await actionPostSpinDraw({
-      wargaId: winner.id,
-      tanggal: new Date().toISOString().slice(0, 10),
-      year,
+      periode_id: periodeId,
+      warga_id: winner.id,
     });
 
     setList((prev) => prev.filter((s) => s.id !== winner.id));
@@ -100,6 +85,7 @@ export default function SpinwheelClient({ initialSegments }) {
           await persistWinner(winner);
           setWinnerName(winner.label);
           setSuccessOpen(true);
+          router.refresh();
         } catch (err) {
           show({
             title: "Gagal",
@@ -133,18 +119,17 @@ export default function SpinwheelClient({ initialSegments }) {
 
           <div className="flex items-center gap-2">
             <select
-              className="h-8 w-[180px] rounded-[12px] border border-[#E2E7D7] bg-white px-3 text-sm"
-              value={year}
-              onChange={(e) => setYear(Number(e.target.value))}
+              className="h-8 w-[220px] rounded-[12px] border border-[#E2E7D7] bg-white px-3 text-sm"
+              value={periodeId ?? ""}
+              onChange={(e) => handleChangePeriode(e.target.value || null)}
             >
-              {Array.from({ length: 6 }).map((_, i) => {
-                const y = new Date().getFullYear() - i;
-                return (
-                  <option key={y} value={y}>
-                    Periode {y}
+              <option value="">Pilih periode</option>
+              {Array.isArray(periodes) &&
+                periodes.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nama}
                   </option>
-                );
-              })}
+                ))}
             </select>
           </div>
         </div>
@@ -174,8 +159,8 @@ export default function SpinwheelClient({ initialSegments }) {
                 }}
               >
                 {list.map((segment, index) => {
-                  const startAngle = index * (360 / list.length);
-                  const endAngle = (index + 1) * (360 / list.length);
+                  const startAngle = index * segmentAngle;
+                  const endAngle = (index + 1) * segmentAngle;
 
                   const sr = (startAngle * Math.PI) / 180;
                   const er = (endAngle * Math.PI) / 180;
@@ -185,7 +170,7 @@ export default function SpinwheelClient({ initialSegments }) {
                   const x2 = wheelRadius + wheelRadius * Math.cos(er);
                   const y2 = wheelRadius + wheelRadius * Math.sin(er);
 
-                  const largeArcFlag = 360 / list.length > 180 ? 1 : 0;
+                  const largeArcFlag = segmentAngle > 180 ? 1 : 0;
                   const d = [
                     `M ${wheelRadius} ${wheelRadius}`,
                     `L ${x1} ${y1}`,
@@ -193,7 +178,7 @@ export default function SpinwheelClient({ initialSegments }) {
                     "Z",
                   ].join(" ");
 
-                  const textAngle = startAngle + 360 / list.length / 2;
+                  const textAngle = startAngle + segmentAngle / 2;
                   const tr = (textAngle * Math.PI) / 180;
                   const textR = wheelRadius * 0.65;
                   const tx = wheelRadius + textR * Math.cos(tr);
@@ -256,10 +241,14 @@ export default function SpinwheelClient({ initialSegments }) {
 
             <button
               onClick={handleSpin}
-              disabled={isSpinning || list.length === 0}
+              disabled={isSpinning || list.length === 0 || !periodeId}
               className="rounded-2xl bg-[#6E8649] px-5 py-3 text-white disabled:opacity-60"
             >
-              {list.length ? "Putar Spinwheel" : "Semua sudah dapat"}
+              {!periodeId
+                ? "Pilih periode dulu"
+                : list.length
+                ? "Putar Spinwheel"
+                : "Semua sudah dapat"}
             </button>
           </div>
         )}
