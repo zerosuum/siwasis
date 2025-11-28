@@ -2,6 +2,7 @@ import KPICard from "@/components/KPICard";
 import ArisanRekapClient from "./RekapClient";
 import { getArisanRekap } from "@/server/queries/arisan";
 import { getAdminProfile } from "@/lib/session";
+import { getPeriodes } from "@/server/queries/periode";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,22 @@ export default async function Page({ searchParams }) {
   } catch {
     initial = fallback;
   }
+
+  let periodes = [];
+  try {
+    const periodeResp = await getPeriodes().catch(() => null);
+    periodes = Array.isArray(periodeResp?.data) ? periodeResp.data : [];
+  } catch {
+    periodes = [];
+  }
+  const activePeriodeId =
+    periodeIdFromUrl ?? initial.periodeId ?? periodes[0]?.id ?? null;
+
+  initial = {
+    ...initial,
+    periodes,
+    periodeId: activePeriodeId,
+  };
 
   const kpis = [
     {

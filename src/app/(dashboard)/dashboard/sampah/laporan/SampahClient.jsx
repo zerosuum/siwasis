@@ -40,9 +40,21 @@ export default function SampahClient({ initial, readOnly }) {
   const [q, setQ] = React.useState("");
   const [searchOpen, setSearchOpen] = React.useState(false);
 
+  const FALLBACK_YEAR = 2026;
+  const initialYearParam = sp.get("year");
   const [year, setYear] = React.useState(
-    Number(sp.get("year")) || new Date().getFullYear()
+    initialYearParam ? Number(initialYearParam) : FALLBACK_YEAR
   );
+
+  const currentYear = year || new Date().getFullYear();
+  const yearOptions = React.useMemo(() => {
+    const baseYears = [currentYear, currentYear - 1, currentYear - 2];
+    const unique = Array.from(new Set(baseYears.filter(Boolean)));
+    return unique.map((y) => ({
+      id: y,
+      nama: `Tahun ${y}`,
+    }));
+  }, [currentYear]);
 
   const initRange =
     sp.get("from") && sp.get("to")
@@ -212,8 +224,9 @@ export default function SampahClient({ initial, readOnly }) {
 
         <div className="flex flex-wrap items-center justify-end gap-2 sm:justify-end justify-start">
           <PeriodDropdown
-            year={year}
-            onSelectYear={(y) => setYear(Number(y))}
+            activeId={currentYear}
+            options={yearOptions}
+            onSelect={(id) => setYear(Number(id))}
             showCreateButton={false}
           />
 

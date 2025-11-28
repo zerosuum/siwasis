@@ -15,6 +15,7 @@ const defaultData = {
     total: 0,
   },
 };
+const FALLBACK_YEAR = 2026;
 
 export default async function Page({ searchParams }) {
   const profile = await getAdminProfile();
@@ -25,8 +26,8 @@ export default async function Page({ searchParams }) {
 
   const sp = await searchParams;
   const page = sp?.page ? Number(sp.page) : 1;
-  const year = sp?.year ? Number(sp.year) : new Date().getFullYear();
-  const from = sp?.from ?? null; // sekarang tidak dipakai BE, tapi aman di URL
+  const year = sp?.year ? Number(sp.year) : FALLBACK_YEAR;
+  const from = sp?.from ?? null;
   const to = sp?.to ?? null;
   const q = sp?.q ?? "";
   const type = sp?.type ?? null; // "IN" / "OUT"

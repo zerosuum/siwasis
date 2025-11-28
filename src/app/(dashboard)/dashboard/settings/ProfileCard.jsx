@@ -44,6 +44,7 @@ function Button({ className = "", ...props }) {
 }
 
 export default function ProfileCard({ profile, loading, error, onEdit }) {
+
   if (loading || !profile) {
     return (
       <Card className="p-5">

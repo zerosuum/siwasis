@@ -16,15 +16,17 @@ export default function DashboardSyncRow({ chartData, arisan }) {
     return () => ro.disconnect();
   }, []);
 
-  const isSudah = (s) =>
-    String(s || "")
-      .toLowerCase()
-      .includes("sudah");
+  const isSudah = (statusTypeOrLabel) => {
+    const v = String(statusTypeOrLabel || "").toLowerCase();
+    if (v === "sudah") return true;
+    if (v === "belum") return false;
+    return v.includes("sudah");
+  };
 
   return (
     <div className="grid items-start grid-cols-1 gap-4 lg:grid-cols-12">
       <div
-        className="lg:col-span-8 rounded-2xl  shadow-sm"
+        className="lg:col-span-8 rounded-2xl shadow-sm"
         style={rightH ? { height: rightH } : undefined}
       >
         <DashboardChartWrapper chartData={chartData} fillContainer />
@@ -44,25 +46,33 @@ export default function DashboardSyncRow({ chartData, arisan }) {
               </tr>
             </thead>
             <tbody>
-              {arisan.slice(0, 5).map((r, i) => (
-                <tr key={r.id} className={i % 2 ? "bg-[#FAFBF7]" : "bg-white"}>
-                  <td className="py-3 px-3 text-gray-500">
-                    {String(i + 1).padStart(2, "0")}
-                  </td>
-                  <td className="py-3 px-3">{r.nama}</td>
-                  <td className="py-3 px-3">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                        isSudah(r.status)
-                          ? "bg-[#EEF0E8] text-[#2B3A1D]"
-                          : "bg-[#FFF6E5] text-[#B0892E]"
-                      }`}
-                    >
-                      {r.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {arisan.slice(0, 5).map((r, i) => {
+                const activeType = r.statusType ?? r.status;
+                const label = r.status ?? r.statusLabel ?? "-";
+
+                return (
+                  <tr
+                    key={r.id}
+                    className={i % 2 ? "bg-[#FAFBF7]" : "bg-white"}
+                  >
+                    <td className="py-3 px-3 text-gray-500">
+                      {String(i + 1).padStart(2, "0")}
+                    </td>
+                    <td className="py-3.5 px-3">{r.nama}</td>
+                    <td className="py-3.5 px-3">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                          isSudah(activeType)
+                            ? "bg-[#EEF0E8] text-[#2B3A1D]"
+                            : "bg-[#FFF6E5] text-[#B0892E]"
+                        }`}
+                      >
+                        {label}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
               {!arisan?.length && (
                 <tr>
                   <td colSpan={3} className="py-6 text-center text-gray-500">

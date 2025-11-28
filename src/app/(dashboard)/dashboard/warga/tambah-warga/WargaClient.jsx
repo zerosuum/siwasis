@@ -21,8 +21,9 @@ import {
   actionUpdateWarga,
   actionDeleteWarga,
 } from "./actions";
+import PeriodDropdown from "../../kas/rekapitulasi/PeriodDropdown";
 
-export default function WargaClient({ initial }) {
+export default function WargaClient({ initial, periodes = [] }) {
   const router = useRouter();
   const sp = useSearchParams();
   const { show } = useToast();
@@ -37,6 +38,8 @@ export default function WargaClient({ initial }) {
   const [arisanOnly, setArisanOnly] = React.useState(
     sp.get("arisan_only") === "1"
   );
+
+  const [periodeId, setPeriodeId] = React.useState(sp.get("periode") || "");
 
   const [createModal, setCreateModal] = React.useState({
     open: false,
@@ -136,6 +139,18 @@ export default function WargaClient({ initial }) {
         </TabNavigation>
 
         <div className="flex items-center gap-2">
+
+          <PeriodDropdown
+            options={periodes}
+            activeId={periodeId ? Number(periodeId) : periodes[0]?.id ?? null}
+            onSelect={(id) => {
+              setPeriodeId(String(id));
+              pushParams({ periode: id });
+            }}
+            onNew={undefined}
+            showCreateButton={false}
+          />
+
           <div
             className="relative"
             onMouseEnter={() => setSearchOpen(true)}
