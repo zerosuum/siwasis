@@ -30,7 +30,6 @@ function formatRp(n) {
     maximumFractionDigits: 0,
   });
 }
-
 function normalizeKasLaporan(resp, year) {
   if (!resp || resp.ok === false) {
     return {
@@ -39,8 +38,15 @@ function normalizeKasLaporan(resp, year) {
     };
   }
 
-  const pag = resp.pagination || {};
-  const raw = resp.data || resp.rows || [];
+  // BE kemungkinan kirim paginator di resp.data
+  const paginator =
+    resp.data && Array.isArray(resp.data.data)
+      ? resp.data
+      : {
+          data: Array.isArray(resp.data) ? resp.data : [],
+        };
+
+  const raw = Array.isArray(paginator.data) ? paginator.data : [];
 
   const rows = raw.map((r) => ({
     id: r.id,
@@ -55,16 +61,17 @@ function normalizeKasLaporan(resp, year) {
   const totalKeluar = rows.reduce((a, b) => a + (b.pengeluaran || 0), 0);
   const saldo = totalMasuk - totalKeluar;
 
-  const filterYear = resp.filter?.year ?? year ?? null;
+  const filters = resp.filter || resp.filters || {};
+  const filterYear = filters.year ?? year ?? null;
 
   return {
     meta: {
       year: filterYear || new Date().getFullYear(),
     },
     rows,
-    page: pag.current_page ?? 1,
-    perPage: pag.per_page ?? 10,
-    total: pag.total ?? rows.length,
+    page: paginator.current_page ?? 1,
+    perPage: paginator.per_page ?? 10,
+    total: paginator.total ?? rows.length,
     kpi: {
       pemasukanFormatted: formatRp(totalMasuk),
       pengeluaranFormatted: formatRp(totalKeluar),

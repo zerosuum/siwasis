@@ -27,7 +27,7 @@ export async function getDashboardSummary({ from, to, periode } = {}) {
   const arisan = (d.status_arisan || []).map((item, idx) => ({
     id: item.warga_id || idx,
     nama: item.nama || "-",
-    status: item.status || "-",
+    status: item.status_arisan || "-",
   }));
 
   return {

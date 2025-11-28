@@ -1,4 +1,5 @@
 import { proxyJSON } from "./_api";
+import { toRp } from "@/lib/format";
 
 export async function getKasRekap({
   page,
@@ -16,58 +17,106 @@ export async function getKasRekap({
 
   if (typeof page !== "undefined") params.page = page;
   if (typeof perPage !== "undefined") params.per_page = perPage;
-
-  if (periodeId) {
-    params.periode_id = periodeId;
-  }
-
+  if (periodeId) params.periode_id = periodeId;
   if (q) params.q = q;
-
   if (rt && rt !== "all") params.rt = rt;
-
   if (from && to) {
     params.from = from;
     params.to = to;
   }
-
   if (typeof min === "number") params.min = min;
   if (typeof max === "number") params.max = max;
-
   if (noPaginate) params.no_paginate = true;
 
-  return proxyJSON("/kas/rekap", { params });
-}
-export async function getKasLaporan({
-  page,
-  year,
-  from,
-  to,
-  q,
-  type,
-  min,
-  max,
-  perPage,
-} = {}) {
-  const params = {};
+  const json = await proxyJSON("/kas/rekap", { params });
 
-  if (typeof page !== "undefined") params.page = page;
-  if (typeof perPage !== "undefined") params.per_page = perPage;
+  const dates = Array.isArray(json.dates) ? json.dates : [];
+  const paginator = json.data || {};
+  const rawRows = Array.isArray(paginator.data) ? paginator.data : [];
 
-  if (year) params.year = year;
+  // 1️⃣ Tentukan nominal standar:
+  //    - prioritas: nominal_kas / nominal dari BE
+  //    - fallback: cari dari payment_status pertama yang jumlahnya > 0
+  let nominal = Number(json.nominal_kas ?? json.nominal ?? 0);
 
-  if (from && to) {
-    params.from = from;
-    params.to = to;
+  if (!nominal) {
+    for (const row of rawRows) {
+      const payments = row.payment_status || {};
+      for (const info of Object.values(payments)) {
+        const j = Number(info?.jumlah ?? 0);
+        if (j > 0) {
+          nominal = j;
+          break;
+        }
+      }
+      if (nominal) break;
+    }
   }
 
-  if (q) params.q = q;
-  if (typeof min === "number") params.min = min;
-  if (typeof max === "number") params.max = max;
+  const rows = rawRows.map((row) => {
+    const payments = row.payment_status || {};
+    const kehadiran = {};
+    let jumlahSetoran = 0;
+    let totalSetoran = 0;
 
-  if (type === "IN") params.tipe = "pemasukan";
-  else if (type === "OUT") params.tipe = "pengeluaran";
+    for (const d of dates) {
+      const info = payments[d];
 
-  return proxyJSON("/kas/laporan", { params });
+      if (info?.status === "sudah_bayar") {
+        kehadiran[d] = true;
+        jumlahSetoran += 1;
+
+        let jml = Number(info.jumlah);
+        if (!Number.isFinite(jml) || jml <= 0) {
+          jml = nominal || 0;
+        }
+        totalSetoran += jml;
+      }
+    }
+
+    return {
+      id: row.warga_id ?? row.id,
+      nama: row.nama,
+      rt: row.rt,
+      jumlahSetoran,
+      totalSetoran,
+      totalSetoranFormatted: toRp(totalSetoran),
+      kehadiran,
+    };
+  });
+
+  const totalMasuk = rows.reduce(
+    (sum, r) => sum + (Number(r.totalSetoran) || 0),
+    0
+  );
+  const totalKeluar = 0;
+  const saldo = totalMasuk - totalKeluar;
+
+  const filters = json.filters || {};
+  const usedPeriodeId =
+    periodeId ?? (filters.periode_id ? Number(filters.periode_id) : null);
+
+  const year = filters.year ? Number(filters.year) : new Date().getFullYear();
+
+  return {
+    rows,
+    dates,
+    page: paginator.current_page ?? 1,
+    perPage: paginator.per_page ?? 10,
+    total: paginator.total ?? rows.length,
+    meta: {
+      year,
+      nominal,
+      nominalFormatted: toRp(nominal),
+      periodeId: usedPeriodeId,
+    },
+    kpi: {
+      pemasukanFormatted: toRp(totalMasuk),
+      pengeluaranFormatted: toRp(totalKeluar),
+      saldoFormatted: toRp(saldo),
+      rangeLabel: json.periode || `Tahun ${year}`,
+    },
+  };
 }
 
 export async function saveKasRekap({ periodeId, updates } = {}) {
@@ -77,12 +126,7 @@ export async function saveKasRekap({ periodeId, updates } = {}) {
       warga_id: u.wargaId,
       tanggal: u.tanggal,
       status: u.status ?? (u.checked ? "sudah_bayar" : "belum_bayar"),
-      jumlah:
-        typeof u.jumlah === "number"
-          ? u.jumlah
-          : u.checked
-          ? 0 
-          : 0,
+      jumlah: u.jumlah ?? 0,
     })),
   };
 
@@ -90,4 +134,39 @@ export async function saveKasRekap({ periodeId, updates } = {}) {
     method: "POST",
     json: body,
   });
+}
+
+export async function getKasLaporan({
+  page,
+  year,
+  from,
+  to,
+  q,
+  type,
+  min,
+  max,
+} = {}) {
+  const params = {};
+
+  if (typeof page !== "undefined") params.page = page;
+
+  if (typeof year !== "undefined" && year !== null) {
+    params.year = year;
+  }
+
+  if (from && to) {
+    params.from = from;
+    params.to = to;
+  }
+
+  if (q) params.q = q;
+
+  if (type === "IN") params.tipe = "pemasukan";
+  else if (type === "OUT") params.tipe = "pengeluaran";
+
+  if (typeof min === "number") params.min = min;
+  if (typeof max === "number") params.max = max;
+
+  const json = await proxyJSON("/kas/laporan", { params });
+  return json;
 }

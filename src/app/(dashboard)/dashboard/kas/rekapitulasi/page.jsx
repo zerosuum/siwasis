@@ -1,15 +1,16 @@
-import { getPeriodes } from "@/server/queries/periode";
-import { getArisanRekap } from "@/server/queries/arisan";
-import RekapClient from "./RekapClient";
 import KPICard from "@/components/KPICard";
-import { first } from "@/lib/utils";
+import RekapClient from "./RekapClient";
+import { getKasRekap } from "@/server/queries/kas";
+import { getPeriodes } from "@/server/queries/periode";
 import { getAdminProfile } from "@/lib/session";
+import { first } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 const fallback = {
   meta: {
     nominal: 0,
+    nominalFormatted: "Rp 0",
     nominalPerEventFormatted: "Rp 0",
     year: new Date().getFullYear(),
     periodeId: null,
@@ -43,7 +44,11 @@ export default async function Page({ searchParams }) {
   const periodeIdFromUrl = sp?.periode_id ? Number(first(sp.periode_id)) : null;
 
   const periodeResp = await getPeriodes();
-  const periodes = Array.isArray(periodeResp?.data) ? periodeResp.data : [];
+  const periodes = Array.isArray(periodeResp?.data)
+    ? periodeResp.data
+    : Array.isArray(periodeResp)
+    ? periodeResp
+    : [];
 
   let activePeriode =
     periodes.find((p) => p.id === periodeIdFromUrl) ||
@@ -55,22 +60,27 @@ export default async function Page({ searchParams }) {
 
   let initial = fallback;
   try {
-    initial = await getArisanRekap({
+    initial = await getKasRekap({
       page,
+      perPage: 10,
+      periodeId,
       q,
       rt,
       from,
       to,
       min,
       max,
-      periode_id: periodeId,
     });
   } catch (err) {
+    console.error("getKasRekap error:", err);
     initial = fallback;
   }
 
-  initial.periodeId = periodeId;
   initial.periodes = periodes;
+  initial.periodeId = periodeId;
+  if (initial.meta) {
+    initial.meta.periodeId = periodeId;
+  }
 
   const kpis = [
     {
