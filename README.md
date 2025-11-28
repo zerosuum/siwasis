@@ -1,36 +1,135 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# SiWASIS — Sistem Informasi Warga Anom Siwalan Sentolo  
+### Frontend Repository (Next.js 15 · Tailwind CSS 4 · Tremor · Server Actions)
 
-## Getting Started
+**SiWASIS** adalah platform informasi dan administrasi warga Dusun Anom Siwalan, Sentolo.  
+Proyek ini dikembangkan sebagai bagian dari mata kuliah **Proyek Aplikasi Dasar (PAD)** TRPL UGM periode semester ganjil tahun ajaran 2025/2026.
 
-First, run the development server:
+Repository ini berisi **seluruh implementasi Frontend**: dashboard admin, publik page, dokumentasi video, kas, arisan, jimpitan, sampah, dokumen, settings, dan modul lain yang terkait.
+
+## 1. Tujuan Proyek
+
+- Membangun aplikasi web terintegrasi untuk administrasi kas, arisan, jimpitan, bank sampah, dan dokumentasi kegiatan warga.  
+- Menghadirkan dashboard modern yang mudah dipakai warga dan pengurus.  
+- Menyediakan sistem publik (company profile) dan sistem admin (protected dashboard).  
+- Menjadi landasan digitalisasi proses administrasi desa.
+
+## 2. Peran dalam Proyek
+
+**Della Nurizki — Frontend Developer**
+
+Implementasi yang dikerjakan di sisi frontend mencakup:
+
+### a. Struktur & Arsitektur Frontend
+- Menyusun App Router Next.js 15 dengan folder modular.  
+- Dua layout utama: Public & Dashboard.  
+- Sistem Proxy API dengan timeout, abort controller, token injection, dan error handling.
+
+### b. Sistem UI/UX Reusable
+- Toast system (success/error/warning).  
+- ConfirmDialog global.  
+- Search bar auto-expand.  
+- Filtering modal, dropdown periode, tab navigation, pagination.  
+- Global breadcrumbs, responsive layout.
+
+### c. Modul Dashboard
+
+#### **1) Kas**
+- Rekap kas per-periode.  
+- Checkbox pembayaran per warga per tanggal.  
+- Filter RT, min/max, tanggal.  
+- Download laporan.  
+- KPI dashboard via Tremor.
+
+#### **2) Arisan**
+- Rekap arisan (checkbox status hadir/bayar).  
+- Spinwheel (undian giliran).  
+- Status “Sudah/Belum Dapat”.  
+- Download rekap.
+
+#### **3) Jimpitan**
+- Rekap harian.  
+- Nominal adjustable.  
+- Tabel + filter tanggal.
+
+#### **4) Sampah**
+- Rekap harian.  
+- Nominal adjustable.  
+- Resume total pemasukan.
+
+#### **5) Dokumen**
+- Upload dokumen (PDF).  
+- Hapus, preview.  
+- Validasi client+server.
+
+#### **6) Warga**
+- Tambah/Edit warga.  
+- Assign role (kas/arisan).  
+- Filter RT, status, role.
+
+#### **7) Settings**
+- Update nama, foto profil admin.  
+- Auto reload + toast.
+
+#### **8) Dokumentasi Video**
+- Upload link YouTube.  
+- Validasi format.  
+- Public page display.
+
+#### **9) Public Landing Page**
+- Hero section, statistik desa, CTA.  
+- Blog/info kegiatan (company profile).  
+- Navigasi responsif modern.
+
+## 3. Tech Stack
+
+| Kategori | Teknologi |
+|---------|-----------|
+| Framework | Next.js 15 |
+| UI | Tailwind CSS v4, Shadcn UI, Tremor |
+| Icons | Lucide |
+| Font | Inter, REM |
+| Backend | Laravel 11 (Sanctum) |
+| Deploy | Vercel, Vercel |
+
+## 4. Instalasi
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+git clone https://github.com/zerosuum/siwasis.git
+cd siwasis
+bun install
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Akses aplikasi via:  
+http://localhost:3000
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## 5. Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+NEXT_PUBLIC_SITE_ORIGIN=http://localhost:3000
+BACKEND_BASE=https://siwasis.novarentech.web.id/api
+```
 
-## Learn More
+## 6. Struktur Direktori
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+ ├── app/(public)/
+ ├── app/(dashboard)/
+ ├── components/
+ ├── server/queries/
+ └── lib/
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 7. Proxy API Layer
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Mengambil token dari cookies  
+- Timeout & abort controller  
+- Konsisten JSON response  
+- Logging untuk dev  
 
-## Deploy on Vercel
+## 8. Kontak
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Della Nurizki — Frontend Developer**  
+GitHub: https://github.com/zerosuum  
+Email: dellanurizki@mail.ugm.ac.id
