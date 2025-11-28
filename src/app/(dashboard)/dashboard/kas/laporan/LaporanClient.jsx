@@ -24,15 +24,61 @@ import {
 import { useToast } from "@/components/ui/useToast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { API_BASE } from "@/lib/config";
-import FilterModal from "@/components/FilterModal";
+import FilterModal from "./FilterModal";
 import PeriodDropdown from "../rekapitulasi/PeriodDropdown";
 import PeriodModal from "../rekapitulasi/PeriodModal";
 import { actionCreatePeriod } from "../rekapitulasi/actions";
+
+function normalizeKasLaporan(resp, year) {
+  if (!resp || resp.ok === false) {
+    return {
+      ...defaultData,
+      meta: { year: year || defaultData.meta.year },
+    };
+  }
+
+  const paginator = resp.pagination || {};
+  const raw = Array.isArray(resp.data) ? resp.data : [];
+
+  const rows = raw.map((r) => ({
+    id: r.id,
+    tanggal: r.tanggal,
+    keterangan: r.keterangan,
+    pemasukan: r.tipe === "pemasukan" ? Number(r.jumlah) : 0,
+    pengeluaran: r.tipe === "pengeluaran" ? Number(r.jumlah) : 0,
+    saldo: r.saldo_sementara ?? 0,
+  }));
+
+  const totalMasuk = rows.reduce((a, b) => a + (b.pemasukan || 0), 0);
+  const totalKeluar = rows.reduce((a, b) => a + (b.pengeluaran || 0), 0);
+  const saldo = totalMasuk - totalKeluar;
+
+  const filters = resp.filter || {};
+  const filterYear = filters.year ?? year ?? null;
+
+  return {
+    meta: {
+      year: filterYear || new Date().getFullYear(),
+    },
+    rows,
+    page: paginator.current_page ?? 1,
+    perPage: paginator.per_page ?? 10,
+    total: paginator.total ?? rows.length,
+    kpi: {
+      pemasukanFormatted: formatRp(totalMasuk),
+      pengeluaranFormatted: formatRp(totalKeluar),
+      saldoFormatted: formatRp(saldo),
+      rangeLabel: filterYear ? `Tahun ${filterYear}` : "Semua",
+    },
+  };
+}
 
 export default function LaporanClient({ initial, readOnly }) {
   const router = useRouter();
   const sp = useSearchParams();
   const { show } = useToast();
+
+  const periodes = initial?.periodes || [];
 
   const metaYear = initial?.meta?.year;
   const urlYear = sp.get("year") ? Number(sp.get("year")) : null;
@@ -200,6 +246,15 @@ export default function LaporanClient({ initial, readOnly }) {
     }
   };
 
+  const activePeriode = React.useMemo(() => {
+    if (!periodes.length) return null;
+    const found = periodes.find((p) => {
+      if (!p.tanggal_mulai) return false;
+      return new Date(p.tanggal_mulai).getFullYear() === Number(year);
+    });
+    return found || periodes[0];
+  }, [periodes, year]);
+
   return (
     <>
       <div className="flex items-center justify-between gap-3 px-4">
@@ -221,8 +276,15 @@ export default function LaporanClient({ initial, readOnly }) {
 
         <div className="flex items-center gap-2">
           <PeriodDropdown
-            year={Number(year)}
-            onSelectYear={handleSelectYear}
+            activeId={activePeriode?.id ?? null}
+            options={periodes}
+            onSelect={(id) => {
+              const p = periodes.find((pp) => pp.id === id);
+              if (p?.tanggal_mulai) {
+                const y = new Date(p.tanggal_mulai).getFullYear();
+                setYear(y);
+              }
+            }}
             showCreateButton={false}
           />
 
