@@ -8,6 +8,22 @@ import { Calendar } from "lucide-react";
 import { useToast } from "@/components/ui/useToast";
 import { actionDeleteBerita } from "@/app/(public)/blog/actions";
 
+function Button({ variant = "solid", className = "", ...props }) {
+  const base =
+    "inline-flex h-7 items-center justify-center rounded-lg px-4 py-2 text-sm transition disabled:opacity-60";
+  const map = {
+    solid: "bg-[#6E8649] text-white hover:bg-[#61753f]",
+    ghost: "bg-gray-100 text-gray-700 hover:bg-gray-200",
+    danger: "bg-red-50 text-red-600 hover:bg-red-100",
+    soft: "bg-[#E2E7D7] text-[#46552D] hover:bg-[#d6dec4]",
+  };
+  const variantClass = map[variant] || map.solid;
+
+  return (
+    <button {...props} className={`${base} ${variantClass} ${className}`} />
+  );
+}
+
 export default function BlogCard({ item, canManage = false }) {
   const router = useRouter();
   const { show: toast } = useToast();
@@ -93,26 +109,17 @@ export default function BlogCard({ item, canManage = false }) {
               <div className="flex items-center gap-2">
                 <Link
                   href={`/blog/${item.id}/edit`}
-                  className="
-                          h-7 px-3 rounded-lg bg-wasis-pr40 text-wasis-pr80 
-                          flex items-center text-sm font-medium 
-                          hover:bg-wasis-pr60 hover:text-white transition-all
-                        "
+                  className="inline-flex h-7 items-center justify-center rounded-lg bg-[#E2E7D7] text-[#46552D] hover:bg-[#d6dec4] px-4 py-2 text-sm transition disabled:opacity-60"
                 >
                   Edit
                 </Link>
-
-                <button
+                <Button
                   type="button"
+                  variant="danger"
                   onClick={() => setConfirmOpen(true)}
-                  className="
-                        h-7 px-3 rounded-lg bg-red-200 text-red-700 
-                        flex items-center text-sm font-medium 
-                        hover:bg-red-300 transition-all
-                      "
-                                >
+                >
                   Hapus
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -138,20 +145,21 @@ export default function BlogCard({ item, canManage = false }) {
             </p>
 
             <div className="mt-5 flex gap-2 justify-end">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => !pending && setConfirmOpen(false)}
-                className="h-9 px-4 rounded-lg bg-gray-200 text-gray-700 text-sm font-medium"
                 disabled={pending}
               >
                 Batal
-              </button>
-              <button
+              </Button>
+
+              <Button
+                variant="danger"
                 onClick={handleDelete}
-                className="h-9 px-4 rounded-lg bg-red-600 text-white text-sm font-medium disabled:opacity-60"
                 disabled={pending}
               >
                 {pending ? "Menghapus..." : "Hapus"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

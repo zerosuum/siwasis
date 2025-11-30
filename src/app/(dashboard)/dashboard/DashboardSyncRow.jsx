@@ -2,6 +2,23 @@
 import * as React from "react";
 import DashboardChartWrapper from "./DashboardChartWrapper";
 
+function getArisanStatusMeta(status) {
+  if (!status) {
+    return { showBadge: false, text: "—", isSudah: false };
+  }
+
+  const s = String(status).toLowerCase();
+
+  if (s === "tidak_ikut") {
+    return { showBadge: false, text: "—", isSudah: false };
+  }
+
+  const isSudah = s.includes("sudah");
+  const text = isSudah ? "Sudah Dapat" : "Belum Dapat";
+
+  return { showBadge: true, text, isSudah };
+}
+
 export default function DashboardSyncRow({ chartData, arisan }) {
   const rightRef = React.useRef(null);
   const [rightH, setRightH] = React.useState(null);
@@ -16,15 +33,10 @@ export default function DashboardSyncRow({ chartData, arisan }) {
     return () => ro.disconnect();
   }, []);
 
-  const isSudah = (s) =>
-    String(s || "")
-      .toLowerCase()
-      .includes("sudah");
-
   return (
     <div className="grid items-start grid-cols-1 gap-4 lg:grid-cols-12">
       <div
-        className="lg:col-span-8 rounded-2xl  shadow-sm"
+        className="lg:col-span-8 rounded-2xl shadow-sm"
         style={rightH ? { height: rightH } : undefined}
       >
         <DashboardChartWrapper chartData={chartData} fillContainer />
@@ -44,25 +56,39 @@ export default function DashboardSyncRow({ chartData, arisan }) {
               </tr>
             </thead>
             <tbody>
-              {arisan.slice(0, 5).map((r, i) => (
-                <tr key={r.id} className={i % 2 ? "bg-[#FAFBF7]" : "bg-white"}>
-                  <td className="py-3 px-3 text-gray-500">
-                    {String(i + 1).padStart(2, "0")}
-                  </td>
-                  <td className="py-3 px-3">{r.nama}</td>
-                  <td className="py-3 px-3">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                        isSudah(r.status)
-                          ? "bg-[#EEF0E8] text-[#2B3A1D]"
-                          : "bg-[#FFF6E5] text-[#B0892E]"
-                      }`}
-                    >
-                      {r.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {arisan.slice(0, 5).map((r, i) => {
+                const { showBadge, text, isSudah } = getArisanStatusMeta(
+                  r.status
+                );
+
+                return (
+                  <tr
+                    key={r.id}
+                    className={i % 2 ? "bg-[#FAFBF7]" : "bg-white"}
+                  >
+                    <td className="py-3 px-3 text-gray-500">
+                      {String(i + 1).padStart(2, "0")}
+                    </td>
+                    <td className="py-3.5 px-3">{r.nama}</td>
+                    <td className="py-3.5 px-3">
+                      {showBadge ? (
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                            isSudah
+                              ? "bg-[#EEF0E8] text-[#2B3A1D]"
+                              : "bg-[#FFF6E5] text-[#B0892E]"
+                          }`}
+                        >
+                          {text}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+
               {!arisan?.length && (
                 <tr>
                   <td colSpan={3} className="py-6 text-center text-gray-500">

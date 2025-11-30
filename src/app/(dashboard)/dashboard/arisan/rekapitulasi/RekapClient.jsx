@@ -39,7 +39,7 @@ export default function ArisanRekapClient({ initial, readOnly }) {
   const [confirmSave, setConfirmSave] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
   const [confirmDownload, setConfirmDownload] = React.useState(false);
-  const [successOpen, setSuccessOpen] = React.useState(false);
+  // const [successOpen, setSuccessOpen] = React.useState(false);
 
   const initRange =
     from && to ? { from: new Date(from), to: new Date(to) } : undefined;
@@ -128,12 +128,16 @@ export default function ArisanRekapClient({ initial, readOnly }) {
 
         setEditing(false);
         setUpdates([]);
-        setSuccessOpen(true);
+        // setSuccessOpen(true);
+        show({
+          title: "Sukses!",
+          description: "Rekap arisan berhasil disimpan.",
+        });
         router.refresh();
       } catch (err) {
         show({
-          title: "Gagal Menyimpan",
-          description: err.message || "Terjadi kesalahan.",
+          title: "Gagal",
+          description: err?.message || "Gagal menyimpan rekap arisan.",
           variant: "error",
         });
       }
@@ -370,7 +374,7 @@ export default function ArisanRekapClient({ initial, readOnly }) {
         description="Anda yakin ingin mengunduh file ini?"
       />
 
-      <ConfirmDialog
+      {/* <ConfirmDialog
         open={successOpen}
         onOk={() => setSuccessOpen(false)}
         hideCancel
@@ -379,7 +383,7 @@ export default function ArisanRekapClient({ initial, readOnly }) {
         title="Sukses!"
         description="Berhasil menyimpan perubahan."
         autoCloseMs={1600}
-      />
+      /> */}
     </>
   );
 }

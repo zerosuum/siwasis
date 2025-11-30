@@ -117,7 +117,7 @@ export default function LaporanTable({ initial, onEdit, onDelete, readOnly }) {
                     <div className="flex items-center justify-center gap-2">
                       <button
                         onClick={() => onEdit?.(r)}
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-[#6E8649] text-white hover:bg-opacity-90"
+                        className="inline-flex h-8 w-8 min-h-8 min-w-8 items-center justify-center rounded-[10px] bg-[#6E8649] text-white hover:bg-opacity-90 transition [line-height:0]"
                         title="Edit"
                       >
                         <IconEdit size={14} />
@@ -125,7 +125,7 @@ export default function LaporanTable({ initial, onEdit, onDelete, readOnly }) {
 
                       <button
                         onClick={() => onDelete?.(r)}
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-[#6E8649] text-white hover:bg-opacity-90"
+                        className="inline-flex h-8 w-8 min-h-8 min-w-8 items-center justify-center rounded-[10px] bg-[#B24949] text-white hover:bg-opacity-90 transition [line-height:0]"
                         title="Hapus"
                       >
                         <IconDelete size={14} />

@@ -71,7 +71,6 @@ export async function getArisanRekap({
       : { data: Array.isArray(json.data) ? json.data : [] };
 
   const rawRows = Array.isArray(paginator.data) ? paginator.data : [];
-
   const filters = json.filters || {};
 
   const rawPeriodes = Array.isArray(periodesRaw?.data)
@@ -111,6 +110,40 @@ export async function getArisanRekap({
     }
   }
 
+  const statusMap = new Map();
+
+  if (resolvedPeriodeId) {
+    try {
+      const giliranJson = await proxyJSON("/arisan/spin", {
+        params: { periode_id: resolvedPeriodeId },
+        auth: true,
+      });
+
+      const giliranData = Array.isArray(giliranJson?.data)
+        ? giliranJson.data
+        : [];
+
+      for (const item of giliranData) {
+
+        const wargaId =
+          item.warga_id ??
+          item.warga?.id ?? 
+          item.id;
+
+        const statusRaw =
+          item.status_arisan ?? item.pivot?.status_arisan ?? null;
+
+        if (wargaId && statusRaw) {
+          statusMap.set(Number(wargaId), String(statusRaw));
+        }
+      }
+    } catch (err) {
+      console.error("Gagal ambil status giliran arisan:", err);
+    }
+  }
+
+  let totalPemasukan = 0;
+
   const rows = rawRows.map((row) => {
     const payments = row.payment_status || {};
     const kehadiran = {};
@@ -133,12 +166,31 @@ export async function getArisanRekap({
       totalSetoran = Number(row.total_setoran) || 0;
     }
 
+    totalPemasukan += totalSetoran;
+
+    const wargaId = row.warga_id ?? row.id;
+
+    const statusFromMap = wargaId ? statusMap.get(Number(wargaId)) : undefined;
+
+    const rawStatus =
+      statusFromMap ??
+      row.status_arisan ??
+      row.arisan_status ??
+      row.status ??
+      "";
+
+    const normStatus = String(rawStatus).toLowerCase();
+
+    const isSudah =
+      normStatus === "sudah_dapat" ||
+      normStatus === "sudah" ||
+      normStatus.includes("sudah");
+
     return {
-      id: row.warga_id ?? row.id,
+      id: wargaId,
       nama: row.nama,
       rt: row.rt,
-      status:
-        row.status_arisan === "sudah_dapat" ? "Sudah Dapat" : "Belum Dapat",
+      status: isSudah ? "Sudah Dapat" : "Belum Dapat",
       jumlahSetoran,
       totalSetoran,
       totalSetoranFormatted: toRp(totalSetoran),
@@ -151,6 +203,28 @@ export async function getArisanRekap({
     new Date().getFullYear();
 
   const year = filters.year ? Number(filters.year) : yearFromPeriodeString;
+
+  const kpiRaw = json.kpi || {};
+
+  const toNum = (v) =>
+    v === undefined || v === null || v === "" ? 0 : Number(v);
+
+  const pemasukan =
+    toNum(kpiRaw.pemasukan) ||
+    toNum(kpiRaw.total_pemasukan) ||
+    toNum(json.total_pemasukan) ||
+    totalPemasukan;
+
+  const pengeluaran =
+    toNum(kpiRaw.pengeluaran) ||
+    toNum(kpiRaw.total_pengeluaran) ||
+    toNum(json.total_pengeluaran);
+
+  const saldo =
+    toNum(kpiRaw.saldo) ||
+    toNum(kpiRaw.total_saldo) ||
+    toNum(json.saldo) ||
+    pemasukan - pengeluaran;
 
   return {
     rows,
@@ -168,13 +242,14 @@ export async function getArisanRekap({
       nominalPerEventFormatted: nominal ? toRp(nominal) : "Rp 0",
     },
     kpi: {
-      pemasukanFormatted: "Rp 0",
-      pengeluaranFormatted: "Rp 0",
-      saldoFormatted: "Rp 0",
+      pemasukanFormatted: toRp(pemasukan),
+      pengeluaranFormatted: toRp(pengeluaran),
+      saldoFormatted: toRp(saldo),
       rangeLabel: json.periode || "Rentang mengikuti periode",
     },
   };
 }
+
 
 export async function saveArisanRekap({ periode_id, updates }) {
   return proxyJSON("/arisan/rekap/save", {

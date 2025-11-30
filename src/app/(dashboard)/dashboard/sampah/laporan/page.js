@@ -15,6 +15,7 @@ const defaultData = {
     total: 0,
   },
 };
+const FALLBACK_YEAR = 2026;
 
 export default async function Page({ searchParams }) {
   const sp = (await searchParams) || {};
@@ -26,10 +27,10 @@ export default async function Page({ searchParams }) {
   const token = cookieStore.get("siwasis_token")?.value || null;
 
   const page = sp.page ? Number(sp.page) : 1;
-  const year = sp.year ? Number(sp.year) : new Date().getFullYear();
+  const year = sp?.year ? Number(sp.year) : FALLBACK_YEAR;
   const from = sp.from ?? null;
   const to = sp.to ?? null;
-  const q = sp.q ?? ""; // ✅ BACA q dari URL
+  const q = sp.q ?? "";
   const type = sp.tipe ?? sp.type ?? null;
   const min = sp.min ? Number(sp.min) : undefined;
   const max = sp.max ? Number(sp.max) : undefined;
@@ -72,35 +73,20 @@ export default async function Page({ searchParams }) {
       maximumFractionDigits: 0,
     }).format(n);
 
-  const formatRpCompact = (n) => {
-    const abs = Math.abs(n);
-
-    if (abs >= 1_000_000_000) {
-      return `Rp ${(n / 1_000_000_000).toFixed(1).replace(/\.0$/, "")}B`;
-    }
-    if (abs >= 1_000_000) {
-      return `Rp ${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
-    }
-    if (abs >= 1_000) {
-      return `Rp ${Math.round(n / 1000)}k`;
-    }
-    return formatRp(n);
-  };
-
   const kpis = [
     {
       label: "Pemasukan Sampah",
-      value: formatRpCompact(pemasukan),
+      value: formatRp(pemasukan),
       range: `Halaman ${initial.data?.current_page || 1}`,
     },
     {
       label: "Pengeluaran Sampah",
-      value: formatRpCompact(pengeluaran),
+      value: formatRp(pengeluaran),
       range: `Halaman ${initial.data?.current_page || 1}`,
     },
     {
       label: "Saldo Total",
-      value: formatRpCompact(kpiSaldo),
+      value: formatRp(kpiSaldo),
       range: "Semua Transaksi",
     },
   ];

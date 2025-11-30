@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { getWarga } from "@/server/queries/warga";
 import WargaClient from "./WargaClient";
+import { getPeriodes } from "@/server/queries/periode";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,7 @@ export default async function Page({ searchParams }) {
     arisan_min,
     arisan_max,
     arisan_status,
+    periode,
   } = sp;
 
   const toNum = (v) =>
@@ -58,9 +60,19 @@ export default async function Page({ searchParams }) {
     arisan_min: toNum(arisan_min),
     arisan_max: toNum(arisan_max),
     arisan_status,
+    periode_id: periode ? Number(periode) : undefined
   });
 
   const initial = normalizeWarga(raw);
 
-  return <WargaClient initial={initial} />;
+  let periodes = [];
+
+  try {
+    const periodeResp = await getPeriodes().catch(() => null);
+    periodes = Array.isArray(periodeResp?.data) ? periodeResp.data : [];
+  } catch {
+    periodes = [];
+  }
+
+  return <WargaClient initial={initial} periodes={periodes} />;
 }

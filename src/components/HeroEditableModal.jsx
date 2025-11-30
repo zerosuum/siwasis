@@ -1,34 +1,20 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useToast } from "@/components/ui/useToast"; 
+import { useToast } from "@/components/ui/useToast";
+import ImageDropzone from "@/components/ImageDropzone";
 
 export default function HeroEditable({
   isAdmin = false,
   currentImage = "/hero-background.jpg",
 }) {
   const [open, setOpen] = useState(false);
-  const [drag, setDrag] = useState(false);
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
-  const inputRef = useRef(null);
 
   const { show: toast } = useToast();
 
   if (!isAdmin) return null;
-
-  const onPick = (f) => {
-    if (!f) return;
-    setFile(f);
-    setPreview(URL.createObjectURL(f));
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDrag(false);
-    const f = e.dataTransfer?.files?.[0];
-    if (f) onPick(f);
-  };
 
   const handleSave = async () => {
     if (!file) return;
@@ -46,7 +32,9 @@ export default function HeroEditable({
       });
 
       setOpen(false);
-      window.location.reload();
+      const url = new URL(window.location.href);
+      url.searchParams.set("hero_updated", Date.now().toString());
+      window.location.href = url.toString();
     } catch (err) {
       toast({
         variant: "error",
@@ -75,48 +63,17 @@ export default function HeroEditable({
               Ubah Foto Sampul
             </h3>
 
-            <div className="mb-4">
-              <div className="aspect-[16/9] w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
-                <img
-                  src={preview || currentImage}
-                  alt="Preview"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            </div>
-
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDrag(true);
+            <ImageDropzone
+              initialUrl={preview || currentImage}
+              onChange={(f, url) => {
+                setFile(f);
+                setPreview(url);
               }}
-              onDragLeave={() => setDrag(false)}
-              onDrop={handleDrop}
-              className={`mb-4 rounded-xl border-2 p-6 text-center transition
-                ${
-                  drag
-                    ? "border-wasis-pr60 bg-wasis-pr00/60"
-                    : "border-dashed border-gray-300"
-                }`}
-              onClick={() => inputRef.current?.click()}
-              role="button"
-              tabIndex={0}
-            >
-              <p className="text-sm text-gray-700">
-                {file
-                  ? file.name
-                  : "Drag & drop gambar ke sini atau klik untuk memilih"}
-              </p>
-              <input
-                ref={inputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => onPick(e.target.files?.[0])}
-              />
-            </div>
+              labelIdle="Drag & drop gambar ke sini atau klik untuk memilih"
+              aspect="16/9"
+            />
 
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-3 mt-5">
               <button
                 onClick={() => setOpen(false)}
                 className="rounded-lg bg-gray-100 px-4 py-2 text-gray-700"

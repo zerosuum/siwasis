@@ -6,6 +6,7 @@ import { useToast } from "@/components/ui/useToast";
 import dynamic from "next/dynamic";
 import { actionCreateBerita } from "../actions";
 import { ImageUp, Loader2 } from "lucide-react";
+import ImageDropzone from "@/components/ImageDropzone";
 
 const TextEditor = dynamic(() => import("@/components/TextEditor"), {
   ssr: false,
@@ -15,23 +16,12 @@ const TextEditor = dynamic(() => import("@/components/TextEditor"), {
     </div>
   ),
 });
-
 function FotoModal({ onClose, onUpload, isUploading }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
 
-  const handleFileChange = (e) => {
-    const f = e.target.files[0];
-    if (f) {
-      setFile(f);
-      setPreview(URL.createObjectURL(f));
-    }
-  };
-
   const handleSimpan = () => {
-    if (file) {
-      onUpload(file, preview);
-    }
+    if (file) onUpload(file, preview);
   };
 
   return (
@@ -50,24 +40,17 @@ function FotoModal({ onClose, onUpload, isUploading }) {
           Pilih foto sampul untuk beritamu.
         </p>
 
-        <div className="w-full h-48 border-2 border-dashed border-gray-300 rounded-lg mt-4 flex flex-col items-center justify-center text-gray-500">
-          {preview ? (
-            <img
-              src={preview}
-              alt="Preview"
-              className="w-full h-full object-cover rounded-lg"
-            />
-          ) : (
-            <ImageUp size={48} className="text-gray-400" />
-          )}
+        <div className="mt-4">
+          <ImageDropzone
+            initialUrl={preview || undefined}
+            onChange={(f, url) => {
+              setFile(f);
+              setPreview(url);
+            }}
+            aspect="16/9"
+            labelIdle="Klik atau drag foto sampul ke sini"
+          />
         </div>
-
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="text-sm mt-4"
-        />
 
         <div className="mt-6 flex gap-2">
           <button
@@ -111,15 +94,14 @@ export default function TulisBeritaPage() {
   };
 
   const handleSubmit = async () => {
-
-      if (!file) {
-        toast({
-          title: "Foto belum dipilih",
-          description: "Silakan pilih foto sampul sebelum mengunggah berita.",
-          variant: "error",
-        });
-        return;
-      }
+    if (!file) {
+      toast({
+        title: "Foto belum dipilih",
+        description: "Silakan pilih foto sampul sebelum mengunggah berita.",
+        variant: "error",
+      });
+      return;
+    }
 
     setIsSubmitting(true);
 

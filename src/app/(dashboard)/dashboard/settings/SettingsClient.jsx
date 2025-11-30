@@ -15,6 +15,7 @@ import AdminList from "./AdminList";
 import AddAdminModal from "./AddAdminModal";
 import ChangePasswordModal from "./ChangePasswordModal";
 import EditProfileModal from "./EditProfileModal";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 function Button({ variant = "solid", className = "", ...props }) {
   const base =
@@ -57,6 +58,8 @@ function PageInner({ initialProfile, initialAdmins }) {
   const [openAdd, setOpenAdd] = React.useState(false);
   const [openPwd, setOpenPwd] = React.useState(false);
   const [openEdit, setOpenEdit] = React.useState(false);
+
+  const [openDelete, setOpenDelete] = React.useState(false);
 
   async function handleCreateAdmin(p) {
     setIsMutating(true);
@@ -122,7 +125,7 @@ function PageInner({ initialProfile, initialAdmins }) {
           <AccountActions
             onAdd={() => setOpenAdd(true)}
             onPwd={() => setOpenPwd(true)}
-            onDelete={() => alert("TODO: Hapus akun")}
+            onDelete={() => setOpenDelete(true)}
           />
         </div>
       </div>
@@ -150,6 +153,19 @@ function PageInner({ initialProfile, initialAdmins }) {
         onSubmit={handleUpdateProfile}
         initial={{ name: profile?.name ?? "", email: profile?.email ?? "" }}
         loading={isMutating}
+      />
+
+      <ConfirmDialog
+        open={openDelete}
+        title="Konfirmasi"
+        description="Apakah Anda yakin ingin menghapus akun ini?"
+        cancelText="Batal"
+        okText="Ya, Hapus"
+        onCancel={() => setOpenDelete(false)}
+        onOk={() => {
+          setOpenDelete(false);
+          alert("TODO: panggil action hapus akun ke backend");
+        }}
       />
     </div>
   );

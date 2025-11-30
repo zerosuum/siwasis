@@ -36,11 +36,23 @@ export default function JimpitanClient({ initial, readOnly }) {
   const itemsPerPage = Number(paginatedData?.per_page) || 15;
   const totalItems = Number(paginatedData?.total) || 0;
 
+  const FALLBACK_YEAR = 2026;
+  const initialYearParam = sp.get("year");
   const [q, setQ] = React.useState(sp.get("q") || "");
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [year, setYear] = React.useState(
-    Number(sp.get("year")) || new Date().getFullYear()
+    initialYearParam ? Number(initialYearParam) : FALLBACK_YEAR
   );
+
+  const currentYear = year || new Date().getFullYear();
+  const yearOptions = React.useMemo(() => {
+    const baseYears = [currentYear, currentYear - 1, currentYear - 2];
+    const unique = Array.from(new Set(baseYears.filter(Boolean)));
+    return unique.map((y) => ({
+      id: y,
+      nama: `Tahun ${y}`,
+    }));
+  }, [currentYear]);
 
   const initRange =
     sp.get("from") && sp.get("to")
@@ -188,8 +200,9 @@ export default function JimpitanClient({ initial, readOnly }) {
 
         <div className="flex flex-wrap items-center justify-end gap-2 sm:justify-end justify-start">
           <PeriodDropdown
-            year={year}
-            onSelectYear={(y) => setYear(Number(y))}
+            activeId={currentYear}
+            options={yearOptions}
+            onSelect={(id) => setYear(Number(id))}
             showCreateButton={false}
           />
 
@@ -332,8 +345,6 @@ export default function JimpitanClient({ initial, readOnly }) {
           setConfirmExport(false);
 
           const params = new URLSearchParams(sp.toString());
-          // opsional: kalau mau bersihin q / page:
-          // params.delete("page");
 
           show({
             variant: "warning",
@@ -342,7 +353,6 @@ export default function JimpitanClient({ initial, readOnly }) {
               "Jika unduhan tidak mulai otomatis, coba ulangi beberapa saat lagi.",
           });
 
-          // lewat proxy Next, sama kayak sampah
           window.location.href = `/api/proxy/jimpitan/laporan/export?${params.toString()}`;
         }}
       />

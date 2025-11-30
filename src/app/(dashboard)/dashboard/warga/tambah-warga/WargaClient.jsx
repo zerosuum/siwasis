@@ -21,8 +21,36 @@ import {
   actionUpdateWarga,
   actionDeleteWarga,
 } from "./actions";
+import PeriodDropdown from "../../kas/rekapitulasi/PeriodDropdown";
 
-export default function WargaClient({ initial }) {
+function IconButtonWithTooltip({ label, children, className = "", ...props }) {
+  const [open, setOpen] = React.useState(false);
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button
+        {...props}
+        className={`flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#6E8649] text-white hover:opacity-90 ${className}`}
+      >
+        {children}
+      </button>
+
+      {open && (
+        <div className="pointer-events-none absolute right-full mr-2 top-1/2 -translate-y-1/2">
+          <div className="rounded-full border border-[#E5E7EB] bg-white px-3 py-1 text-xs font-medium text-[#374151] shadow-[0_8px_24px_rgba(15,23,42,0.18)] whitespace-nowrap">
+            {label}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function WargaClient({ initial, periodes = [] }) {
   const router = useRouter();
   const sp = useSearchParams();
   const { show } = useToast();
@@ -38,6 +66,8 @@ export default function WargaClient({ initial }) {
     sp.get("arisan_only") === "1"
   );
 
+  const [periodeId, setPeriodeId] = React.useState(sp.get("periode") || "");
+
   const [createModal, setCreateModal] = React.useState({
     open: false,
     variant: "WARGA",
@@ -51,6 +81,9 @@ export default function WargaClient({ initial }) {
   // });
 
   const filterBtnRef = React.useRef(null);
+
+  const [hoverArisan, setHoverArisan] = React.useState(false);
+  const [hoverKas, setHoverKas] = React.useState(false);
 
   async function onCreate(values, variant) {
     try {
@@ -122,9 +155,11 @@ export default function WargaClient({ initial }) {
     router.push(`/dashboard/warga/tambah-warga?${params.toString()}`);
   }
 
+
+
   return (
     <>
-      <div className="flex items-center justify-between gap-3 px-4 border-b border-gray-100">
+      <div className="flex items-center justify-between gap-3 px-4">
         <TabNavigation className="!mb-0 h-6">
           <TabNavigationLink
             href="/dashboard/warga/tambah-warga"
@@ -136,6 +171,17 @@ export default function WargaClient({ initial }) {
         </TabNavigation>
 
         <div className="flex items-center gap-2">
+          <PeriodDropdown
+            options={periodes}
+            activeId={periodeId ? Number(periodeId) : periodes[0]?.id ?? null}
+            onSelect={(id) => {
+              setPeriodeId(String(id));
+              pushParams({ periode: id });
+            }}
+            onNew={undefined}
+            showCreateButton={false}
+          />
+
           <div
             className="relative"
             onMouseEnter={() => setSearchOpen(true)}
@@ -170,21 +216,21 @@ export default function WargaClient({ initial }) {
             <IconFilter size={16} />
           </button>
 
-          <button
-            type="button"
-            onClick={() => setCreateModal({ open: true, variant: "ARISAN" })}
-            className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#6E8649] text-white hover:opacity-90"
-          >
-            <IconArisan size={16} />
-          </button>
+            <IconButtonWithTooltip
+              label="Tambah Anggota Arisan"
+              type="button"
+              onClick={() => setCreateModal({ open: true, variant: "ARISAN" })}
+            >
+              <IconArisan size={16} />
+            </IconButtonWithTooltip>
 
-          <button
-            type="button"
-            onClick={() => setCreateModal({ open: true, variant: "KAS" })}
-            className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#6E8649] text-white hover:opacity-90"
-          >
-            <IconKas size={16} />
-          </button>
+            <IconButtonWithTooltip
+              label="Tambah Anggota Kas"
+              type="button"
+              onClick={() => setCreateModal({ open: true, variant: "KAS" })}
+            >
+              <IconKas size={16} />
+            </IconButtonWithTooltip>
         </div>
       </div>
 

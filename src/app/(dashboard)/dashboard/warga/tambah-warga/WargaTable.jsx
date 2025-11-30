@@ -19,6 +19,20 @@ const rp = (n) =>
     maximumFractionDigits: 0,
   }).format(Number(n || 0));
 
+const ROLE_LABELS = {
+  warga: "Warga",
+  ketua: "Ketua",
+  wakil_ketua: "Wakil Ketua",
+  sekretaris: "Sekretaris",
+  bendahara: "Bendahara",
+};
+
+function getRoleLabel(role) {
+  if (!role) return "Warga";
+  const key = String(role).toLowerCase();
+  return ROLE_LABELS[key] || role;
+}
+
 function ArisanBadge({ status }) {
   if (!status) return null;
 
@@ -44,7 +58,7 @@ function ArisanBadge({ status }) {
 export default function WargaTable({ initial, onEdit, onDelete }) {
   const rows = initial?.data ?? initial?.rows ?? [];
   const hasData = rows.length > 0;
-  
+
   const colCount = 8;
 
   const currentPage = Number(initial?.page || initial?.current_page) || 1;
@@ -55,7 +69,7 @@ export default function WargaTable({ initial, onEdit, onDelete }) {
       className="overflow-auto"
       style={{ maxHeight: "calc(100vh - 72px - 24px - 56px - 72px)" }}
     >
-      <Table className="w-full table-fixed min-w-[960px]">
+      <Table className="w-full table-fixed min-w-[960px] border-b-0">
         <TableHead className="bg-[#F4F6EE] sticky top-0 z-10">
           <TableRow>
             <TableHeaderCell className="w-[56px] text-center py-3 font-semibold text-gray-600">
@@ -107,9 +121,7 @@ export default function WargaTable({ initial, onEdit, onDelete }) {
                   </div>
                 </TableCell>
 
-                <TableCell className="py-4 capitalize">
-                  {r.role || "Warga"}
-                </TableCell>
+                <TableCell className="py-4">{getRoleLabel(r.role)}</TableCell>
 
                 <TableCell className="py-4">
                   {r.status_arisan && r.status_arisan !== "tidak_ikut" ? (
@@ -131,7 +143,7 @@ export default function WargaTable({ initial, onEdit, onDelete }) {
                   <div className="flex items-center justify-center gap-2">
                     <button
                       onClick={() => onEdit?.(r)}
-                      className="inline-flex h-8 w-8 min-h-8 min-w-8 items-center justify-center rounded-full bg-[#6E8649] text-white hover:bg-opacity-90 transition [line-height:0]"
+                      className="inline-flex h-8 w-8 min-h-8 min-w-8 items-center justify-center rounded-[10px] bg-[#6E8649] text-white hover:bg-opacity-90 transition [line-height:0]"
                       title="Edit"
                       aria-label="Edit"
                     >
@@ -140,7 +152,7 @@ export default function WargaTable({ initial, onEdit, onDelete }) {
 
                     <button
                       onClick={() => onDelete?.(r)}
-                      className="inline-flex h-8 w-8 min-h-8 min-w-8 items-center justify-center rounded-full bg-[#6E8649] text-white hover:bg-opacity-90 transition [line-height:0]"
+                      className="inline-flex h-8 w-8 min-h-8 min-w-8 items-center justify-center rounded-[10px] bg-[#6E8649] text-white hover:bg-opacity-90 transition [line-height:0]"
                       title="Hapus"
                       aria-label="Hapus"
                     >

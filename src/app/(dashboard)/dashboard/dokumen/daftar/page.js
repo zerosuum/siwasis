@@ -1,6 +1,5 @@
 import DocumentClient from "./DocumentClient";
 import { getDocuments } from "@/server/queries/documents";
-import { getAdminProfile } from "@/lib/session";
 import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
@@ -13,9 +12,6 @@ const defaultData = {
 };
 
 export default async function Page({ searchParams }) {
-  const profile = await getAdminProfile();
-  const isLoggedIn = !!profile;
-
   const cookieStore = await cookies();
   const token = cookieStore.get("siwasis_token")?.value || null;
 
@@ -46,6 +42,8 @@ export default async function Page({ searchParams }) {
     console.error("Gagal getDocuments:", e.message);
     initial = defaultData;
   }
+  
+  const isLoggedIn = !!token;
 
   return (
     <div className="pb-10">

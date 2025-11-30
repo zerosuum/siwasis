@@ -2,19 +2,18 @@
 import * as React from "react";
 import { Modal, Button, Input, Label } from "@/components/ui/UI";
 import { UploadCloud } from "lucide-react";
+import ImageDropzone from "@/components/ImageDropzone";
 
 export default function EditProfileModal({ open, onClose, onSubmit, initial }) {
   const [name, setName] = React.useState(initial?.name || "");
   const [email, setEmail] = React.useState(initial?.email || "");
   const [file, setFile] = React.useState(null);
-  const [preview, setPreview] = React.useState(null);
 
   React.useEffect(() => {
     if (open) {
       setName(initial?.name || "");
       setEmail(initial?.email || "");
       setFile(null);
-      setPreview(null);
     }
   }, [open, initial?.name, initial?.email]);
 
@@ -49,52 +48,35 @@ export default function EditProfileModal({ open, onClose, onSubmit, initial }) {
         </>
       }
     >
-      <div className="w-full">
-        <label
-          htmlFor="file-upload"
-          className="relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
-        >
-          {preview ? (
-            <img
-              src={preview}
-              alt="Preview"
-              className="h-full w-full object-cover rounded-lg"
-            />
-          ) : (
-            <>
-              <UploadCloud className="w-10 h-10 text-gray-400" />
-              <span className="mt-2 text-sm text-gray-500">
-                Klik atau drag file ke sini
-              </span>
-            </>
-          )}
-          <input
-            id="file-upload"
-            name="file-upload"
-            type="file"
-            className="sr-only"
+      <div className="flex flex-col items-center justify-center gap-6 py-6">
+        <div className="w-full">
+          <ImageDropzone
+            initialUrl={initial?.photoUrl}
+            onChange={(f) => setFile(f)}
             accept="image/png, image/jpeg"
-            onChange={handleFileChange}
-          />
-        </label>
-      </div>
-
-      <div className="space-y-3">
-        <div>
-          <Label>Nama *</Label>
-          <Input
-            placeholder="Masukkan username..."
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            aspect="1/1"
+            labelIdle="Klik atau drag foto profil ke sini"
+            className="max-h-[260px]"
           />
         </div>
-        <div>
-          <Label>Email *</Label>
-          <Input
-            placeholder="admin@gmail.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+
+        <div className="w-full space-y-3">
+          <div>
+            <Label>Nama *</Label>
+            <Input
+              placeholder="Masukkan username..."
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label>Email *</Label>
+            <Input
+              placeholder="admin@gmail.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
         </div>
       </div>
     </Modal>
