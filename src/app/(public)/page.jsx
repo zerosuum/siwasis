@@ -102,16 +102,21 @@ const roleIcons = {
 function mapPengurusHarian(list) {
   if (!Array.isArray(list)) return {};
 
-  const findByRole = (keywords) =>
-    list.find((p) => {
-      const jabatan = (p.jabatan || p.role || "").toLowerCase();
-      return keywords.some((k) => jabatan.includes(k));
-    });
+  const normalize = (p) =>
+    (p.jabatan || p.role || "").toLowerCase().replace(/\s+/g, "_");
 
-  const ketua = findByRole(["ketua"]);
-  const wakil = findByRole(["wakil"]);
-  const sekretaris = findByRole(["sekretaris"]);
-  const bendahara = findByRole(["bendahara"]);
+  const findExact = (target) => list.find((p) => normalize(p) === target);
+
+  const findIncludes = (keyword) =>
+    list.find((p) => normalize(p).includes(keyword));
+
+  const ketua = findExact("ketua") || findIncludes("ketua");
+
+  const wakil = findExact("wakil_ketua") || findIncludes("wakil");
+
+  const sekretaris = findExact("sekretaris") || findIncludes("sekretaris");
+
+  const bendahara = findExact("bendahara") || findIncludes("bendahara");
 
   return { ketua, wakil, sekretaris, bendahara };
 }
@@ -173,22 +178,22 @@ export default async function HomePage() {
     ketua: {
       role: "Ketua",
       name: ketua?.nama ?? "Belum diatur",
-      icon: ketua?.foto_url ?? "/icons/ketua.svg",
+      icon: "/icons/ketua.svg",
     },
     wakil: {
       role: "Wakil Ketua",
       name: wakil?.nama ?? "Belum diatur",
-      icon: wakil?.foto_url ?? "/icons/wakil.svg",
+      icon: "/icons/wakil.svg",
     },
     sekretaris: {
       role: "Sekretaris",
       name: sekretaris?.nama ?? "Belum diatur",
-      icon: sekretaris?.foto_url ?? "/icons/sekretaris.svg",
+      icon: "/icons/sekretaris.svg",
     },
     bendahara: {
       role: "Bendahara",
       name: bendahara?.nama ?? "Belum diatur",
-      icon: bendahara?.foto_url ?? "/icons/bendahara.svg",
+      icon: "/icons/bendahara.svg",
     },
   };
 
@@ -308,28 +313,27 @@ yang mandiri, sejahtera, dan berbudaya.`}
             title="Pengurus Harian"
             subtitle="Tim utama yang memimpin dan menggerakkan setiap kegiatan WASIS dengan penuh semangat, tanggung jawab, dan dedikasi."
           />
-
           <div className="mt-12 w-full flex justify-center">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
               <PengurusCard
-                role="Ketua"
-                name="Fajar Pratama"
-                icon="/icons/ketua.svg"
+                role={pengurusCards.ketua.role}
+                name={pengurusCards.ketua.name}
+                icon={pengurusCards.ketua.icon}
               />
               <PengurusCard
-                role="Wakil Ketua"
-                name="Rizky Ananda"
-                icon="/icons/wakil.svg"
+                role={pengurusCards.wakil.role}
+                name={pengurusCards.wakil.name}
+                icon={pengurusCards.wakil.icon}
               />
               <PengurusCard
-                role="Sekretaris"
-                name="Dewi Lestari"
-                icon="/icons/sekretaris.svg"
+                role={pengurusCards.sekretaris.role}
+                name={pengurusCards.sekretaris.name}
+                icon={pengurusCards.sekretaris.icon}
               />
               <PengurusCard
-                role="Bendahara"
-                name="Sinta Rahma"
-                icon="/icons/bendahara.svg"
+                role={pengurusCards.bendahara.role}
+                name={pengurusCards.bendahara.name}
+                icon={pengurusCards.bendahara.icon}
               />
             </div>
           </div>

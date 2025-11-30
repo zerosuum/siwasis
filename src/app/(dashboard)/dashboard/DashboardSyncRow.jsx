@@ -2,6 +2,23 @@
 import * as React from "react";
 import DashboardChartWrapper from "./DashboardChartWrapper";
 
+function getArisanStatusMeta(status) {
+  if (!status) {
+    return { showBadge: false, text: "—", isSudah: false };
+  }
+
+  const s = String(status).toLowerCase();
+
+  if (s === "tidak_ikut") {
+    return { showBadge: false, text: "—", isSudah: false };
+  }
+
+  const isSudah = s.includes("sudah");
+  const text = isSudah ? "Sudah Dapat" : "Belum Dapat";
+
+  return { showBadge: true, text, isSudah };
+}
+
 export default function DashboardSyncRow({ chartData, arisan }) {
   const rightRef = React.useRef(null);
   const [rightH, setRightH] = React.useState(null);
@@ -15,13 +32,6 @@ export default function DashboardSyncRow({ chartData, arisan }) {
     ro.observe(rightRef.current);
     return () => ro.disconnect();
   }, []);
-
-  const isSudah = (statusTypeOrLabel) => {
-    const v = String(statusTypeOrLabel || "").toLowerCase();
-    if (v === "sudah") return true;
-    if (v === "belum") return false;
-    return v.includes("sudah");
-  };
 
   return (
     <div className="grid items-start grid-cols-1 gap-4 lg:grid-cols-12">
@@ -47,8 +57,9 @@ export default function DashboardSyncRow({ chartData, arisan }) {
             </thead>
             <tbody>
               {arisan.slice(0, 5).map((r, i) => {
-                const activeType = r.statusType ?? r.status;
-                const label = r.status ?? r.statusLabel ?? "-";
+                const { showBadge, text, isSudah } = getArisanStatusMeta(
+                  r.status
+                );
 
                 return (
                   <tr
@@ -60,19 +71,24 @@ export default function DashboardSyncRow({ chartData, arisan }) {
                     </td>
                     <td className="py-3.5 px-3">{r.nama}</td>
                     <td className="py-3.5 px-3">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                          isSudah(activeType)
-                            ? "bg-[#EEF0E8] text-[#2B3A1D]"
-                            : "bg-[#FFF6E5] text-[#B0892E]"
-                        }`}
-                      >
-                        {label}
-                      </span>
+                      {showBadge ? (
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                            isSudah
+                              ? "bg-[#EEF0E8] text-[#2B3A1D]"
+                              : "bg-[#FFF6E5] text-[#B0892E]"
+                          }`}
+                        >
+                          {text}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
                     </td>
                   </tr>
                 );
               })}
+
               {!arisan?.length && (
                 <tr>
                   <td colSpan={3} className="py-6 text-center text-gray-500">

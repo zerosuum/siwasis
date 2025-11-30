@@ -47,8 +47,7 @@ export default async function DashboardPage({ searchParams }) {
 
   try {
     data = await getDashboardSummary({ from, to, periode: periodeId });
-  } catch {
-  }
+  } catch {}
 
   const periodStr =
     data?.period?.from && data?.period?.to
@@ -93,30 +92,31 @@ export default async function DashboardPage({ searchParams }) {
 
       <DashboardSyncRow chartData={data.chart} arisan={data.arisan} />
 
+      {/* Tabel kas warga */}
       <div className="rounded-2xl bg-white border border-[#EEF0E8] shadow-sm overflow-hidden">
         <div className="overflow-auto">
-          <table className="min-w-[800px] w-full text-sm table-fixed">
+          <table className="min-w-[840px] w-full text-sm table-fixed">
             <thead className="bg-[#F4F6EE] sticky top-0 z-10">
               <tr className="text-left text-gray-600">
-                <th className="py-3 px-3 w-[60px]">No</th>
+                <th className="py-3 px-4 w-[64px] text-center">No</th>
                 <th className="py-3 px-3 w-[80px] text-center">RT</th>
                 <th className="py-3 px-3">Nama</th>
                 <th className="py-3 px-3 text-center">Jumlah Setoran</th>
-                <th className="py-3 px-3 text-right">Total Kas</th>
+                <th className="py-3 px-4 text-right">Total Kas</th>
               </tr>
             </thead>
             <tbody>
               {data.kasTable.slice(0, 5).map((r, i) => (
                 <tr key={r.id} className={i % 2 ? "bg-[#FAFBF7]" : "bg-white"}>
-                  <td className="py-3 px-3 text-gray-500">
+                  <td className="py-3 px-4 text-center text-gray-500">
                     {String(i + 1).padStart(2, "0")}
                   </td>
                   <td className="py-3 px-3 text-center">{r.rt ?? "—"}</td>
                   <td className="py-3 px-3">{r.nama}</td>
-                  <td className="py-3 px-3 text-center tabular-nums">
+                  <td className="py-3 px-3 text-center tabular-nums whitespace-nowrap">
                     {r.jumlah_setoran}
                   </td>
-                  <td className="py-3 px-3 text-right tabular-nums font-medium">
+                  <td className="py-3 px-4 text-right tabular-nums font-medium whitespace-nowrap">
                     {toRp(r.total_kas)}
                   </td>
                 </tr>

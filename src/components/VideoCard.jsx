@@ -160,22 +160,14 @@ export default function VideoCard({ item, canManage = false }) {
                     setError(null);
                     setEditOpen(true);
                   }}
-                  className="
-                          h-7 px-3 rounded-lg bg-wasis-pr40 text-wasis-pr80 
-                          flex items-center text-sm font-medium 
-                          hover:bg-wasis-pr60 hover:text-white transition-all
-                        "
+                  className="inline-flex h-7 items-center justify-center rounded-lg bg-[#E2E7D7] text-[#46552D] hover:bg-[#d6dec4] px-4 py-2 text-sm transition disabled:opacity-60"
                 >
                   Edit
                 </button>
                 <button
                   type="button"
                   onClick={() => setDeleteConfirmOpen(true)}
-                  className="
-                        h-7 px-3 rounded-lg bg-red-200 text-red-700 
-                        flex items-center text-sm font-medium 
-                        hover:bg-red-300 transition-all
-                      "
+                  className="inline-flex h-7 items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 text-sm transition disabled:opacity-60"
                 >
                   Hapus
                 </button>

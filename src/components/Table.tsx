@@ -34,9 +34,7 @@ const Table = React.forwardRef<
  tremor-id="tremor-raw"
  className={cx(
  // base
- "w-full caption-bottom border-b",
- // border color
- "border-gray-200 ",
+ "w-full caption-bottom",
  className
  )}
  {...props}

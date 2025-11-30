@@ -1,26 +1,16 @@
+// src/app/(dashboard)/dashboard/settings/ChangePasswordModal.jsx
 "use client";
 import * as React from "react";
 import { Button } from "@/components/ui/UI";
 import { X as IconX } from "lucide-react";
 
-function Modal({ title, open, onClose, children, footer }) {
-  if (!open) return null;
+function FormField({ label, children }) {
   return (
-    <div className="fixed inset-0 z-[200]">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative z-10 mx-auto mt-20 w-[560px] max-w-[95vw] rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold">{title}</h3>
-          <button
-            onClick={onClose}
-            className="rounded-md p-1 hover:bg-gray-100"
-          >
-            <IconX size={18} />
-          </button>
-        </div>
-        <div className="space-y-3">{children}</div>
-        {footer && <div className="mt-5 flex justify-end gap-2">{footer}</div>}
-      </div>
+    <div>
+      <label className="mb-1.5 block text-sm font-medium text-gray-500">
+        {label}
+      </label>
+      {children}
     </div>
   );
 }
@@ -42,6 +32,8 @@ export default function ChangePasswordModal({ open, onClose, onSubmit }) {
     }
   }, [open]);
 
+  if (!open) return null;
+
   async function submit() {
     if (!can || submitting) return;
     setSubmitting(true);
@@ -53,63 +45,69 @@ export default function ChangePasswordModal({ open, onClose, onSubmit }) {
       });
       onClose?.();
     } catch {
-
+      // toast sudah dihandle di parent
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <Modal
-      title="Ubah Password"
-      open={open}
-      onClose={onClose}
-      footer={
-        <>
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 px-4">
+      <div className="w-full max-w-[460px] rounded-2xl bg-white px-6 py-8 md:px-10 md:py-10 shadow-2xl border border-gray-100">
+        {/* Header */}
+        <div className="mb-6 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-gray-800">Ubah Password</h3>
+          <button
+            onClick={onClose}
+            className="rounded-md p-1 hover:bg-gray-100"
+          >
+            <IconX size={18} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="space-y-4">
+          <FormField label="Password Lama *">
+            <input
+              type="password"
+              className="h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3
+                         text-sm placeholder-gray-400 focus:border-gray-400 focus:ring-0"
+              value={oldPwd}
+              onChange={(e) => setOldPwd(e.target.value)}
+            />
+          </FormField>
+
+          <FormField label="Password Baru *">
+            <input
+              type="password"
+              className="h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3
+                         text-sm placeholder-gray-400 focus:border-gray-400 focus:ring-0"
+              value={newPwd}
+              onChange={(e) => setNewPwd(e.target.value)}
+            />
+          </FormField>
+
+          <FormField label="Konfirmasi Password Baru *">
+            <input
+              type="password"
+              className="h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3
+                         text-sm placeholder-gray-400 focus:border-gray-400 focus:ring-0"
+              value={newPwd2}
+              onChange={(e) => setNewPwd2(e.target.value)}
+            />
+          </FormField>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-8 flex justify-end gap-3">
           <Button variant="ghost" onClick={onClose}>
             Batal
           </Button>
           <Button disabled={!can || submitting} onClick={submit}>
             {submitting ? "Menyimpan..." : "Simpan"}
           </Button>
-        </>
-      }
-    >
-      <div className="space-y-3">
-        <div>
-          <label className="text-sm font-medium text-gray-700">
-            Password Lama *
-          </label>
-          <input
-            type="password"
-            className="w-full rounded-lg border px-3 py-2 text-sm"
-            value={oldPwd}
-            onChange={(e) => setOldPwd(e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="text-sm font-medium text-gray-700">
-            Password Baru *
-          </label>
-          <input
-            type="password"
-            className="w-full rounded-lg border px-3 py-2 text-sm"
-            value={newPwd}
-            onChange={(e) => setNewPwd(e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="text-sm font-medium text-gray-700">
-            Konfirmasi Password Baru *
-          </label>
-          <input
-            type="password"
-            className="w-full rounded-lg border px-3 py-2 text-sm"
-            value={newPwd2}
-            onChange={(e) => setNewPwd2(e.target.value)}
-          />
         </div>
       </div>
-    </Modal>
+    </div>
   );
 }
