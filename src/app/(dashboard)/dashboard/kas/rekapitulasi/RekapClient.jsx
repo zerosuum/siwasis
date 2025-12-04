@@ -314,12 +314,13 @@ export default function RekapClient({ initial, readOnly }) {
             </div>
           </div>
 
-          {!readOnly && ( <button
-            onClick={() => setConfirmDownload(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
-          >
-            <IconDownload size={16} />
-          </button>
+          {!readOnly && (
+            <button
+              onClick={() => setConfirmDownload(true)}
+              className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
+            >
+              <IconDownload size={16} />
+            </button>
           )}
 
           {!readOnly && (
@@ -407,18 +408,31 @@ export default function RekapClient({ initial, readOnly }) {
         />
       )}
 
-      <ConfirmDialog
-        open={confirmDownload}
-        onOk={() => {
-          const params = new URLSearchParams(sp.toString());
-          // lewat route Next.js yang sudah nge-proxy auth
-          window.location.href = `/dashboard/kas/rekapitulasi/export?${params.toString()}`;
-          setConfirmDownload(false);
-        }}
-        onCancel={() => setConfirmDownload(false)}
-        title="Konfirmasi"
-        description="Anda yakin ingin mengunduh file ini?"
-      />
+      {!readOnly && (
+        <ConfirmDialog
+          open={confirmDownload}
+          title="Konfirmasi"
+          description="Anda yakin ingin mengunduh rekapitulasi kas?"
+          cancelText="Batal"
+          okText="Ya, Unduh"
+          onCancel={() => setConfirmDownload(false)}
+          onOk={() => {
+            setConfirmDownload(false);
+
+            const params = new URLSearchParams(sp.toString());
+            params.delete("q");
+
+            show({
+              variant: "warning",
+              title: "Mengunduh rekapitulasi",
+              description:
+                "Jika unduhan tidak mulai otomatis, coba ulangi beberapa saat lagi.",
+            });
+
+            window.location.href = `/api/proxy/kas/rekap/export?${params.toString()}`;
+          }}
+        />
+      )}
 
       {/* {!readOnly && (
         <ConfirmDialog

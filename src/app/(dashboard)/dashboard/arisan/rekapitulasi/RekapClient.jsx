@@ -366,7 +366,16 @@ export default function ArisanRekapClient({ initial, readOnly }) {
         open={confirmDownload}
         onOk={() => {
           const params = new URLSearchParams(sp.toString());
-          window.location.href = `/dashboard/arisan/rekapitulasi/export?${params.toString()}`;
+          params.delete("q");
+
+          show({
+            variant: "warning",
+            title: "Mengunduh rekapitulasi arisan",
+            description:
+              "Jika unduhan tidak mulai otomatis, coba ulangi beberapa saat lagi.",
+          });
+
+          window.location.href = `/api/proxy/arisan/rekap/export?${params.toString()}`;
           setConfirmDownload(false);
         }}
         onCancel={() => setConfirmDownload(false)}

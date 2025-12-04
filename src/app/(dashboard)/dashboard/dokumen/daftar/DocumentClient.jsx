@@ -59,6 +59,8 @@ export default function DocumentClient({ initial, readOnly }) {
   });
   const [viewer, setViewer] = React.useState({ open: false, url: null });
 
+  const [confirmDownload, setConfirmDownload] = React.useState(null);
+
   const pushWithParams = React.useCallback(
     (extra = {}) => {
       const params = new URLSearchParams(sp.toString());
@@ -241,7 +243,7 @@ export default function DocumentClient({ initial, readOnly }) {
           onEdit={(row) => setModalState({ open: true, data: row })}
           onDelete={(row) => setConfirmDelete(row)}
           onDownload={(row) => {
-            window.location.href = downloadURL(row.id);
+            setConfirmDownload(row);
           }}
         />
       </div>
@@ -278,6 +280,34 @@ export default function DocumentClient({ initial, readOnly }) {
         okText="Ya, Hapus"
         onCancel={() => setConfirmDelete(null)}
         onOk={() => onDelete(confirmDelete.id)}
+      />
+
+      <ConfirmDialog
+        open={!!confirmDownload}
+        title="Unduh Dokumen"
+        description={
+          confirmDownload
+            ? `Anda yakin ingin mengunduh "${confirmDownload.title}"?`
+            : "Anda yakin ingin mengunduh dokumen ini?"
+        }
+        cancelText="Batal"
+        okText="Ya, Unduh"
+        onCancel={() => setConfirmDownload(null)}
+        onOk={() => {
+          const row = confirmDownload;
+          setConfirmDownload(null);
+
+          show({
+            variant: "warning",
+            title: "Mengunduh dokumen",
+            description:
+              "Jika unduhan tidak mulai otomatis, coba ulangi beberapa saat lagi.",
+          });
+
+          if (row?.id) {
+            window.location.href = downloadURL(row.id);
+          }
+        }}
       />
     </>
   );
