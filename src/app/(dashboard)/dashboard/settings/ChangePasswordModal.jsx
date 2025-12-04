@@ -1,4 +1,3 @@
-// src/app/(dashboard)/dashboard/settings/ChangePasswordModal.jsx
 "use client";
 import * as React from "react";
 import { Button } from "@/components/ui/UI";
@@ -15,7 +14,12 @@ function FormField({ label, children }) {
   );
 }
 
-export default function ChangePasswordModal({ open, onClose, onSubmit }) {
+export default function ChangePasswordModal({
+  open,
+  onClose,
+  onSubmit,
+  loading = false,
+}) {
   const [oldPwd, setOldPwd] = React.useState("");
   const [newPwd, setNewPwd] = React.useState("");
   const [newPwd2, setNewPwd2] = React.useState("");
@@ -45,7 +49,6 @@ export default function ChangePasswordModal({ open, onClose, onSubmit }) {
       });
       onClose?.();
     } catch {
-      // toast sudah dihandle di parent
     } finally {
       setSubmitting(false);
     }
@@ -100,10 +103,17 @@ export default function ChangePasswordModal({ open, onClose, onSubmit }) {
 
         {/* Footer */}
         <div className="mt-8 flex justify-end gap-3">
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose} disabled={submitting}>
             Batal
           </Button>
-          <Button disabled={!can || submitting} onClick={submit}>
+          <Button
+            disabled={!can || submitting}
+            onClick={submit}
+            className={submitting ? "cursor-wait opacity-80" : ""}
+          >
+            {submitting && (
+              <span className="mr-2 inline-block h-3 w-3 animate-spin rounded-full border border-white border-t-transparent" />
+            )}
             {submitting ? "Menyimpan..." : "Simpan"}
           </Button>
         </div>

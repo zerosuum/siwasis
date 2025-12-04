@@ -3,10 +3,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/useToast";
 
-import {
-  actionCreateAdmin,
-  actionChangePassword,
-} from "./actions";
+import { actionCreateAdmin, actionChangePassword, actionDeleteAdmin } from "./actions";
 
 import ProfileCard from "./ProfileCard";
 import AccountDetails from "./AccountDetails";
@@ -15,7 +12,6 @@ import AddAdminModal from "./AddAdminModal";
 import ChangePasswordModal from "./ChangePasswordModal";
 import EditProfileModal from "./EditProfileModal";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-
 
 function Button({ variant = "solid", className = "", ...props }) {
   const base =
@@ -55,6 +51,10 @@ function PageInner({ initialProfile, initialAdmins }) {
   const [admins, setAdmins] = React.useState(initialAdmins);
   const [isMutating, setIsMutating] = React.useState(false);
 
+  React.useEffect(() => {
+    setAdmins(initialAdmins || []);
+  }, [initialAdmins]);
+
   const [openAdd, setOpenAdd] = React.useState(false);
   const [openPwd, setOpenPwd] = React.useState(false);
   const [openEdit, setOpenEdit] = React.useState(false);
@@ -79,15 +79,14 @@ function PageInner({ initialProfile, initialAdmins }) {
   }
 
   async function handleUpdateProfile(p) {
-    // p: { name, email, photo?: File }
     setIsMutating(true);
     try {
       const fd = new FormData();
-      // optional, boleh dihapus; Laravel-mu pakai POST
-      fd.append("_method", "PUT");
+
       fd.append("name", p.name);
       fd.append("email", p.email);
       if (p.photo) fd.append("photo", p.photo);
+
       const res = await fetch("/api/profile", {
         method: "POST",
         body: fd,
@@ -97,25 +96,19 @@ function PageInner({ initialProfile, initialAdmins }) {
 
       if (!res.ok) {
         const msg =
-          data?.message ||
-          data?.errors ||
-          "Gagal memperbarui profil.";
-        throw new Error(
-          typeof msg === "string" ? msg : JSON.stringify(msg)
-        );
+          data?.message || data?.errors || "Gagal memperbarui profil.";
+        throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
       }
 
       const updatedProfile = data?.data ?? data ?? {};
 
       setProfile((old) => ({ ...old, ...updatedProfile }));
-
       router.refresh();
 
       show({
         title: "Sukses!",
         description: "Profil berhasil diperbarui.",
       });
-      // biar modal ketutup kalau onClose dipanggil di parent
       setOpenEdit(false);
     } catch (e) {
       console.error(e);
@@ -189,9 +182,40 @@ function PageInner({ initialProfile, initialAdmins }) {
         cancelText="Batal"
         okText="Ya, Hapus"
         onCancel={() => setOpenDelete(false)}
-        onOk={() => {
+        onOk={async () => {
           setOpenDelete(false);
-          alert("TODO: panggil action hapus akun ke backend");
+
+          if (!profile?.id) {
+            show({
+              title: "Gagal",
+              description: "ID akun tidak ditemukan.",
+              variant: "error",
+            });
+            return;
+          }
+
+          setIsMutating(true);
+          try {
+            await actionDeleteAdmin(profile.id);
+
+            show({
+              title: "Sukses!",
+              description: "Akun berhasil dihapus.",
+            });
+
+            document.cookie = "siwasis_token=; path=/; max-age=0";
+
+            router.push("/");
+          } catch (e) {
+            console.error(e);
+            show({
+              title: "Gagal",
+              description: e?.message || "Terjadi kesalahan.",
+              variant: "error",
+            });
+          } finally {
+            setIsMutating(false);
+          }
         }}
       />
     </div>

@@ -47,8 +47,12 @@ export default function EditProfileModal({
           <Button
             disabled={!name || !email || loading}
             onClick={() => onSubmit?.({ name, email, photo: file })}
+            className={loading ? "cursor-wait opacity-80" : ""}
           >
-            Simpan
+            {loading && (
+              <span className="mr-2 inline-block h-3 w-3 animate-spin rounded-full border border-white border-t-transparent" />
+            )}
+            {loading ? "Menyimpan..." : "Simpan"}
           </Button>
         </>
       }

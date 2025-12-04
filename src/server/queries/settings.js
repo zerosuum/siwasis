@@ -9,7 +9,7 @@ export async function createAdmin(_ignored, payload) {
 }
 
 export async function deleteAdmin(_ignored, id) {
-  return proxyJSON(`admins/${id}`, { method: "DELETE" });
+  return proxyJSON(`admins`, { method: "DELETE" });
 }
 
 export async function getProfile() {
