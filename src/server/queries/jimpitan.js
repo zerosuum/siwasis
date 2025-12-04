@@ -10,10 +10,16 @@ export async function getJimpitanLaporan(
   params.per_page = 15;
 
   if (year) params.year = year;
+  if (from) params.from = from;
+  if (to) params.to = to;
+
   if (q) params.q = q;
 
   if (type === "IN") params.tipe = "pemasukan";
   else if (type === "OUT") params.tipe = "pengeluaran";
+
+  if (min != null) params.min = min;
+  if (max != null) params.max = max;
 
   const raw = await proxyJSON("/jimpitan/laporan", { params });
 
@@ -28,6 +34,7 @@ export async function getJimpitanLaporan(
 
   return {
     saldo_akhir_total: raw.saldo_akhir_total ?? 0,
+    saldo_filter: raw.saldo_filter ?? null,
     data: paginated,
     filters: raw.filters ?? {},
   };

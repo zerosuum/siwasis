@@ -51,7 +51,7 @@ export default function RekapClient({ initial, readOnly }) {
   const [confirmSave, setConfirmSave] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
   const [confirmDownload, setConfirmDownload] = React.useState(false);
-  const [successOpen, setSuccessOpen] = React.useState(false);
+  // const [successOpen, setSuccessOpen] = React.useState(false);
 
   const initRange =
     sp.get("from") && sp.get("to")
@@ -138,12 +138,15 @@ export default function RekapClient({ initial, readOnly }) {
 
         setEditing(false);
         setUpdates([]);
-        setSuccessOpen(true);
+       show({
+         title: "Sukses!",
+         description: "Rekap kas berhasil disimpan.",
+       });
 
-        const params = new URLSearchParams(sp.toString());
-        params.set("_v", String(Date.now()));
-        router.replace(`/dashboard/kas/rekapitulasi?${params.toString()}`);
-        router.refresh();
+       const params = new URLSearchParams(sp.toString());
+       params.set("_v", String(Date.now()));
+       router.replace(`/dashboard/kas/rekapitulasi?${params.toString()}`);
+       router.refresh();
       } catch (e) {
         console.error(e);
         show({
@@ -311,12 +314,13 @@ export default function RekapClient({ initial, readOnly }) {
             </div>
           </div>
 
-          <button
+          {!readOnly && ( <button
             onClick={() => setConfirmDownload(true)}
             className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
           >
             <IconDownload size={16} />
           </button>
+          )}
 
           {!readOnly && (
             <>
@@ -407,7 +411,8 @@ export default function RekapClient({ initial, readOnly }) {
         open={confirmDownload}
         onOk={() => {
           const params = new URLSearchParams(sp.toString());
-          window.location.href = `${API_BASE}/kas/rekap/export?${params}`;
+          // lewat route Next.js yang sudah nge-proxy auth
+          window.location.href = `/dashboard/kas/rekapitulasi/export?${params.toString()}`;
           setConfirmDownload(false);
         }}
         onCancel={() => setConfirmDownload(false)}
@@ -415,7 +420,7 @@ export default function RekapClient({ initial, readOnly }) {
         description="Anda yakin ingin mengunduh file ini?"
       />
 
-      {!readOnly && (
+      {/* {!readOnly && (
         <ConfirmDialog
           open={successOpen}
           onOk={() => setSuccessOpen(false)}
@@ -426,7 +431,7 @@ export default function RekapClient({ initial, readOnly }) {
           description="Berhasil menyimpan perubahan."
           autoCloseMs={1600}
         />
-      )}
+      )} */}
 
       {!readOnly && (
         <PeriodModal

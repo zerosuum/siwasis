@@ -106,6 +106,11 @@ export default function LaporanClient({ initial, readOnly }) {
   const [confirmExport, setConfirmExport] = React.useState(false);
   const [newPeriodOpen, setNewPeriodOpen] = React.useState(false);
 
+  const [deleteState, setDeleteState] = React.useState({
+    open: false,
+    item: null,
+  });
+
   const toLocalYMD = (d) =>
     [
       d.getFullYear(),
@@ -153,6 +158,7 @@ export default function LaporanClient({ initial, readOnly }) {
   const handleSelectYear = (y) => {
     setYear(Number(y));
   };
+
   React.useEffect(() => {
     const currentYear = sp.get("year") ? Number(sp.get("year")) : null;
     if (currentYear !== year) {
@@ -184,6 +190,7 @@ export default function LaporanClient({ initial, readOnly }) {
 
   const handleOpenModal = (type, data = null) =>
     setModalState({ open: true, type, data });
+
   const handleCloseModal = () =>
     setModalState({ open: false, type: null, data: null });
 
@@ -352,13 +359,13 @@ export default function LaporanClient({ initial, readOnly }) {
             </div>
           </div>
 
-          <button
+          {!readOnly && ( <button
+            onClick={() => setConfirmDownload(true)}
             className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
-            title="Export"
-            onClick={() => setConfirmExport(true)}
           >
             <IconDownload size={16} />
           </button>
+          )}
 
           {!readOnly && (
             <>
@@ -386,12 +393,11 @@ export default function LaporanClient({ initial, readOnly }) {
           initial={initial}
           readOnly={readOnly}
           onEdit={(item) => handleOpenModal("edit", item)}
-          onDelete={async (item) => {
-            if (window.confirm(`Yakin ingin menghapus "${item.keterangan}"?`)) {
-              await actionDeleteEntry({ id: item.id });
-              show({ title: "Terhapus", description: "Baris telah dihapus." });
-              router.refresh();
-            }
+          onDelete={(item) => {
+            setDeleteState({
+              open: true,
+              item,
+            });
           }}
         />
       </div>
@@ -424,16 +430,43 @@ export default function LaporanClient({ initial, readOnly }) {
       />
 
       <ConfirmDialog
-        open={confirmExport}
-        title="Konfirmasi"
-        description="Apakah Anda yakin ingin mengunduh file ini?"
+        open={deleteState.open}
+        title="Hapus Transaksi"
+        description={
+          deleteState.item?.keterangan
+            ? `Yakin ingin menghapus "${deleteState.item.keterangan}"?`
+            : "Yakin ingin menghapus transaksi ini?"
+        }
         cancelText="Batal"
-        okText="Ya, Unduh"
-        onCancel={() => setConfirmExport(false)}
-        onOk={() => {
-          setConfirmExport(false);
-          const params = new URLSearchParams(sp.toString());
-          window.location.href = `${API_BASE}/kas/laporan/export?${params.toString()}`;
+        okText="Ya, Hapus"
+        onCancel={() =>
+          setDeleteState({
+            open: false,
+            item: null,
+          })
+        }
+        onOk={async () => {
+          if (!deleteState.item?.id) {
+            setDeleteState({ open: false, item: null });
+            return;
+          }
+
+          try {
+            await actionDeleteEntry({ id: deleteState.item.id });
+            show({
+              title: "Terhapus",
+              description: "Baris telah dihapus.",
+            });
+            setDeleteState({ open: false, item: null });
+            router.refresh();
+          } catch (e) {
+            console.error(e);
+            show({
+              title: "Gagal",
+              description: "Tidak dapat menghapus data.",
+              variant: "error",
+            });
+          }
         }}
       />
 
@@ -454,6 +487,20 @@ export default function LaporanClient({ initial, readOnly }) {
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmExport}
+        title="Konfirmasi"
+        description="Apakah Anda yakin ingin mengunduh file ini?"
+        cancelText="Batal"
+        okText="Ya, Unduh"
+        onCancel={() => setConfirmExport(false)}
+        onOk={() => {
+          setConfirmExport(false);
+          const params = new URLSearchParams(sp.toString());
+          window.location.href = `${API_BASE}/kas/laporan/export?${params.toString()}`;
+        }}
+      />
 
       <PeriodModal
         open={newPeriodOpen}

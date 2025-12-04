@@ -1,59 +1,65 @@
-import { API_BASE, setParams } from "@/server/queries/_api";
+import { cookies } from "next/headers";
+import { API_BASE } from "@/lib/config";
 
-export async function GET(req) {
-  const { searchParams } = new URL(req.url);
-  const page = 1; 
-  const year = searchParams.get("year") || new Date().getFullYear();
-  const q = searchParams.get("q") || "";
-  const rt = searchParams.get("rt") || "all";
-  const from = searchParams.get("from") || undefined;
-  const to = searchParams.get("to") || undefined;
-  const min = searchParams.get("min") || undefined;
-  const max = searchParams.get("max") || undefined;
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-  const url = new URL(`${API_BASE}/arisan/rekap`);
-  setParams(url, { page, year, q, rt, from, to, min, max });
+export async function GET(request) {
+  try {
+    console.log("[export arisan] handler masuk");
 
-  const res = await fetch(url.toString(), {
-    headers: { Accept: "application/json" },
-    cache: "no-store",
-  });
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    return new Response(`Gagal mengambil data: ${txt}`, { status: 500 });
+    const cookieStore = cookies();
+    const token = cookieStore.get("siwasis_token")?.value;
+
+    if (!token) {
+      console.error("[export arisan] token tidak ada");
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    if (!API_BASE) {
+      console.error("[export arisan] API_BASE tidak terdefinisi");
+      return new Response("API base URL is not configured", { status: 500 });
+    }
+
+    const incomingUrl = new URL(request.url);
+    const searchParams = incomingUrl.searchParams;
+
+    const target = new URL("/arisan/rekap/export", API_BASE);
+
+    searchParams.forEach((value, key) => {
+      if (value != null && value !== "") {
+        target.searchParams.set(key, value);
+      }
+    });
+
+    console.log("[export arisan] call BE:", target.toString());
+
+    const res = await fetch(target.toString(), {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/json,*/*",
+      },
+    });
+
+    const contentType =
+      res.headers.get("content-type") || "application/octet-stream";
+    const contentDisposition =
+      res.headers.get("content-disposition") ||
+      'attachment; filename="arisan-rekap.xlsx"';
+
+    const buffer = await res.arrayBuffer();
+
+    return new Response(buffer, {
+      status: res.status,
+      headers: {
+        "content-type": contentType,
+        "content-disposition": contentDisposition,
+      },
+    });
+  } catch (error) {
+    console.error("[export arisan] error:", error);
+    return new Response("Gagal mengunduh file arisan.", { status: 500 });
   }
-  const data = await res.json();
-
-  const dates = Array.isArray(data.dates) ? data.dates : [];
-  const header = [
-    "No",
-    "Nama",
-    "RT",
-    "Status",
-    "Jumlah Setoran",
-    "Total Setoran",
-    ...dates.map((d) => d.split("-").reverse().join("/")),
-  ];
-
-  let csv = header.join(",") + "\n";
-  (data.rows || []).forEach((row, i) => {
-    const base = [
-      i + 1,
-      `"${row.nama?.replace(/"/g, '""') || ""}"`,
-      row.rt || "",
-      row.status || "",
-      row.jumlahSetoran || "0",
-      row.totalSetoranFormatted || "Rp 0",
-    ];
-    const marks = dates.map((d) => (row.kehadiran?.[d] ? "1" : "0"));
-    csv += [...base, ...marks].join(",") + "\n";
-  });
-
-  return new Response(csv, {
-    status: 200,
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="rekap-arisan-${year}.csv"`,
-    },
-  });
 }
