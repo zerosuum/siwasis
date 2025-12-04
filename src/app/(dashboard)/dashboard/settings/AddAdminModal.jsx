@@ -14,7 +14,7 @@ function FormField({ label, children }) {
   );
 }
 
-export default function AddAdminModal({ open, onClose, onSubmit }) {
+export default function AddAdminModal({ open, onClose, onSubmit, loading = false }) {
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [pwd, setPwd] = React.useState("");
@@ -97,11 +97,11 @@ export default function AddAdminModal({ open, onClose, onSubmit }) {
 
         {/* Footer */}
         <div className="mt-8 flex justify-end gap-3">
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose} disabled={loading}>
             Batal
           </Button>
           <Button
-            disabled={!can}
+            disabled={!can || loading}
             onClick={() =>
               onSubmit?.({
                 name,
@@ -110,8 +110,12 @@ export default function AddAdminModal({ open, onClose, onSubmit }) {
                 password_confirmation: pwd2,
               })
             }
+            className={loading ? "cursor-wait opacity-80" : ""}
           >
-            Tambah
+            {loading && (
+              <span className="mr-2 inline-block h-3 w-3 animate-spin rounded-full border border-white border-t-transparent" />
+            )}
+            {loading ? "Menambahkan..." : "Tambah"}
           </Button>
         </div>
       </div>
