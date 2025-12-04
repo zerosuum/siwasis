@@ -23,7 +23,6 @@ import {
 } from "./actions";
 import { useToast } from "@/components/ui/useToast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import { API_BASE } from "@/lib/config";
 import FilterModal from "./FilterModal";
 import PeriodDropdown from "../rekapitulasi/PeriodDropdown";
 import PeriodModal from "../rekapitulasi/PeriodModal";
@@ -204,7 +203,11 @@ export default function LaporanClient({ initial, readOnly }) {
         await actionCreateEntry({ ...payload, type: "OUT" });
         title = "Pengeluaran ditambahkan";
       } else if (modalState.type === "edit") {
-        const type = modalState.data?.pemasukan != null ? "IN" : "OUT";
+        const pemasukan = Number(modalState.data?.pemasukan ?? 0);
+        const pengeluaran = Number(modalState.data?.pengeluaran ?? 0);
+
+        const type = pengeluaran > 0 ? "OUT" : "IN";
+
         await actionUpdateEntry({
           id: modalState.data.id,
           type,
@@ -227,12 +230,17 @@ export default function LaporanClient({ initial, readOnly }) {
 
   const initialDataForEdit = React.useMemo(() => {
     if (modalState.type !== "edit") return undefined;
+
+    const pemasukan = Number(modalState.data?.pemasukan ?? 0);
+    const pengeluaran = Number(modalState.data?.pengeluaran ?? 0);
+    const isPengeluaran = pengeluaran > 0;
+
     return {
       tanggal:
         modalState.data?.tanggal?.split("T")[0] || modalState.data?.tanggal,
       keterangan: modalState.data?.keterangan,
-      nominal: modalState.data?.pemasukan ?? modalState.data?.pengeluaran ?? "",
-      type: modalState.data?.pemasukan != null ? "IN" : "OUT",
+      nominal: isPengeluaran ? pengeluaran : pemasukan,
+      type: isPengeluaran ? "OUT" : "IN",
     };
   }, [modalState]);
 
@@ -359,12 +367,13 @@ export default function LaporanClient({ initial, readOnly }) {
             </div>
           </div>
 
-          {!readOnly && ( <button
-            onClick={() => setConfirmDownload(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
-          >
-            <IconDownload size={16} />
-          </button>
+          {!readOnly && (
+            <button
+              onClick={() => setConfirmExport(true)}
+              className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
+            >
+              <IconDownload size={16} />
+            </button>
           )}
 
           {!readOnly && (
@@ -488,19 +497,31 @@ export default function LaporanClient({ initial, readOnly }) {
         />
       )}
 
-      <ConfirmDialog
-        open={confirmExport}
-        title="Konfirmasi"
-        description="Apakah Anda yakin ingin mengunduh file ini?"
-        cancelText="Batal"
-        okText="Ya, Unduh"
-        onCancel={() => setConfirmExport(false)}
-        onOk={() => {
-          setConfirmExport(false);
-          const params = new URLSearchParams(sp.toString());
-          window.location.href = `${API_BASE}/kas/laporan/export?${params.toString()}`;
-        }}
-      />
+      {!readOnly && (
+        <ConfirmDialog
+          open={confirmExport}
+          title="Konfirmasi"
+          description="Apakah Anda yakin ingin mengunduh laporan kas ini?"
+          cancelText="Batal"
+          okText="Ya, Unduh"
+          onCancel={() => setConfirmExport(false)}
+          onOk={() => {
+            setConfirmExport(false);
+
+            const params = new URLSearchParams(sp.toString());
+            params.delete("q");
+
+            show({
+              variant: "warning",
+              title: "Mengunduh laporan",
+              description:
+                "Jika unduhan tidak mulai otomatis, coba ulangi beberapa saat lagi.",
+            });
+
+               window.location.href = `/api/proxy/kas/laporan/export?${params.toString()}`;
+          }}
+        />
+      )}
 
       <PeriodModal
         open={newPeriodOpen}
