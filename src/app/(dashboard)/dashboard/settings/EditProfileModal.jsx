@@ -1,10 +1,15 @@
 "use client";
 import * as React from "react";
 import { Modal, Button, Input, Label } from "@/components/ui/UI";
-import { UploadCloud } from "lucide-react";
 import ImageDropzone from "@/components/ImageDropzone";
 
-export default function EditProfileModal({ open, onClose, onSubmit, initial }) {
+export default function EditProfileModal({
+  open,
+  onClose,
+  onSubmit,
+  initial,
+  loading = false,
+}) {
   const [name, setName] = React.useState(initial?.name || "");
   const [email, setEmail] = React.useState(initial?.email || "");
   const [file, setFile] = React.useState(null);
@@ -40,7 +45,7 @@ export default function EditProfileModal({ open, onClose, onSubmit, initial }) {
             Batal
           </Button>
           <Button
-            disabled={!name || !email}
+            disabled={!name || !email || loading}
             onClick={() => onSubmit?.({ name, email, photo: file })}
           >
             Simpan

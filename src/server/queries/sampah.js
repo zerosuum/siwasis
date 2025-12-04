@@ -34,6 +34,7 @@ export async function getSampahLaporan(
 
   return {
     saldo_akhir_total: raw.saldo_akhir_total ?? 0,
+    saldo_filter: raw.saldo_filter ?? 0,
     data: paginated,
     filters: raw.filters ?? {},
   };

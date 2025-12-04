@@ -3,6 +3,7 @@ import JimpitanClient from "./JimpitanClient";
 import { getJimpitanLaporan } from "@/server/queries/jimpitan";
 import { getAdminProfile } from "@/lib/session";
 import { cookies } from "next/headers";
+import { getPeriodes } from "@/server/queries/periode";
 
 export const dynamic = "force-dynamic";
 
@@ -15,24 +16,64 @@ const defaultData = {
     total: 0,
   },
 };
-const FALLBACK_YEAR = 2026;
+
+const FALLBACK_YEAR = new Date().getFullYear();
 
 export default async function Page({ searchParams }) {
+  const sp = (await searchParams) || {};
+
   const profile = await getAdminProfile();
   const isLoggedIn = !!profile;
 
   const cookieStore = await cookies();
   const token = cookieStore.get("siwasis_token")?.value || null;
 
-  const sp = await searchParams;
-  const page = sp?.page ? Number(sp.page) : 1;
-  const year = sp?.year ? Number(sp.year) : FALLBACK_YEAR;
-  const from = sp?.from ?? null;
-  const to = sp?.to ?? null;
-  const q = sp?.q ?? "";
-  const type = sp?.type ?? null; // "IN" / "OUT"
-  const min = sp?.min ? Number(sp.min) : undefined;
-  const max = sp?.max ? Number(sp.max) : undefined;
+  let periodes = [];
+  try {
+    const raw = await getPeriodes(token);
+    const list = Array.isArray(raw?.data) ? raw.data : [];
+
+    periodes = list.map((p) => {
+      const tahun = p.tanggal_mulai
+        ? new Date(p.tanggal_mulai).getFullYear()
+        : p.tanggal_selesai
+        ? new Date(p.tanggal_selesai).getFullYear()
+        : null;
+
+      return {
+        id: p.id,
+        nama: p.nama ?? `Periode ${tahun ?? ""}`.trim(),
+        tahun,
+      };
+    });
+  } catch (e) {
+    console.error("Gagal getPeriodes:", e.message);
+    periodes = [];
+  }
+
+  const tahunSet = new Set(
+    periodes
+      .map((p) => p.tahun)
+      .filter((t) => typeof t === "number" || typeof t === "string")
+  );
+
+  const tahunList = Array.from(tahunSet)
+    .map((t) => Number(t))
+    .filter((t) => !Number.isNaN(t))
+    .sort((a, b) => b - a);
+
+  const spYear = sp.year ? Number(sp.year) : null;
+
+  const year =
+    spYear && !Number.isNaN(spYear) ? spYear : tahunList[0] ?? FALLBACK_YEAR;
+
+  const page = sp.page ? Number(sp.page) : 1;
+  const from = sp.from ?? null;
+  const to = sp.to ?? null;
+  const q = sp.q ?? "";
+  const type = sp.tipe ?? sp.type ?? null;
+  const min = sp.min ? Number(sp.min) : undefined;
+  const max = sp.max ? Number(sp.max) : undefined;
 
   let initial = defaultData;
   let kpiSaldo = 0;
@@ -48,13 +89,19 @@ export default async function Page({ searchParams }) {
       min,
       max,
     });
+
     initial = resp || defaultData;
-    kpiSaldo = resp.saldo_akhir_total || 0;
+
+    kpiSaldo =
+      (resp.saldo_filter ?? null) !== null
+        ? resp.saldo_filter
+        : resp.saldo_akhir_total ?? 0;
   } catch (e) {
     console.error("Gagal getJimpitanLaporan:", e.message);
   }
 
-  const kpiData = initial.data?.data || [];
+  const rawData = initial.data ?? [];
+  const kpiData = Array.isArray(rawData) ? rawData : rawData.data || [];
 
   const pemasukan = kpiData
     .filter((t) => t.tipe === "pemasukan")
@@ -75,17 +122,17 @@ export default async function Page({ searchParams }) {
     {
       label: "Pemasukan Jimpitan",
       value: formatRp(pemasukan),
-      range: `Halaman ${initial.data?.current_page || 1}`,
+      range: `Tahun ${year}`,
     },
     {
       label: "Pengeluaran Jimpitan",
       value: formatRp(pengeluaran),
-      range: `Halaman ${initial.data?.current_page || 1}`,
+      range: `Tahun ${year}`,
     },
     {
-      label: "Saldo Total",
+      label: "Saldo Periode",
       value: formatRp(kpiSaldo),
-      range: "Semua Transaksi",
+      range: `Tahun ${year}`,
     },
   ];
 
@@ -96,7 +143,13 @@ export default async function Page({ searchParams }) {
           <KPICard key={k.label} {...k} />
         ))}
       </div>
-      <JimpitanClient initial={initial} readOnly={!isLoggedIn} />
+
+      <JimpitanClient
+        initial={initial}
+        readOnly={!isLoggedIn}
+        years={tahunList}
+        activeYear={year}
+      />
     </div>
   );
 }

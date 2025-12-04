@@ -48,10 +48,10 @@ export default function ArisanRekapTable({
             <TableHeaderCell className="w-[120px] text-center py-3 font-semibold text-gray-600">
               Status
             </TableHeaderCell>
-            <TableHeaderCell className="w-[110px] text-center py-3 font-semibold text-gray-600">
+            <TableHeaderCell className="w-[140px] text-center py-3 font-semibold text-gray-600">
               Jumlah Setoran
             </TableHeaderCell>
-            <TableHeaderCell className="w-[140px] text-right py-3 font-semibold text-gray-600">
+            <TableHeaderCell className="w-[140px] text-center py-3 font-semibold text-gray-600">
               Total Setoran
             </TableHeaderCell>
             {dates.map((d) => (
@@ -88,10 +88,10 @@ export default function ArisanRekapTable({
                     {row.status}
                   </span>
                 </TableCell>
-                <TableCell className="text-right py-4 tabular-nums">
+                <TableCell className="text-center py-4 tabular-nums">
                   {row.jumlahSetoran}
                 </TableCell>
-                <TableCell className="text-right font-medium py-4 tabular-nums">
+                <TableCell className="text-center font-medium py-4 tabular-nums">
                   {row.totalSetoranFormatted}
                 </TableCell>
 

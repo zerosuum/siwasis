@@ -1,4 +1,5 @@
 "use client";
+
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TabNavigation, TabNavigationLink } from "@/components/TabNavigation";
@@ -8,6 +9,7 @@ import Pagination from "@/components/Pagination";
 import TransaksiModal from "@/components/TransaksiModal";
 import FilterModal from "@/components/GenericFilterModal";
 import PeriodDropdown from "../../kas/rekapitulasi/PeriodDropdown";
+
 import {
   Calendar as IconCalendar,
   Search as IconSearch,
@@ -16,6 +18,7 @@ import {
   PlusCircle as IconPlus,
   MinusCircle as IconMinus,
 } from "lucide-react";
+
 import {
   actionCreateEntry,
   actionUpdateEntry,
@@ -24,9 +27,12 @@ import {
 import { useToast } from "@/components/ui/useToast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
-export default function JimpitanClient({ initial, readOnly }) {
-  const [filterOpen, setFilterOpen] = React.useState(false);
-
+export default function JimpitanClient({
+  initial,
+  readOnly,
+  years = [],
+  activeYear,
+}) {
   const router = useRouter();
   const sp = useSearchParams();
   const { show } = useToast();
@@ -36,23 +42,29 @@ export default function JimpitanClient({ initial, readOnly }) {
   const itemsPerPage = Number(paginatedData?.per_page) || 15;
   const totalItems = Number(paginatedData?.total) || 0;
 
-  const FALLBACK_YEAR = 2026;
-  const initialYearParam = sp.get("year");
-  const [q, setQ] = React.useState(sp.get("q") || "");
+  const [q, setQ] = React.useState("");
   const [searchOpen, setSearchOpen] = React.useState(false);
-  const [year, setYear] = React.useState(
-    initialYearParam ? Number(initialYearParam) : FALLBACK_YEAR
-  );
 
-  const currentYear = year || new Date().getFullYear();
+  const fallbackYear =
+    typeof activeYear === "number"
+      ? activeYear
+      : Array.isArray(years) && years.length > 0
+      ? Number(years[0])
+      : new Date().getFullYear();
+
+  const [year, setYear] = React.useState(fallbackYear);
+
   const yearOptions = React.useMemo(() => {
-    const baseYears = [currentYear, currentYear - 1, currentYear - 2];
-    const unique = Array.from(new Set(baseYears.filter(Boolean)));
+    const list = Array.isArray(years) ? years : [];
+    const unique = Array.from(
+      new Set(list.map((y) => Number(y)).filter((y) => !Number.isNaN(y)))
+    ).sort((a, b) => b - a);
+
     return unique.map((y) => ({
       id: y,
       nama: `Tahun ${y}`,
     }));
-  }, [currentYear]);
+  }, [years]);
 
   const initRange =
     sp.get("from") && sp.get("to")
@@ -60,20 +72,24 @@ export default function JimpitanClient({ initial, readOnly }) {
       : undefined;
   const [range, setRange] = React.useState(initRange);
 
+  const [filterOpen, setFilterOpen] = React.useState(false);
+  const [confirmExport, setConfirmExport] = React.useState(false);
+  const [confirmDelete, setConfirmDelete] = React.useState(null);
+
   const [modalState, setModalState] = React.useState({
     open: false,
     type: null,
     data: null,
   });
-  const [confirmExport, setConfirmExport] = React.useState(false);
 
-  const [confirmDelete, setConfirmDelete] = React.useState(null);
+  const [submitting, setSubmitting] = React.useState(false);
 
   const pushWithParams = React.useCallback(
     (extra = {}) => {
       const params = new URLSearchParams(sp.toString());
 
       if (year) params.set("year", String(year));
+
       if (range?.from && range?.to) {
         params.set("from", range.from.toISOString().slice(0, 10));
         params.set("to", range.to.toISOString().slice(0, 10));
@@ -82,9 +98,7 @@ export default function JimpitanClient({ initial, readOnly }) {
         params.delete("to");
       }
 
-      if (q) params.set("q", q);
-      else params.delete("q");
-
+      params.delete("q");
       params.set("page", "1");
 
       Object.entries(extra).forEach(([k, v]) => {
@@ -94,7 +108,7 @@ export default function JimpitanClient({ initial, readOnly }) {
 
       router.push(`/dashboard/jimpitan/laporan?${params.toString()}`);
     },
-    [sp, year, range?.from, range?.to, q, router]
+    [sp, year, range?.from, range?.to, router]
   );
 
   React.useEffect(() => {
@@ -144,6 +158,9 @@ export default function JimpitanClient({ initial, readOnly }) {
   };
 
   const handleSubmit = async (payload) => {
+    if (submitting) return;
+    setSubmitting(true);
+
     try {
       if (modalState.type === "pemasukan") {
         await actionCreateEntry({ ...payload, type: "IN" });
@@ -162,6 +179,7 @@ export default function JimpitanClient({ initial, readOnly }) {
         });
         show({ title: "Sukses!", description: "Data berhasil diperbarui." });
       }
+
       handleCloseModal();
       router.refresh();
     } catch (e) {
@@ -171,6 +189,8 @@ export default function JimpitanClient({ initial, readOnly }) {
         description: String(e.message || "Terjadi kesalahan."),
         variant: "error",
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -184,6 +204,46 @@ export default function JimpitanClient({ initial, readOnly }) {
       type: data.tipe === "pemasukan" ? "IN" : "OUT",
     };
   }, [modalState]);
+
+  const baseRows = paginatedData.data || [];
+
+  const typeParam = sp.get("type");
+  const minParam = sp.get("min");
+  const maxParam = sp.get("max");
+
+  const filteredRows = React.useMemo(() => {
+    const s = (q || "").toLowerCase();
+    const min = minParam != null ? Number(minParam) : null;
+    const max = maxParam != null ? Number(maxParam) : null;
+
+    return baseRows.filter((r) => {
+      if (s) {
+        const ket = (r.keterangan || "").toLowerCase();
+        if (!ket.includes(s)) return false;
+      }
+
+      if (typeParam === "IN" && r.tipe !== "pemasukan") return false;
+      if (typeParam === "OUT" && r.tipe !== "pengeluaran") return false;
+
+      const nominal = Number(r.jumlah || 0);
+
+      if (min !== null && !Number.isNaN(min) && nominal < min) return false;
+      if (max !== null && !Number.isNaN(max) && nominal > max) return false;
+
+      return true;
+    });
+  }, [baseRows, q, typeParam, minParam, maxParam]);
+
+  const tableInitial = React.useMemo(
+    () => ({
+      ...initial,
+      data: {
+        ...paginatedData,
+        data: filteredRows,
+      },
+    }),
+    [initial, paginatedData, filteredRows]
+  );
 
   return (
     <>
@@ -200,26 +260,31 @@ export default function JimpitanClient({ initial, readOnly }) {
 
         <div className="flex flex-wrap items-center justify-end gap-2 sm:justify-end justify-start">
           <PeriodDropdown
-            activeId={currentYear}
+            activeId={year}
             options={yearOptions}
-            onSelect={(id) => setYear(Number(id))}
+            onSelect={(id) => {
+              const y = Number(id);
+              setYear(y);
+              const params = new URLSearchParams(sp.toString());
+              if (y) params.set("year", String(y));
+              params.set("page", "1");
+              router.push(`/dashboard/jimpitan/laporan?${params.toString()}`);
+            }}
             showCreateButton={false}
           />
 
-          <div className="relative" onMouseEnter={() => setSearchOpen(true)}>
+          <div
+            className="relative"
+            onMouseEnter={() => setSearchOpen(true)}
+            onMouseLeave={() => !q && setSearchOpen(false)}
+          >
             <IconSearch
               size={16}
               className="pointer-events-none absolute left-1.5 top-1/2 -translate-y-1/2 text-gray-500"
             />
             <input
               value={q}
-              onChange={(e) => {
-                setQ(e.target.value);
-                if (e.target.value === "") {
-                  pushWithParams({ q: "" });
-                }
-              }}
-              onKeyDown={(e) => e.key === "Enter" && pushWithParams()}
+              onChange={(e) => setQ(e.target.value)}
               placeholder="Cari keterangan..."
               className={`h-8 border rounded-[10px] border-gray-300 bg-white pl-7 pr-2 text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-gray-200 ${
                 searchOpen || q ? "w-48" : "w-6"
@@ -247,7 +312,7 @@ export default function JimpitanClient({ initial, readOnly }) {
             </button>
             <div
               ref={filterAnchorRef}
-              className="absolute inset-0 opacity-0 pointer-events-none"
+              className="absolute inset-0 pointer-events-none opacity-0"
               aria-hidden="true"
             >
               <DateRangePicker
@@ -270,13 +335,16 @@ export default function JimpitanClient({ initial, readOnly }) {
             </div>
           </div>
 
-          <button
-            className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
-            title="Export"
-            onClick={() => setConfirmExport(true)}
-          >
-            <IconDownload size={16} />
-          </button>
+          {!readOnly && (
+            <button
+              className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
+              title="Export"
+              onClick={() => setConfirmExport(true)}
+            >
+              <IconDownload size={16} />
+            </button>
+          )}
+
           {!readOnly && (
             <>
               <button
@@ -300,7 +368,7 @@ export default function JimpitanClient({ initial, readOnly }) {
 
       <div className="overflow-hidden md:rounded-xl md:bg-white md:shadow">
         <JimpitanTable
-          initial={initial}
+          initial={tableInitial}
           readOnly={readOnly}
           onEdit={(item) => handleOpenModal("edit", item)}
           onDelete={(item) => setConfirmDelete(item)}
@@ -319,6 +387,7 @@ export default function JimpitanClient({ initial, readOnly }) {
         open={modalState.open}
         onClose={handleCloseModal}
         onSubmit={handleSubmit}
+        submitting={submitting}
         initialData={initialDataForEdit}
         {...(modalState.type === "pemasukan" && {
           title: "Mencatat Pemasukan",
@@ -334,28 +403,31 @@ export default function JimpitanClient({ initial, readOnly }) {
         })}
       />
 
-      <ConfirmDialog
-        open={confirmExport}
-        title="Konfirmasi"
-        description="Apakah Anda yakin ingin mengunduh file ini?"
-        cancelText="Batal"
-        okText="Ya, Unduh"
-        onCancel={() => setConfirmExport(false)}
-        onOk={() => {
-          setConfirmExport(false);
+      {!readOnly && (
+        <ConfirmDialog
+          open={confirmExport}
+          title="Konfirmasi"
+          description="Apakah Anda yakin ingin mengunduh file ini?"
+          cancelText="Batal"
+          okText="Ya, Unduh"
+          onCancel={() => setConfirmExport(false)}
+          onOk={() => {
+            setConfirmExport(false);
 
-          const params = new URLSearchParams(sp.toString());
+            const params = new URLSearchParams(sp.toString());
+            params.delete("q");
 
-          show({
-            variant: "warning",
-            title: "Mengunduh laporan",
-            description:
-              "Jika unduhan tidak mulai otomatis, coba ulangi beberapa saat lagi.",
-          });
+            show({
+              variant: "warning",
+              title: "Mengunduh laporan",
+              description:
+                "Jika unduhan tidak mulai otomatis, coba ulangi beberapa saat lagi.",
+            });
 
-          window.location.href = `/api/proxy/jimpitan/laporan/export?${params.toString()}`;
-        }}
-      />
+            window.location.href = `/api/proxy/jimpitan/laporan/export?${params.toString()}`;
+          }}
+        />
+      )}
 
       {filterOpen && (
         <FilterModal

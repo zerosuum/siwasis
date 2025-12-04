@@ -269,13 +269,13 @@ export default function ArisanRekapClient({ initial, readOnly }) {
             </div>
           </div>
 
-          <button
+          {!readOnly && ( <button
             onClick={() => setConfirmDownload(true)}
             className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
-            title="Unduh"
           >
             <IconDownload size={16} />
           </button>
+          )}
 
           {!readOnly && (
             <>
@@ -366,7 +366,7 @@ export default function ArisanRekapClient({ initial, readOnly }) {
         open={confirmDownload}
         onOk={() => {
           const params = new URLSearchParams(sp.toString());
-          window.location.href = `/dashboard/arisan/rekapitulasi/export?${params}`;
+          window.location.href = `/dashboard/arisan/rekapitulasi/export?${params.toString()}`;
           setConfirmDownload(false);
         }}
         onCancel={() => setConfirmDownload(false)}

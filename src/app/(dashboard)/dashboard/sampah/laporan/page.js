@@ -3,6 +3,7 @@ import SampahClient from "./SampahClient";
 import { getSampahLaporan } from "@/server/queries/sampah";
 import { getAdminProfile } from "@/lib/session";
 import { cookies } from "next/headers";
+import { getPeriodes } from "@/server/queries/periode";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ const defaultData = {
     total: 0,
   },
 };
-const FALLBACK_YEAR = 2026;
+const FALLBACK_YEAR = new Date().getFullYear();
 
 export default async function Page({ searchParams }) {
   const sp = (await searchParams) || {};
@@ -26,8 +27,47 @@ export default async function Page({ searchParams }) {
   const cookieStore = await cookies();
   const token = cookieStore.get("siwasis_token")?.value || null;
 
+  let periodes = [];
+  try {
+    const rawPeriodes = await getPeriodes();
+
+    const list = Array.isArray(rawPeriodes?.data) ? rawPeriodes.data : [];
+
+    periodes = list.map((p) => {
+      const tahun = p.tanggal_mulai
+        ? new Date(p.tanggal_mulai).getFullYear()
+        : p.tanggal_selesai
+        ? new Date(p.tanggal_selesai).getFullYear()
+        : null;
+
+      return {
+        id: p.id,
+        nama: p.nama ?? `Periode ${tahun ?? ""}`.trim(),
+        tahun,
+      };
+    });
+  } catch (e) {
+    console.error("Gagal getPeriodes:", e.message);
+    periodes = [];
+  }
+
+  const tahunSet = new Set(
+    periodes
+      .map((p) => p.tahun)
+      .filter((t) => typeof t === "number" || typeof t === "string")
+  );
+  const tahunList = Array.from(tahunSet)
+    .map((t) => Number(t))
+    .filter((t) => !Number.isNaN(t))
+    .sort((a, b) => b - a);
+    
+  const spYear = sp.year ? Number(sp.year) : null;
+  const year =
+    spYear && !Number.isNaN(spYear)
+      ? spYear
+      : tahunList[0] ?? new Date().getFullYear();
+
   const page = sp.page ? Number(sp.page) : 1;
-  const year = sp?.year ? Number(sp.year) : FALLBACK_YEAR;
   const from = sp.from ?? null;
   const to = sp.to ?? null;
   const q = sp.q ?? "";
@@ -50,7 +90,11 @@ export default async function Page({ searchParams }) {
       max,
     });
     initial = resp || defaultData;
-    kpiSaldo = resp.saldo_akhir_total || 0;
+
+    kpiSaldo =
+      (resp.saldo_filter ?? null) !== null
+        ? resp.saldo_filter
+        : resp.saldo_akhir_total ?? 0;
   } catch (e) {
     console.error("Gagal getSampahLaporan:", e.message);
   }
@@ -85,9 +129,9 @@ export default async function Page({ searchParams }) {
       range: `Halaman ${initial.data?.current_page || 1}`,
     },
     {
-      label: "Saldo Total",
+      label: "Saldo Periode",
       value: formatRp(kpiSaldo),
-      range: "Semua Transaksi",
+      range: `Tahun ${year}`,
     },
   ];
 
@@ -103,7 +147,7 @@ export default async function Page({ searchParams }) {
           <KPICard key={k.label} {...k} />
         ))}
       </div>
-      <SampahClient initial={initial} readOnly={!isLoggedIn} />
+      <SampahClient initial={initial} readOnly={!isLoggedIn} years={tahunList} activeYear={year} />
     </div>
   );
 }

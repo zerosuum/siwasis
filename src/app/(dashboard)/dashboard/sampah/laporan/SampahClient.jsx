@@ -27,7 +27,12 @@ import {
 import { useToast } from "@/components/ui/useToast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
-export default function SampahClient({ initial, readOnly }) {
+export default function SampahClient({
+  initial,
+  readOnly,
+  years = [],
+  activeYear,
+}) {
   const router = useRouter();
   const sp = useSearchParams();
   const { show } = useToast();
@@ -40,21 +45,26 @@ export default function SampahClient({ initial, readOnly }) {
   const [q, setQ] = React.useState("");
   const [searchOpen, setSearchOpen] = React.useState(false);
 
-  const FALLBACK_YEAR = 2026;
-  const initialYearParam = sp.get("year");
-  const [year, setYear] = React.useState(
-    initialYearParam ? Number(initialYearParam) : FALLBACK_YEAR
-  );
+  const fallbackYear =
+    typeof activeYear === "number"
+      ? activeYear
+      : Array.isArray(years) && years.length > 0
+      ? Number(years[0])
+      : new Date().getFullYear();
 
-  const currentYear = year || new Date().getFullYear();
+  const [year, setYear] = React.useState(fallbackYear);
+
   const yearOptions = React.useMemo(() => {
-    const baseYears = [currentYear, currentYear - 1, currentYear - 2];
-    const unique = Array.from(new Set(baseYears.filter(Boolean)));
+    const list = Array.isArray(years) ? years : [];
+    const unique = Array.from(
+      new Set(list.map((y) => Number(y)).filter((y) => !Number.isNaN(y)))
+    ).sort((a, b) => b - a);
+
     return unique.map((y) => ({
       id: y,
       nama: `Tahun ${y}`,
     }));
-  }, [currentYear]);
+  }, [years]);
 
   const initRange =
     sp.get("from") && sp.get("to")
@@ -87,7 +97,6 @@ export default function SampahClient({ initial, readOnly }) {
       }
 
       params.delete("q");
-
       params.set("page", "1");
 
       Object.entries(extra).forEach(([k, v]) => {
@@ -146,7 +155,12 @@ export default function SampahClient({ initial, readOnly }) {
     }
   };
 
+  const [submitting, setSubmitting] = React.useState(false);
+
   const handleSubmit = async (payload) => {
+    if (submitting) return;
+    setSubmitting(true);
+
     try {
       if (modalState.type === "pemasukan") {
         await actionCreateEntry({ ...payload, type: "IN" });
@@ -165,6 +179,7 @@ export default function SampahClient({ initial, readOnly }) {
         });
         show({ title: "Sukses!", description: "Data berhasil diperbarui." });
       }
+
       handleCloseModal();
       router.refresh();
     } catch (e) {
@@ -174,6 +189,8 @@ export default function SampahClient({ initial, readOnly }) {
         description: String(e.message || "Terjadi kesalahan."),
         variant: "error",
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -190,13 +207,33 @@ export default function SampahClient({ initial, readOnly }) {
 
   const baseRows = paginatedData.data || [];
 
+  const typeParam = sp.get("type"); // "IN" | "OUT" | null
+  const minParam = sp.get("min");
+  const maxParam = sp.get("max");
+
   const filteredRows = React.useMemo(() => {
-    if (!q) return baseRows;
-    const s = q.toLowerCase();
-    return baseRows.filter((r) =>
-      (r.keterangan || "").toLowerCase().includes(s)
-    );
-  }, [baseRows, q]);
+    const s = (q || "").toLowerCase();
+    const min = minParam != null ? Number(minParam) : null;
+    const max = maxParam != null ? Number(maxParam) : null;
+
+    return baseRows.filter((r) => {
+      if (s) {
+        const ket = (r.keterangan || "").toLowerCase();
+        if (!ket.includes(s)) return false;
+      }
+
+      if (typeParam === "IN" && r.tipe !== "pemasukan") return false;
+      if (typeParam === "OUT" && r.tipe !== "pengeluaran") return false;
+
+      const nominal = Number(r.jumlah || 0);
+
+      if (min !== null && !Number.isNaN(min) && nominal < min) return false;
+
+      if (max !== null && !Number.isNaN(max) && nominal > max) return false;
+
+      return true;
+    });
+  }, [baseRows, q, typeParam, minParam, maxParam]);
 
   const tableInitial = React.useMemo(
     () => ({
@@ -224,9 +261,16 @@ export default function SampahClient({ initial, readOnly }) {
 
         <div className="flex flex-wrap items-center justify-end gap-2 sm:justify-end justify-start">
           <PeriodDropdown
-            activeId={currentYear}
+            activeId={year}
             options={yearOptions}
-            onSelect={(id) => setYear(Number(id))}
+            onSelect={(id) => {
+              const y = Number(id);
+              setYear(y);
+              const params = new URLSearchParams(sp.toString());
+              if (y) params.set("year", String(y));
+              params.set("page", "1");
+              router.push(`/dashboard/sampah/laporan?${params.toString()}`);
+            }}
             showCreateButton={false}
           />
 
@@ -292,13 +336,15 @@ export default function SampahClient({ initial, readOnly }) {
             </div>
           </div>
 
-          <button
-            className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
-            title="Export"
-            onClick={() => setConfirmExport(true)}
-          >
-            <IconDownload size={16} />
-          </button>
+          {!readOnly && (
+            <button
+              className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
+              title="Export"
+              onClick={() => setConfirmExport(true)}
+            >
+              <IconDownload size={16} />
+            </button>
+          )}
 
           {!readOnly && (
             <>
@@ -342,6 +388,7 @@ export default function SampahClient({ initial, readOnly }) {
         open={modalState.open}
         onClose={handleCloseModal}
         onSubmit={handleSubmit}
+        submitting={submitting}
         initialData={initialDataForEdit}
         {...(modalState.type === "pemasukan" && {
           title: "Mencatat Pemasukan",
@@ -357,29 +404,31 @@ export default function SampahClient({ initial, readOnly }) {
         })}
       />
 
-      <ConfirmDialog
-        open={confirmExport}
-        title="Konfirmasi"
-        description="Apakah Anda yakin ingin mengunduh file ini?"
-        cancelText="Batal"
-        okText="Ya, Unduh"
-        onCancel={() => setConfirmExport(false)}
-        onOk={() => {
-          setConfirmExport(false);
+      {!readOnly && (
+        <ConfirmDialog
+          open={confirmExport}
+          title="Konfirmasi"
+          description="Apakah Anda yakin ingin mengunduh file ini?"
+          cancelText="Batal"
+          okText="Ya, Unduh"
+          onCancel={() => setConfirmExport(false)}
+          onOk={() => {
+            setConfirmExport(false);
 
-          const params = new URLSearchParams(sp.toString());
-          params.delete("q");
+            const params = new URLSearchParams(sp.toString());
+            params.delete("q");
 
-          show({
-            variant: "warning",
-            title: "Mengunduh laporan",
-            description:
-              "Jika unduhan tidak mulai otomatis, coba ulangi beberapa saat lagi.",
-          });
+            show({
+              variant: "warning",
+              title: "Mengunduh laporan",
+              description:
+                "Jika unduhan tidak mulai otomatis, coba ulangi beberapa saat lagi.",
+            });
 
-          window.location.href = `/api/proxy/sampah/laporan/export?${params.toString()}`;
-        }}
-      />
+            window.location.href = `/api/proxy/sampah/laporan/export?${params.toString()}`;
+          }}
+        />
+      )}
 
       {filterOpen && (
         <FilterModal

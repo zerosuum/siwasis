@@ -5,7 +5,6 @@ import { useToast } from "@/components/ui/useToast";
 
 import {
   actionCreateAdmin,
-  actionUpdateProfile,
   actionChangePassword,
 } from "./actions";
 
@@ -16,6 +15,7 @@ import AddAdminModal from "./AddAdminModal";
 import ChangePasswordModal from "./ChangePasswordModal";
 import EditProfileModal from "./EditProfileModal";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+
 
 function Button({ variant = "solid", className = "", ...props }) {
   const base =
@@ -79,24 +79,51 @@ function PageInner({ initialProfile, initialAdmins }) {
   }
 
   async function handleUpdateProfile(p) {
+    // p: { name, email, photo?: File }
     setIsMutating(true);
     try {
       const fd = new FormData();
+      // optional, boleh dihapus; Laravel-mu pakai POST
       fd.append("_method", "PUT");
       fd.append("name", p.name);
       fd.append("email", p.email);
       if (p.photo) fd.append("photo", p.photo);
+      const res = await fetch("/api/profile", {
+        method: "POST",
+        body: fd,
+      });
 
-      const updated = await actionUpdateProfile(fd);
-      const updatedProfile = updated?.data ?? updated ?? {};
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        const msg =
+          data?.message ||
+          data?.errors ||
+          "Gagal memperbarui profil.";
+        throw new Error(
+          typeof msg === "string" ? msg : JSON.stringify(msg)
+        );
+      }
+
+      const updatedProfile = data?.data ?? data ?? {};
 
       setProfile((old) => ({ ...old, ...updatedProfile }));
 
       router.refresh();
 
-      show({ title: "Sukses!", description: "Profil berhasil diperbarui." });
+      show({
+        title: "Sukses!",
+        description: "Profil berhasil diperbarui.",
+      });
+      // biar modal ketutup kalau onClose dipanggil di parent
+      setOpenEdit(false);
     } catch (e) {
-      show({ title: "Gagal", description: e.message, variant: "error" });
+      console.error(e);
+      show({
+        title: "Gagal",
+        description: e?.message || "Gagal memperbarui profil.",
+        variant: "error",
+      });
     } finally {
       setIsMutating(false);
     }
