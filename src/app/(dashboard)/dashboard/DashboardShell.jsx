@@ -22,7 +22,6 @@ import { createAvatar } from "@dicebear/core";
 import { lorelei } from "@dicebear/collection";
 import Image from "next/image";
 import { getProfilePhotoUrl } from "@/lib/profilePhoto";
-import TopLoader from "@/components/TopLoader";
 
 function Avatar({ seed }) {
   const svg = createAvatar(lorelei, {
@@ -81,7 +80,6 @@ export default function DashboardShell({ profile, children }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
-      <TopLoader />
       {isMobileMenuOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
