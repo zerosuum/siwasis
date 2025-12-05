@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 export default function TopLoader() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [progress, setProgress] = useState(0);
   const [visible, setVisible] = useState(false);
 
@@ -28,7 +27,7 @@ export default function TopLoader() {
       clearTimeout(step2);
       clearTimeout(done);
     };
-  }, [pathname, searchParams?.toString()]);
+  }, [pathname]);
 
   if (!visible && progress === 0) return null;
 
