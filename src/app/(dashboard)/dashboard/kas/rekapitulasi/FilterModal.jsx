@@ -11,6 +11,9 @@ export default function FilterModal({
   rtOptions,
   value,
   bounds,
+  anchorEl, 
+  align = "left",
+  offset = 8,
 }) {
   const [rt, setRt] = React.useState(value.rt ?? "all");
   const [range, setRange] = React.useState([
@@ -26,8 +29,6 @@ export default function FilterModal({
     ]);
   }, [open, value, bounds]);
 
-  if (!open) return null;
-
   const resetAll = () => {
     setRt("all");
     setRange([bounds.min, bounds.max]);
@@ -35,17 +36,67 @@ export default function FilterModal({
 
   const apply = () => {
     onApply({
-      rt: rt === "all" ? undefined : rt, 
+      rt: rt === "all" ? undefined : rt,
       min: range[0],
       max: range[1],
     });
-    onClose();
+    onClose?.();
   };
 
+  const panelRef = React.useRef(null);
+  const [pos, setPos] = React.useState({ top: 0, left: 0, ready: false });
+
+  React.useLayoutEffect(() => {
+    if (!open || !anchorEl) return;
+
+    const calc = () => {
+      const r = anchorEl.getBoundingClientRect();
+      const pw = panelRef.current?.offsetWidth ?? 480;
+      const vw = window.innerWidth;
+
+      let left = align === "right" ? r.right - pw : r.left;
+      left = Math.min(Math.max(12, left), vw - pw - 12);
+
+      const top = Math.max(12, r.bottom + offset);
+
+      setPos({ top, left, ready: true });
+    };
+
+    calc();
+
+    const onScroll = () => calc();
+    window.addEventListener("resize", calc);
+    window.addEventListener("scroll", onScroll, true);
+
+    return () => {
+      window.removeEventListener("resize", calc);
+      window.removeEventListener("scroll", onScroll, true);
+    };
+  }, [open, anchorEl, align, offset]);
+
+  const onBackdrop = (e) => {
+    if (e.target === e.currentTarget) onClose?.();
+  };
+
+  if (!open) return null;
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative z-[101] w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
+    <>
+      {/* backdrop full screen */}
+      <div className="fixed inset-0 z-[100]" onMouseDown={onBackdrop} />
+
+      {/* panel nempel di bawah icon filter */}
+      <div
+        ref={panelRef}
+        className="fixed z-[101] w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl border border-[#EEF0E8]"
+        style={{
+          top: pos.top,
+          left: pos.left,
+          visibility: pos.ready ? "visible" : "hidden",
+        }}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-xl font-semibold">Filter</h2>
           <div className="flex items-center gap-2">
@@ -137,7 +188,7 @@ export default function FilterModal({
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

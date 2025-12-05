@@ -1,3 +1,4 @@
+"use client";
 import * as React from "react";
 
 export default function GenericFilterModal({
@@ -5,6 +6,9 @@ export default function GenericFilterModal({
   onClose,
   value = {},
   onApply,
+  anchorEl,
+  align = "left", 
+  offset = 8,
 }) {
   const [typeIn, setTypeIn] = React.useState(!!value.typeIn);
   const [typeOut, setTypeOut] = React.useState(!!value.typeOut);
@@ -19,6 +23,37 @@ export default function GenericFilterModal({
       setMax(value.max || "");
     }
   }, [open, value]);
+
+  const panelRef = React.useRef(null);
+  const [pos, setPos] = React.useState({ top: 0, left: 0, ready: false });
+
+  React.useLayoutEffect(() => {
+    if (!open || !anchorEl) return;
+
+    const calc = () => {
+      const r = anchorEl.getBoundingClientRect();
+      const pw = panelRef.current?.offsetWidth ?? 420;
+      const vw = window.innerWidth;
+
+      let left = align === "right" ? r.right - pw : r.left;
+      left = Math.min(Math.max(12, left), vw - pw - 12);
+
+      const top = Math.max(12, r.bottom + offset);
+
+      setPos({ top, left, ready: true });
+    };
+
+    calc();
+
+    const onScroll = () => calc();
+    window.addEventListener("resize", calc);
+    window.addEventListener("scroll", onScroll, true);
+
+    return () => {
+      window.removeEventListener("resize", calc);
+      window.removeEventListener("scroll", onScroll, true);
+    };
+  }, [open, anchorEl, align, offset]);
 
   const resetAll = () => {
     setTypeIn(false);
@@ -37,15 +72,30 @@ export default function GenericFilterModal({
       min: min || undefined,
       max: max || undefined,
     });
-    onClose();
+    onClose?.();
+  };
+
+  const onBackdrop = (e) => {
+    if (e.target === e.currentTarget) onClose?.();
   };
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative z-10 w-[420px] max-w-[95vw] rounded-2xl bg-white p-6 shadow-xl">
+    <>
+      <div className="fixed inset-0 z-[199]" onMouseDown={onBackdrop} />
+
+      <div
+        ref={panelRef}
+        className="fixed z-[200] w-[420px] max-w-[95vw] rounded-2xl bg-white p-6 shadow-xl border border-[#EEF0E8]"
+        style={{
+          top: pos.top,
+          left: pos.left,
+          visibility: pos.ready ? "visible" : "hidden",
+        }}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-lg font-semibold">Filter Laporan</h3>
           <button
@@ -121,6 +171,6 @@ export default function GenericFilterModal({
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }

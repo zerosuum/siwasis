@@ -82,6 +82,8 @@ export default function SampahClient({
     data: null,
   });
 
+  const filterBtnRef = React.useRef(null);
+
   const pushWithParams = React.useCallback(
     (extra = {}) => {
       const params = new URLSearchParams(sp.toString());
@@ -294,6 +296,7 @@ export default function SampahClient({
           </div>
 
           <button
+            ref={filterBtnRef}
             type="button"
             onClick={() => setFilterOpen(true)}
             className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
@@ -434,6 +437,8 @@ export default function SampahClient({
         <FilterModal
           open={filterOpen}
           onClose={() => setFilterOpen(false)}
+          anchorEl={filterBtnRef.current}
+          align="right" 
           value={{
             typeIn: sp.get("type") === "IN",
             typeOut: sp.get("type") === "OUT",
