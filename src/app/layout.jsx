@@ -2,6 +2,7 @@ import { Inter, REM } from "next/font/google";
 import "@/styles/globals.css";
 import { ToastProvider } from "@/components/ui/useToast";
 import Toast from "@/components/ui/Toast";
+import TopLoader from "@/components/TopLoader";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -29,6 +30,7 @@ export default function RootLayout({ children }) {
     >
       <body className="min-h-screen bg-wasis-pr00 text-wasis-pr80 antialiased">
         <ToastProvider>
+          <TopLoader />
           {children}
           <Toast /> {/* <- renderer global */}
         </ToastProvider>
