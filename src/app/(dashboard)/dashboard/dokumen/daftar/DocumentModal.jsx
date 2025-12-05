@@ -85,7 +85,7 @@ export default function DocumentModal({
 
         <div className="grid gap-3">
           <div>
-            <label className="mb-1 block text-sm">File</label>
+            <label className="mb-1 block text-sm">File *Maksimal 5Mb</label>
 
             {isEdit && initial?.file_path && (
               <div className="mb-2 text-sm">
