@@ -52,7 +52,7 @@ export default function RekapClient({ initial, readOnly }) {
   const [pending, startTransition] = React.useTransition();
   const [confirmDownload, setConfirmDownload] = React.useState(false);
   // const [successOpen, setSuccessOpen] = React.useState(false);
-
+  const filterBtnRef = React.useRef(null);
   const initRange =
     sp.get("from") && sp.get("to")
       ? { from: new Date(sp.get("from")), to: new Date(sp.get("to")) }
@@ -138,15 +138,15 @@ export default function RekapClient({ initial, readOnly }) {
 
         setEditing(false);
         setUpdates([]);
-       show({
-         title: "Sukses!",
-         description: "Rekap kas berhasil disimpan.",
-       });
+        show({
+          title: "Sukses!",
+          description: "Rekap kas berhasil disimpan.",
+        });
 
-       const params = new URLSearchParams(sp.toString());
-       params.set("_v", String(Date.now()));
-       router.replace(`/dashboard/kas/rekapitulasi?${params.toString()}`);
-       router.refresh();
+        const params = new URLSearchParams(sp.toString());
+        params.set("_v", String(Date.now()));
+        router.replace(`/dashboard/kas/rekapitulasi?${params.toString()}`);
+        router.refresh();
       } catch (e) {
         console.error(e);
         show({
@@ -273,6 +273,7 @@ export default function RekapClient({ initial, readOnly }) {
           </div>
 
           <button
+            ref={filterBtnRef}
             onClick={() => setFilterOpen(true)}
             className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
           >
@@ -385,6 +386,8 @@ export default function RekapClient({ initial, readOnly }) {
         <FilterModal
           open={filterOpen}
           onClose={() => setFilterOpen(false)}
+          anchorEl={filterBtnRef.current}
+          align="right"
           onApply={(vals) =>
             navigate({ rt: vals.rt, min: vals.min, max: vals.max })
           }

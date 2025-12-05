@@ -97,6 +97,8 @@ export default function LaporanClient({ initial, readOnly }) {
   const [filterOpen, setFilterOpen] = React.useState(false);
   const setoranBounds = React.useMemo(() => ({ min: 0, max: 10_000_000 }), []);
 
+  const filterBtnRef = React.useRef(null);
+
   const [modalState, setModalState] = React.useState({
     open: false,
     type: null,
@@ -324,6 +326,7 @@ export default function LaporanClient({ initial, readOnly }) {
           </div>
 
           <button
+            ref={filterBtnRef}
             type="button"
             onClick={() => setFilterOpen(true)}
             className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
@@ -483,6 +486,8 @@ export default function LaporanClient({ initial, readOnly }) {
         <FilterModal
           open={filterOpen}
           onClose={() => setFilterOpen(false)}
+          anchorEl={filterBtnRef.current}
+          align="right"
           bounds={setoranBounds}
           value={{
             typeIn: sp.get("type") === "IN",
@@ -518,7 +523,7 @@ export default function LaporanClient({ initial, readOnly }) {
                 "Jika unduhan tidak mulai otomatis, coba ulangi beberapa saat lagi.",
             });
 
-               window.location.href = `/api/proxy/kas/laporan/export?${params.toString()}`;
+            window.location.href = `/api/proxy/kas/laporan/export?${params.toString()}`;
           }}
         />
       )}

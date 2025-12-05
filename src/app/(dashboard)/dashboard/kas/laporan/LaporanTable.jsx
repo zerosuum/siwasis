@@ -12,14 +12,12 @@ import {
 
 import { Pencil as IconEdit, Trash as IconDelete } from "lucide-react";
 
-const rp = (n) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
+const formatNumberID = (n) => {
+  const s = Math.trunc(Number(n || 0)).toString();
+  return s.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
 
-    currency: "IDR",
-
-    maximumFractionDigits: 0,
-  }).format(Number(n || 0));
+const rp = (n) => `Rp ${formatNumberID(n)}`;
 
 function SourceChip({ source }) {
   const meta = {

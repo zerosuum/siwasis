@@ -41,6 +41,8 @@ export default function ArisanRekapClient({ initial, readOnly }) {
   const [confirmDownload, setConfirmDownload] = React.useState(false);
   // const [successOpen, setSuccessOpen] = React.useState(false);
 
+  const filterBtnRef = React.useRef(null);
+
   const initRange =
     from && to ? { from: new Date(from), to: new Date(to) } : undefined;
   const [range, setRange] = React.useState(initRange);
@@ -226,6 +228,7 @@ export default function ArisanRekapClient({ initial, readOnly }) {
           </div>
 
           <button
+            ref={filterBtnRef}
             onClick={() => setFilterOpen(true)}
             className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
             title="Filter"
@@ -269,12 +272,13 @@ export default function ArisanRekapClient({ initial, readOnly }) {
             </div>
           </div>
 
-          {!readOnly && ( <button
-            onClick={() => setConfirmDownload(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
-          >
-            <IconDownload size={16} />
-          </button>
+          {!readOnly && (
+            <button
+              onClick={() => setConfirmDownload(true)}
+              className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
+            >
+              <IconDownload size={16} />
+            </button>
           )}
 
           {!readOnly && (
@@ -341,6 +345,8 @@ export default function ArisanRekapClient({ initial, readOnly }) {
         <FilterModal
           open={filterOpen}
           onClose={() => setFilterOpen(false)}
+          anchorEl={filterBtnRef.current}
+          align="right"
           onApply={(vals) =>
             navigate({ rt: vals.rt, min: vals.min, max: vals.max })
           }
