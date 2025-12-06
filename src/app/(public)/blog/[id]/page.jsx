@@ -38,19 +38,12 @@ export default async function BeritaDetailPage({ params }) {
         <div
           className="w-full max-w-[1320px] mx-auto 
                   px-4 sm:px-6 lg:px-10 
-                  py-6 sm:py-8 lg:py-10"
+                  py-10 sm:py-12 lg:py-16"
         >
-          <Link
-            href="/blog"
-            className="text-xs sm:text-sm text-white/80 hover:underline"
-          >
-            &larr; Kembali ke semua berita
-          </Link>
           <h1
             className="font-rem font-bold 
-                 text-2xl sm:text-3xl lg:text-4xl 
-                 text-wasis-nt80 mt-2 max-w-3xl"
-            style={{ lineHeight: "1.3" }}
+                  text-2xl sm:text-3xl lg:text-4xl 
+                  text-wasis-nt80 mt-3 leading-tight"
           >
             {item.title}
           </h1>
@@ -90,6 +83,15 @@ export default async function BeritaDetailPage({ params }) {
             className="tiptap-content font-rem text-wasis-pr80"
             dangerouslySetInnerHTML={{ __html: item.content }}
           />
+        </div>
+
+        <div className="mt-8 pt-4 border-t border-wasis-pr00/40 flex justify-between items-center">
+          <Link
+            href="/blog"
+            className="text-xs sm:text-sm text-wasis-pr60 hover:underline"
+          >
+            &larr; Kembali ke semua berita
+          </Link>
         </div>
       </div>
     </>

@@ -3,44 +3,58 @@
 import { revalidatePath } from "next/cache";
 import { getAdminProfile } from "@/lib/session";
 import { cookies } from "next/headers";
+import { API_BASE } from "@/lib/config";
 
-export async function actionCreateBerita(formData) {
+const BASE =
+  API_BASE || process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000/api";
+
+async function getAuthHeaders() {
   const profile = await getAdminProfile();
-  if (!profile) throw new Error("Akses ditolak. Silakan login.");
+  if (!profile) {
+    throw new Error("Akses ditolak. Silakan login.");
+  }
 
   const cookieStore = await cookies();
   const token = cookieStore.get("siwasis_token")?.value;
+  if (!token) {
+    throw new Error("Token tidak ditemukan. Silakan login kembali.");
+  }
 
-  const site = process.env.NEXT_PUBLIC_SITE_ORIGIN || "http://localhost:3000";
+  const headers = { Accept: "application/json" };
+  headers["Authorization"] = `Bearer ${token}`;
 
-  const res = await fetch(`${site}/api/proxy/articles`, {
+  return headers;
+}
+
+export async function actionCreateBerita(formData) {
+  const headers = await getAuthHeaders();
+
+  const res = await fetch(`${BASE}/articles`, {
     method: "POST",
-    headers: {
-      Accept: "application/json",
-      Cookie: `siwasis_token=${token}`,
-    },
+    headers,
     body: formData,
     cache: "no-store",
   });
+
+  const ct = res.headers.get("content-type") || "";
+  let payload = null;
+
+  if (ct.includes("application/json")) {
+    payload = await res.json().catch(() => null);
+  }
 
   if (!res.ok) {
     let msg = "Gagal mengirim data ke server.";
-    try {
-      const j = await res.json();
-      if (j.errors) {
-        msg = Object.values(j.errors).flat().join(", ");
-      } else {
-        msg = j?.message || msg;
-      }
-    } catch {}
+    if (payload?.errors) {
+      msg = Object.values(payload.errors).flat().join(", ");
+    } else if (payload?.message) {
+      msg = payload.message;
+    }
+    console.error("Create berita gagal:", res.status, payload);
     throw new Error(msg);
   }
 
-  let data = null;
-  try {
-    const j = await res.json();
-    data = j?.data ?? j ?? null;
-  } catch {}
+  const data = payload?.data ?? payload ?? null;
 
   revalidatePath("/blog");
   revalidatePath("/");
@@ -48,78 +62,63 @@ export async function actionCreateBerita(formData) {
   return data;
 }
 
-/**
- * UPDATE BERITA
- * - Kirim FormData yg berisi _method=PUT, title, content, optional image
- */
 export async function actionUpdateBerita(id, formData) {
-  const profile = await getAdminProfile();
-  if (!profile) throw new Error("Akses ditolak. Silakan login.");
+  const headers = await getAuthHeaders();
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get("siwasis_token")?.value;
-  const site = process.env.NEXT_PUBLIC_SITE_ORIGIN || "http://localhost:3000";
+  if (!formData.has("_method")) {
+    formData.set("_method", "PUT");
+  }
 
-  const res = await fetch(`${site}/api/proxy/articles/${id}`, {
-    method: "POST", // pakai method spoofing _method=PUT
-    headers: {
-      Accept: "application/json",
-      Cookie: `siwasis_token=${token}`,
-    },
+  const res = await fetch(`${BASE}/articles/${id}`, {
+    method: "POST",
+    headers,
     body: formData,
     cache: "no-store",
   });
 
+  const ct = res.headers.get("content-type") || "";
+  let payload = null;
+  if (ct.includes("application/json")) {
+    payload = await res.json().catch(() => null);
+  }
+
   if (!res.ok) {
     let msg = "Gagal memperbarui berita.";
-    try {
-      const j = await res.json();
-      if (j.errors) {
-        msg = Object.values(j.errors).flat().join(", ");
-      } else {
-        msg = j?.message || msg;
-      }
-    } catch {}
+    if (payload?.errors) {
+      msg = Object.values(payload.errors).flat().join(", ");
+    } else if (payload?.message) {
+      msg = payload.message;
+    }
+    console.error("Update berita gagal:", res.status, payload);
     throw new Error(msg);
   }
 
-  let data = null;
-  try {
-    const j = await res.json();
-    data = j?.data ?? j ?? null;
-  } catch {}
+  const data = payload?.data ?? payload ?? null;
 
   revalidatePath("/blog");
   revalidatePath("/");
   return data;
 }
 
-/**
- * DELETE BERITA
- */
 export async function actionDeleteBerita(id) {
-  const profile = await getAdminProfile();
-  if (!profile) throw new Error("Akses ditolak. Silakan login.");
+  const headers = await getAuthHeaders();
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get("siwasis_token")?.value;
-  const site = process.env.NEXT_PUBLIC_SITE_ORIGIN || "http://localhost:3000";
-
-  const res = await fetch(`${site}/api/proxy/articles/${id}`, {
+  const res = await fetch(`${BASE}/articles/${id}`, {
     method: "DELETE",
-    headers: {
-      Accept: "application/json",
-      Cookie: `siwasis_token=${token}`,
-    },
+    headers,
     cache: "no-store",
   });
 
+  const ct = res.headers.get("content-type") || "";
+  let payload = null;
+  if (ct.includes("application/json")) {
+    payload = await res.json().catch(() => null);
+  }
+
   if (!res.ok) {
     let msg = "Gagal menghapus berita.";
-    try {
-      const j = await res.json();
-      msg = j?.message || msg;
-    } catch {}
+    if (payload?.message) msg = payload.message;
+    console.error("Delete berita gagal:", res.status, payload);
     throw new Error(msg);
   }
 
