@@ -66,6 +66,14 @@ export default function EditProfileModal({
             aspect="1/1"
             labelIdle="Klik atau drag foto profil ke sini"
             className="max-h-[260px]"
+            maxSize={2 * 1024 * 1024}
+            onError={(msg) =>
+              show({
+                title: "Gagal",
+                description: msg,
+                variant: "error",
+              })
+            }
           />
         </div>
 

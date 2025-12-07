@@ -121,16 +121,48 @@ function mapPengurusHarian(list) {
   return { ketua, wakil, sekretaris, bendahara };
 }
 
+function normalizeHeroUrl(raw) {
+  if (!raw) return "/hero-background.jpg";
+
+  const urlString = typeof raw === "string" ? raw : raw.image_url;
+  if (!urlString) return "/hero-background.jpg";
+
+  try {
+    const u = new URL(urlString);
+
+    if (u.hostname === "127.0.0.1" || u.hostname === "localhost") {
+      const api = new URL(API_BASE);
+      const origin = api.origin.replace(/\/+$/, "");
+
+      return origin + u.pathname;
+    }
+
+    return u.toString();
+  } catch {
+    const api = new URL(API_BASE);
+    const origin = api.origin.replace(/\/+$/, "").replace(/\/api$/, "");
+    const path = urlString.startsWith("/") ? urlString : `/${urlString}`;
+    return origin + path;
+  }
+}
+
 export default async function HomePage() {
-  const [profile, pengurus, beritaRaw, video] = await Promise.all([
+  const [profile, pengurus, beritaRaw, video, heroRaw] = await Promise.all([
     getAdminProfile(),
     fetchFirstData("/pengurus"),
     fetchFirstData("/articles?limit=5"),
     fetchFirstData(["/youtube?limit=5"]),
+    fetchFirstData("/hero-image"),
   ]);
 
   const isAdmin = !!profile;
 
+  let heroImageUrl = "/hero-background.jpg";
+
+  const heroPayload = Array.isArray(heroRaw) ? heroRaw[0] : heroRaw;
+  if (heroPayload) {
+    heroImageUrl = normalizeHeroUrl(heroPayload);
+  }
   const beritaListRaw =
     Array.isArray(beritaRaw) && beritaRaw.length ? beritaRaw : [];
 
@@ -245,7 +277,7 @@ export default async function HomePage() {
     <div className="w-full overflow-x-hidden">
       <section className="relative w-full min-h-[90vh] pt-[72px] flex items-center pb-32">
         <Image
-          src="/hero-background.jpg"
+          src={heroImageUrl}
           alt="Hero Siwasis"
           fill
           className="z-0 object-cover"
@@ -253,10 +285,7 @@ export default async function HomePage() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[rgba(0,0,0,.45)] via-[rgba(0,0,0,.35)] to-[rgba(0,0,0,.35)]" />
 
-        <HeroEditableModal
-          isAdmin={isAdmin}
-          currentImage="/hero-background.jpg"
-        />
+        <HeroEditableModal isAdmin={isAdmin} currentImage={heroImageUrl} />
 
         <div className="relative z-10 w-full">
           <div className="w-full max-w-[1440px] mx-auto px-6 md:px-4">

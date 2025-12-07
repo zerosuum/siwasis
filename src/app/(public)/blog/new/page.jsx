@@ -34,7 +34,7 @@ function FotoModal({ onClose, onUpload, isUploading }) {
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-xl font-bold font-rem text-wasis-pr80">
-          Tambahkan Foto
+          Tambahkan Foto *Maksimal 2Mb
         </h3>
         <p className="text-sm text-gray-500 mt-1">
           Pilih foto sampul untuk beritamu.

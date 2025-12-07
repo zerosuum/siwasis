@@ -4,6 +4,7 @@ import { fetchFirstData } from "@/server/queries/_api";
 import UploadVideoTrigger from "@/components/UploadVideoTrigger";
 import UploadVideoCTA from "@/components/UploadVideoCTA";
 import VideoCard from "@/components/VideoCard";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -44,7 +45,9 @@ export default async function DokumentasiVideoPage() {
 
       <div className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 md:px-4 py-10 sm:py-12 flex flex-col items-center gap-8">
         {list.length > 0 ? (
-          list.map((item) => <VideoCard key={item.id} item={item} canManage={isLoggedIn} />)
+          list.map((item) => (
+            <VideoCard key={item.id} item={item} canManage={isLoggedIn} />
+          ))
         ) : (
           <p className="text-gray-500 text-center py-24">
             Belum ada video untuk ditampilkan.
@@ -53,6 +56,17 @@ export default async function DokumentasiVideoPage() {
       </div>
 
       <UploadVideoCTA />
+
+      <div className="w-full border-t border-wasis-pr00/40">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 md:px-4 py-6 flex justify-between items-center">
+          <Link
+            href="/"
+            className="text-xs sm:text-sm text-wasis-pr60 hover:underline"
+          >
+            &larr; Kembali ke beranda
+          </Link>
+        </div>
+      </div>
     </>
   );
 }
