@@ -30,8 +30,8 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 export default function JimpitanClient({
   initial,
   readOnly,
-  years = [],
-  activeYear,
+  periodes = [],
+  activePeriodeId,
 }) {
   const router = useRouter();
   const sp = useSearchParams();
@@ -45,26 +45,20 @@ export default function JimpitanClient({
   const [q, setQ] = React.useState("");
   const [searchOpen, setSearchOpen] = React.useState(false);
 
-  const fallbackYear =
-    typeof activeYear === "number"
-      ? activeYear
-      : Array.isArray(years) && years.length > 0
-      ? Number(years[0])
-      : new Date().getFullYear();
+  // 🔹 periode selected (mirip Sampah)
+  const initialPeriodeId =
+    activePeriodeId ||
+    (Array.isArray(periodes) && periodes.length > 0 ? periodes[0].id : null);
 
-  const [year, setYear] = React.useState(fallbackYear);
+  const [periodeId, setPeriodeId] = React.useState(initialPeriodeId);
 
-  const yearOptions = React.useMemo(() => {
-    const list = Array.isArray(years) ? years : [];
-    const unique = Array.from(
-      new Set(list.map((y) => Number(y)).filter((y) => !Number.isNaN(y)))
-    ).sort((a, b) => b - a);
-
-    return unique.map((y) => ({
-      id: y,
-      nama: `Tahun ${y}`,
+  const periodeOptions = React.useMemo(() => {
+    const list = Array.isArray(periodes) ? periodes : [];
+    return list.map((p) => ({
+      id: p.id,
+      nama: p.nama,
     }));
-  }, [years]);
+  }, [periodes]);
 
   const initRange =
     sp.get("from") && sp.get("to")
@@ -88,7 +82,7 @@ export default function JimpitanClient({
     (extra = {}) => {
       const params = new URLSearchParams(sp.toString());
 
-      if (year) params.set("year", String(year));
+      if (periodeId) params.set("periode_id", String(periodeId));
 
       if (range?.from && range?.to) {
         params.set("from", range.from.toISOString().slice(0, 10));
@@ -108,12 +102,8 @@ export default function JimpitanClient({
 
       router.push(`/dashboard/jimpitan/laporan?${params.toString()}`);
     },
-    [sp, year, range?.from, range?.to, router]
+    [sp, periodeId, range?.from, range?.to, router]
   );
-
-  React.useEffect(() => {
-    pushWithParams();
-  }, [year]); // eslint-disable-line react-hooks/exhaustive-deps
 
   React.useEffect(() => {
     if (range?.from && range?.to) pushWithParams();
@@ -261,15 +251,11 @@ export default function JimpitanClient({
 
         <div className="flex flex-wrap items-center justify-end gap-2 sm:justify-end justify-start">
           <PeriodDropdown
-            activeId={year}
-            options={yearOptions}
+            activeId={periodeId}
+            options={periodeOptions}
             onSelect={(id) => {
-              const y = Number(id);
-              setYear(y);
-              const params = new URLSearchParams(sp.toString());
-              if (y) params.set("year", String(y));
-              params.set("page", "1");
-              router.push(`/dashboard/jimpitan/laporan?${params.toString()}`);
+              setPeriodeId(id);
+              pushWithParams({ periode_id: id });
             }}
             showCreateButton={false}
           />
@@ -294,7 +280,7 @@ export default function JimpitanClient({
           </div>
 
           <button
-          ref={filterBtnRef}
+            ref={filterBtnRef}
             type="button"
             onClick={() => setFilterOpen(true)}
             className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"

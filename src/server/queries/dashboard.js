@@ -1,61 +1,77 @@
 import { proxyJSON } from "./_api";
 
 export async function getDashboardSummary({ from, to, periode } = {}) {
-  const json = await proxyJSON("/dashboard/summary", {
-    params: {
-      from,
-      to,
-      periode_id: periode,
-    },
-  });
+  const params = {};
 
-  const periodeMeta = json.periode || {};
-  const d = json.data || {};
-  const kasTotal = d.kas_total || {};
+  if (from) params.from = from;
+  if (to) params.to = to;
+  if (periode) params.periode_id = periode;
 
-  const chart = (d.chart_keuangan || []).map((row) => ({
-    label: row.bulan,
-    Pemasukan: Number(row.total_pemasukan || 0),
-    Pengeluaran: Number(row.total_pengeluaran || 0),
-  }));
+  const json = await proxyJSON("/dashboard/summary", { params });
 
-  const kasTable = (d.rekap_kas_warga || []).map((row) => ({
-    id: row.id,
-    rt: row.rt,
-    nama: row.nama,
-    jumlah_setoran: row.jumlah_setoran ?? 0,
-    total_kas: row.total_setoran ?? 0,
-  }));
+  // // DEBUG
+  // if (process.env.NODE_ENV !== "production") {
+  //   console.log("=== [DashboardSummary] REQUEST ===");
+  //   console.log("params:", params);
 
-  const arisan = (d.status_arisan || []).map((item, idx) => ({
-    id: item.warga_id || idx,
-    nama: item.nama || "-",
-    status: item.status_arisan || "-",
-  }));
+  //   console.log("=== [DashboardSummary] RAW JSON ===");
+  //   console.dir(json, { depth: null });
+
+  //   console.log("=== [DashboardSummary] QUICK CHECK ===");
+  //   console.log("periode:", json.periode);
+  //   console.log(
+  //     "chart_keuangan length:",
+  //     json?.data?.chart_keuangan?.length ?? 0
+  //   );
+  //   console.log(
+  //     "status_arisan sample:",
+  //     (json?.data?.status_arisan ?? []).slice(0, 5)
+  //   );
+  //   console.log(
+  //     "rekap_kas_warga sample:",
+  //     (json?.data?.rekap_kas_warga ?? []).slice(0, 3)
+  //   );
+  // }
+
+  const periodeInfo = json.periode || {};
+  const raw = json.data || {};
+  const totals = raw.kas_total || {};
+
+  const chartRaw = raw.chart_keuangan || [];
+  const rekapKasRaw = raw.rekap_kas_warga || [];
+  const arisanRaw = raw.status_arisan || [];
 
   return {
     kpi: {
-      pemasukan: Number(
-        kasTotal.total_pemasukan_semua ??
-          kasTotal.pemasukan ?? 
-          0
-      ),
-
-      pengeluaran: Number(
-        kasTotal.total_pengeluaran_semua ?? kasTotal.pengeluaran ?? 0
-      ),
-
-      saldo: Number(kasTotal.saldo_akhir_semua ?? kasTotal.saldo ?? 0),
-
-      pemasukan_arisan: Number(kasTotal.pemasukan_arisan ?? 0),
+      pemasukan: Number(totals.total_pemasukan_semua ?? 0),
+      pengeluaran: Number(totals.total_pengeluaran_semua ?? 0),
+      saldo: Number(totals.saldo_akhir_semua ?? 0),
     },
-    chart,
-    arisan,
-    kasTable,
+
+    chart: chartRaw.map((row) => ({
+      label: row.bulan,
+      Pemasukan: Number(row.total_pemasukan ?? 0),
+      Pengeluaran: Number(row.total_pengeluaran ?? 0),
+    })),
+
+    arisan: arisanRaw.map((row, idx) => ({
+      id: row.id ?? row.warga_id ?? idx + 1,
+      nama: row.nama,
+      status: row.status_arisan ?? "belum_dapat",
+    })),
+
+    kasTable: rekapKasRaw.map((row) => ({
+      id: row.id,
+      nama: row.nama,
+      rt: row.rt,
+      jumlah_setoran: Number(row.jumlah_setoran ?? 0),
+      total_kas: Number(row.total_setoran ?? 0),
+    })),
+
     period: {
-      from: periodeMeta.from || null,
-      to: periodeMeta.to || null,
-      nama: periodeMeta.nama || null,
+      from: periodeInfo.from ?? null,
+      to: periodeInfo.to ?? null,
+      nama: periodeInfo.nama ?? null,
     },
   };
 }

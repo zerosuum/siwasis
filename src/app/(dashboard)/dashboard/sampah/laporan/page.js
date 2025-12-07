@@ -16,7 +16,6 @@ const defaultData = {
     total: 0,
   },
 };
-const FALLBACK_YEAR = new Date().getFullYear();
 
 export default async function Page({ searchParams }) {
   const sp = (await searchParams) || {};
@@ -30,7 +29,6 @@ export default async function Page({ searchParams }) {
   let periodes = [];
   try {
     const rawPeriodes = await getPeriodes();
-
     const list = Array.isArray(rawPeriodes?.data) ? rawPeriodes.data : [];
 
     periodes = list.map((p) => {
@@ -51,21 +49,13 @@ export default async function Page({ searchParams }) {
     periodes = [];
   }
 
-  const tahunSet = new Set(
-    periodes
-      .map((p) => p.tahun)
-      .filter((t) => typeof t === "number" || typeof t === "string")
-  );
-  const tahunList = Array.from(tahunSet)
-    .map((t) => Number(t))
-    .filter((t) => !Number.isNaN(t))
-    .sort((a, b) => b - a);
-    
-  const spYear = sp.year ? Number(sp.year) : null;
-  const year =
-    spYear && !Number.isNaN(spYear)
-      ? spYear
-      : tahunList[0] ?? new Date().getFullYear();
+  const spPeriodeId = sp.periode_id ? Number(sp.periode_id) : null;
+  const defaultPeriode = periodes[0] || null;
+  const activePeriode =
+    (spPeriodeId && periodes.find((p) => p.id === spPeriodeId)) ||
+    defaultPeriode;
+
+  const activePeriodeId = activePeriode?.id || null;
 
   const page = sp.page ? Number(sp.page) : 1;
   const from = sp.from ?? null;
@@ -81,7 +71,7 @@ export default async function Page({ searchParams }) {
   try {
     const resp = await getSampahLaporan(token, {
       page,
-      year,
+      periodeId: activePeriodeId,
       from,
       to,
       q,
@@ -89,6 +79,7 @@ export default async function Page({ searchParams }) {
       min,
       max,
     });
+
     initial = resp || defaultData;
 
     kpiSaldo =
@@ -131,14 +122,9 @@ export default async function Page({ searchParams }) {
     {
       label: "Saldo Periode",
       value: formatRp(kpiSaldo),
-      range: `Tahun ${year}`,
+      range: activePeriode ? activePeriode.nama : "Semua Periode",
     },
   ];
-
-  // console.log(
-  //   "Sampah Laporan initial from API:",
-  //   JSON.stringify(initial, null, 2)
-  // );
 
   return (
     <div className="pb-10">
@@ -147,7 +133,12 @@ export default async function Page({ searchParams }) {
           <KPICard key={k.label} {...k} />
         ))}
       </div>
-      <SampahClient initial={initial} readOnly={!isLoggedIn} years={tahunList} activeYear={year} />
+      <SampahClient
+        initial={initial}
+        readOnly={!isLoggedIn}
+        periodes={periodes}
+        activePeriodeId={activePeriodeId}
+      />
     </div>
   );
 }

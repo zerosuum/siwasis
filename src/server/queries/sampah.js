@@ -2,14 +2,14 @@ import { proxyJSON } from "./_api";
 
 export async function getSampahLaporan(
   _tokenIgnored,
-  { page, year, from, to, q, type, min, max } = {}
+  { page, periodeId, from, to, q, type, min, max } = {}
 ) {
   const params = {};
 
   if (page) params.page = page;
   params.per_page = 15;
 
-  if (year) params.year = year;
+  if (periodeId) params.periode_id = periodeId;
   if (from) params.from = from;
   if (to) params.to = to;
 

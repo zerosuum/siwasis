@@ -30,8 +30,8 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 export default function SampahClient({
   initial,
   readOnly,
-  years = [],
-  activeYear,
+  periodes = [],
+  activePeriodeId,
 }) {
   const router = useRouter();
   const sp = useSearchParams();
@@ -45,26 +45,19 @@ export default function SampahClient({
   const [q, setQ] = React.useState("");
   const [searchOpen, setSearchOpen] = React.useState(false);
 
-  const fallbackYear =
-    typeof activeYear === "number"
-      ? activeYear
-      : Array.isArray(years) && years.length > 0
-      ? Number(years[0])
-      : new Date().getFullYear();
+  const initialPeriodeId =
+    activePeriodeId ||
+    (Array.isArray(periodes) && periodes.length > 0 ? periodes[0].id : null);
 
-  const [year, setYear] = React.useState(fallbackYear);
+  const [periodeId, setPeriodeId] = React.useState(initialPeriodeId);
 
-  const yearOptions = React.useMemo(() => {
-    const list = Array.isArray(years) ? years : [];
-    const unique = Array.from(
-      new Set(list.map((y) => Number(y)).filter((y) => !Number.isNaN(y)))
-    ).sort((a, b) => b - a);
-
-    return unique.map((y) => ({
-      id: y,
-      nama: `Tahun ${y}`,
+  const periodeOptions = React.useMemo(() => {
+    const list = Array.isArray(periodes) ? periodes : [];
+    return list.map((p) => ({
+      id: p.id,
+      nama: p.nama,
     }));
-  }, [years]);
+  }, [periodes]);
 
   const initRange =
     sp.get("from") && sp.get("to")
@@ -83,16 +76,25 @@ export default function SampahClient({
   });
 
   const filterBtnRef = React.useRef(null);
+  const filterAnchorRef = React.useRef(null);
 
   const pushWithParams = React.useCallback(
     (extra = {}) => {
       const params = new URLSearchParams(sp.toString());
 
-      if (year) params.set("year", String(year));
+      if (periodeId) params.set("periode_id", String(periodeId));
+
+      const formatDate = (d) => {
+        if (!d) return "";
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+      };
 
       if (range?.from && range?.to) {
-        params.set("from", range.from.toISOString().slice(0, 10));
-        params.set("to", range.to.toISOString().slice(0, 10));
+        params.set("from", formatDate(range.from));
+        params.set("to", formatDate(range.to));
       } else {
         params.delete("from");
         params.delete("to");
@@ -108,18 +110,31 @@ export default function SampahClient({
 
       router.push(`/dashboard/sampah/laporan?${params.toString()}`);
     },
-    [sp, year, range?.from, range?.to, router]
+    [sp, periodeId, range?.from, range?.to, router]
   );
 
   React.useEffect(() => {
-    pushWithParams();
-  }, [year]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (range?.from && range?.to) {
+      pushWithParams();
+    }
+  }, [range?.from, range?.to, pushWithParams]);
 
-  React.useEffect(() => {
-    if (range?.from && range?.to) pushWithParams();
-  }, [range?.from, range?.to]); // eslint-disable-line react-hooks/exhaustive-deps
+  const handleResetFilter = React.useCallback(() => {
+    setQ("");
+    setRange(undefined);
 
-  const filterAnchorRef = React.useRef(null);
+    const params = new URLSearchParams(sp.toString());
+
+    if (periodeId) params.set("periode_id", String(periodeId));
+    else params.delete("periode_id");
+
+    ["from", "to", "type", "min", "max", "page"].forEach((k) =>
+      params.delete(k)
+    );
+
+    router.push(`/dashboard/sampah/laporan?${params.toString()}`);
+  }, [sp, router, periodeId]);
+
   const openFilterCalendar = React.useCallback(() => {
     const root = filterAnchorRef.current;
     if (!root) return;
@@ -209,33 +224,15 @@ export default function SampahClient({
 
   const baseRows = paginatedData.data || [];
 
-  const typeParam = sp.get("type"); // "IN" | "OUT" | null
-  const minParam = sp.get("min");
-  const maxParam = sp.get("max");
-
   const filteredRows = React.useMemo(() => {
     const s = (q || "").toLowerCase();
-    const min = minParam != null ? Number(minParam) : null;
-    const max = maxParam != null ? Number(maxParam) : null;
+    if (!s) return baseRows;
 
     return baseRows.filter((r) => {
-      if (s) {
-        const ket = (r.keterangan || "").toLowerCase();
-        if (!ket.includes(s)) return false;
-      }
-
-      if (typeParam === "IN" && r.tipe !== "pemasukan") return false;
-      if (typeParam === "OUT" && r.tipe !== "pengeluaran") return false;
-
-      const nominal = Number(r.jumlah || 0);
-
-      if (min !== null && !Number.isNaN(min) && nominal < min) return false;
-
-      if (max !== null && !Number.isNaN(max) && nominal > max) return false;
-
-      return true;
+      const ket = (r.keterangan || "").toLowerCase();
+      return ket.includes(s);
     });
-  }, [baseRows, q, typeParam, minParam, maxParam]);
+  }, [baseRows, q]);
 
   const tableInitial = React.useMemo(
     () => ({
@@ -263,15 +260,11 @@ export default function SampahClient({
 
         <div className="flex flex-wrap items-center justify-end gap-2 sm:justify-end justify-start">
           <PeriodDropdown
-            activeId={year}
-            options={yearOptions}
+            activeId={periodeId}
+            options={periodeOptions}
             onSelect={(id) => {
-              const y = Number(id);
-              setYear(y);
-              const params = new URLSearchParams(sp.toString());
-              if (y) params.set("year", String(y));
-              params.set("page", "1");
-              router.push(`/dashboard/sampah/laporan?${params.toString()}`);
+              setPeriodeId(id);
+              pushWithParams({ periode_id: id });
             }}
             showCreateButton={false}
           />
@@ -438,7 +431,7 @@ export default function SampahClient({
           open={filterOpen}
           onClose={() => setFilterOpen(false)}
           anchorEl={filterBtnRef.current}
-          align="right" 
+          align="right"
           value={{
             typeIn: sp.get("type") === "IN",
             typeOut: sp.get("type") === "OUT",
@@ -448,8 +441,10 @@ export default function SampahClient({
           onApply={({ type, min, max }) =>
             pushWithParams({ type: type ?? "", min, max })
           }
+          onResetAll={handleResetFilter}
         />
       )}
+
       <ConfirmDialog
         open={!!confirmDelete}
         title="Hapus Transaksi"

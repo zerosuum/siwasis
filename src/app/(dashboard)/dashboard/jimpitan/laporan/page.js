@@ -17,8 +17,6 @@ const defaultData = {
   },
 };
 
-const FALLBACK_YEAR = new Date().getFullYear();
-
 export default async function Page({ searchParams }) {
   const sp = (await searchParams) || {};
 
@@ -51,21 +49,13 @@ export default async function Page({ searchParams }) {
     periodes = [];
   }
 
-  const tahunSet = new Set(
-    periodes
-      .map((p) => p.tahun)
-      .filter((t) => typeof t === "number" || typeof t === "string")
-  );
+  const spPeriodeId = sp.periode_id ? Number(sp.periode_id) : null;
+  const defaultPeriode = periodes[0] || null;
+  const activePeriode =
+    (spPeriodeId && periodes.find((p) => p.id === spPeriodeId)) ||
+    defaultPeriode;
 
-  const tahunList = Array.from(tahunSet)
-    .map((t) => Number(t))
-    .filter((t) => !Number.isNaN(t))
-    .sort((a, b) => b - a);
-
-  const spYear = sp.year ? Number(sp.year) : null;
-
-  const year =
-    spYear && !Number.isNaN(spYear) ? spYear : tahunList[0] ?? FALLBACK_YEAR;
+  const activePeriodeId = activePeriode?.id || null;
 
   const page = sp.page ? Number(sp.page) : 1;
   const from = sp.from ?? null;
@@ -81,7 +71,7 @@ export default async function Page({ searchParams }) {
   try {
     const resp = await getJimpitanLaporan(token, {
       page,
-      year,
+      periodeId: activePeriodeId,
       from,
       to,
       q,
@@ -122,17 +112,17 @@ export default async function Page({ searchParams }) {
     {
       label: "Pemasukan Jimpitan",
       value: formatRp(pemasukan),
-      range: `Tahun ${year}`,
+      range: `Halaman ${initial.data?.current_page || 1}`,
     },
     {
       label: "Pengeluaran Jimpitan",
       value: formatRp(pengeluaran),
-      range: `Tahun ${year}`,
+      range: `Halaman ${initial.data?.current_page || 1}`,
     },
     {
       label: "Saldo Periode",
       value: formatRp(kpiSaldo),
-      range: `Tahun ${year}`,
+      range: activePeriode ? activePeriode.nama : "Semua Periode",
     },
   ];
 
@@ -147,8 +137,8 @@ export default async function Page({ searchParams }) {
       <JimpitanClient
         initial={initial}
         readOnly={!isLoggedIn}
-        years={tahunList}
-        activeYear={year}
+        periodes={periodes}
+        activePeriodeId={activePeriodeId}
       />
     </div>
   );

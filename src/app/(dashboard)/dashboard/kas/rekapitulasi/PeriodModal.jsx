@@ -4,25 +4,48 @@ import * as React from "react";
 import { DateRangePicker } from "@/components/DatePicker";
 import { Pencil as IconPencil, Calendar as IconCalendar } from "lucide-react";
 
-export default function PeriodModal({ open, onClose, onSubmit }) {
+export default function PeriodModal({
+  open,
+  onClose,
+  onSubmit,
+  mode = "create",        // "create" | "edit"
+  initialPeriod = null,   // { id, nama, nominal, tanggal_mulai, tanggal_selesai }
+}) {
   const [name, setName] = React.useState("");
   const [nominal, setNominal] = React.useState("");
   const [range, setRange] = React.useState();
 
   React.useEffect(() => {
     if (!open) return;
-    const next = new Date().getFullYear() + 1;
-    setName(`Periode ${next}`);
-    setNominal("");
-    setRange(undefined);
-  }, [open]);
+
+    if (mode === "edit" && initialPeriod) {
+      setName(initialPeriod.nama ?? "");
+      setNominal(
+        initialPeriod.nominal != null ? String(initialPeriod.nominal) : ""
+      );
+      const from = initialPeriod.tanggal_mulai
+        ? new Date(initialPeriod.tanggal_mulai)
+        : undefined;
+      const to = initialPeriod.tanggal_selesai
+        ? new Date(initialPeriod.tanggal_selesai)
+        : undefined;
+      setRange(from && to ? { from, to } : undefined);
+    } else {
+      const next = new Date().getFullYear() + 1;
+      setName(`Periode ${next}`);
+      setNominal("");
+      setRange(undefined);
+    }
+  }, [open, mode, initialPeriod]);
 
   if (!open) return null;
 
   const ok = () => {
     const from = range?.from?.toISOString?.().slice(0, 10);
     const to = range?.to?.toISOString?.().slice(0, 10);
+
     onSubmit?.({
+      id: initialPeriod?.id,
       name: name?.trim(),
       nominal: nominal === "" ? 0 : Number(nominal),
       from,
@@ -43,7 +66,7 @@ export default function PeriodModal({ open, onClose, onSubmit }) {
         <div className="mb-6 flex items-center gap-3">
           <IconPencil size={20} className="text-gray-800" />
           <h3 className="text-lg font-semibold text-gray-800">
-            Mulai Periode Baru
+            {mode === "edit" ? "Edit Periode" : "Mulai Periode Baru"}
           </h3>
         </div>
 

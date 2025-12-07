@@ -37,7 +37,7 @@ export default async function Page({ searchParams }) {
     arisan_min,
     arisan_max,
     arisan_status,
-    periode,
+    periode_id,
   } = sp;
 
   const toNum = (v) =>
@@ -60,7 +60,7 @@ export default async function Page({ searchParams }) {
     arisan_min: toNum(arisan_min),
     arisan_max: toNum(arisan_max),
     arisan_status,
-    periode_id: periode ? Number(periode) : undefined
+    periode_id: periode_id ? Number(periode_id) : undefined,
   });
 
   const initial = normalizeWarga(raw);
@@ -69,10 +69,39 @@ export default async function Page({ searchParams }) {
 
   try {
     const periodeResp = await getPeriodes().catch(() => null);
-    periodes = Array.isArray(periodeResp?.data) ? periodeResp.data : [];
+    const rawPeriodes = Array.isArray(periodeResp?.data)
+      ? periodeResp.data
+      : Array.isArray(periodeResp)
+      ? periodeResp
+      : [];
+
+    periodes = rawPeriodes.map((p) => {
+      const text = p.nama ?? p.name ?? `Tahun ${p.tahun ?? p.year}`;
+      return {
+        id: p.id,
+        nama: text,
+        name: text,
+        label: text,
+        isActive: p.is_active ?? p.isActive ?? false,
+        nominal: p.nominal ?? 0,
+      };
+    });
   } catch {
     periodes = [];
   }
 
-  return <WargaClient initial={initial} periodes={periodes} />;
+  const periodeIdFromUrl = periode_id ? Number(periode_id) : undefined;
+  const activePeriodeId =
+    periodeIdFromUrl ??
+    periodes.find((p) => p.isActive)?.id ??
+    periodes[0]?.id ??
+    null;
+
+  return (
+    <WargaClient
+      initial={initial}
+      periodes={periodes}
+      activePeriodeId={activePeriodeId}
+    />
+  );
 }
