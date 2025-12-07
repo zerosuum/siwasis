@@ -50,7 +50,11 @@ function IconButtonWithTooltip({ label, children, className = "", ...props }) {
   );
 }
 
-export default function WargaClient({ initial, periodes = [] }) {
+export default function WargaClient({
+  initial,
+  periodes = [],
+  activePeriodeId,
+}) {
   const router = useRouter();
   const sp = useSearchParams();
   const { show } = useToast();
@@ -66,7 +70,9 @@ export default function WargaClient({ initial, periodes = [] }) {
     sp.get("arisan_only") === "1"
   );
 
-  const [periodeId, setPeriodeId] = React.useState(sp.get("periode") || "");
+  const [periodeId, setPeriodeId] = React.useState(
+    sp.get("periode_id") || (activePeriodeId ? String(activePeriodeId) : "")
+  );
 
   const [createModal, setCreateModal] = React.useState({
     open: false,
@@ -146,6 +152,9 @@ export default function WargaClient({ initial, periodes = [] }) {
     kasOnly ? params.set("kas_only", "1") : params.delete("kas_only");
     arisanOnly ? params.set("arisan_only", "1") : params.delete("arisan_only");
 
+    if (periodeId) params.set("periode_id", String(periodeId));
+    else params.delete("periode_id");
+
     Object.entries(extra).forEach(([k, v]) => {
       if (v === undefined || v === null || v === "") params.delete(k);
       else params.set(k, String(v));
@@ -154,8 +163,6 @@ export default function WargaClient({ initial, periodes = [] }) {
     params.set("page", "1");
     router.push(`/dashboard/warga/tambah-warga?${params.toString()}`);
   }
-
-
 
   return (
     <>
@@ -173,10 +180,15 @@ export default function WargaClient({ initial, periodes = [] }) {
         <div className="flex items-center gap-2">
           <PeriodDropdown
             options={periodes}
-            activeId={periodeId ? Number(periodeId) : periodes[0]?.id ?? null}
+            activeId={
+              periodeId
+                ? Number(periodeId)
+                : activePeriodeId ?? periodes[0]?.id ?? null
+            }
             onSelect={(id) => {
-              setPeriodeId(String(id));
-              pushParams({ periode: id });
+              const v = id ? String(id) : "";
+              setPeriodeId(v);
+              pushParams({ periode_id: v || undefined });
             }}
             onNew={undefined}
             showCreateButton={false}
@@ -216,21 +228,21 @@ export default function WargaClient({ initial, periodes = [] }) {
             <IconFilter size={16} />
           </button>
 
-            <IconButtonWithTooltip
-              label="Tambah Anggota Arisan"
-              type="button"
-              onClick={() => setCreateModal({ open: true, variant: "ARISAN" })}
-            >
-              <IconArisan size={16} />
-            </IconButtonWithTooltip>
+          <IconButtonWithTooltip
+            label="Tambah Anggota Arisan"
+            type="button"
+            onClick={() => setCreateModal({ open: true, variant: "ARISAN" })}
+          >
+            <IconArisan size={16} />
+          </IconButtonWithTooltip>
 
-            <IconButtonWithTooltip
-              label="Tambah Anggota Kas"
-              type="button"
-              onClick={() => setCreateModal({ open: true, variant: "KAS" })}
-            >
-              <IconKas size={16} />
-            </IconButtonWithTooltip>
+          <IconButtonWithTooltip
+            label="Tambah Anggota Kas"
+            type="button"
+            onClick={() => setCreateModal({ open: true, variant: "KAS" })}
+          >
+            <IconKas size={16} />
+          </IconButtonWithTooltip>
         </div>
       </div>
 

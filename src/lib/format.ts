@@ -6,7 +6,7 @@ export const rupiah = (n = 0) =>
   }).format(n);
 
   export const toRp = (n: number) =>
-    "Rp. " +
+    "Rp " +
     new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(n || 0);
 
 export const shortDate = (d) => {

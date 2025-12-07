@@ -17,6 +17,7 @@ export async function getWarga(_tokenIgnored, opts = {}) {
     arisan_min,
     arisan_max,
     arisan_status,
+    periode_id,
   } = opts;
 
   const isNum = (v) =>
@@ -38,6 +39,7 @@ export async function getWarga(_tokenIgnored, opts = {}) {
       kas_max: isNum(kas_max) ? Number(kas_max) : undefined,
       arisan_min: isNum(arisan_min) ? Number(arisan_min) : undefined,
       arisan_max: isNum(arisan_max) ? Number(arisan_max) : undefined,
+      periode_id: isNum(periode_id) ? Number(periode_id) : undefined, 
     },
   });
 }

@@ -6,8 +6,9 @@ export default function GenericFilterModal({
   onClose,
   value = {},
   onApply,
+  onResetAll,
   anchorEl,
-  align = "left", 
+  align = "left",
   offset = 8,
 }) {
   const [typeIn, setTypeIn] = React.useState(!!value.typeIn);
@@ -56,10 +57,13 @@ export default function GenericFilterModal({
   }, [open, anchorEl, align, offset]);
 
   const resetAll = () => {
+
     setTypeIn(false);
     setTypeOut(false);
     setMin("");
     setMax("");
+
+    onResetAll?.();
   };
 
   const apply = () => {

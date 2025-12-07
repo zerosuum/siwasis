@@ -132,11 +132,15 @@ export default function WargaTable({ initial, onEdit, onDelete }) {
                 </TableCell>
 
                 <TableCell className="py-4 text-center tabular-nums font-medium">
-                  {r.setoran_kas ? rp(r.setoran_kas) : "—"}
+                  {r.setoran_kas !== null && r.setoran_kas !== undefined
+                    ? rp(Number(r.setoran_kas) || 0)
+                    : "—"}
                 </TableCell>
 
                 <TableCell className="py-4 text-center tabular-nums font-medium">
-                  {r.setoran_arisan ? rp(r.setoran_arisan) : "—"}
+                  {r.setoran_arisan !== null && r.setoran_arisan !== undefined
+                    ? rp(Number(r.setoran_arisan) || 0)
+                    : "—"}
                 </TableCell>
 
                 <TableCell className="py-3">

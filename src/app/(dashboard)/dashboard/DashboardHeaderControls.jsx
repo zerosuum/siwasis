@@ -7,7 +7,11 @@ import { DateRangePicker } from "@/components/DatePicker";
 import { useToast } from "@/components/ui/useToast";
 import PeriodDropdown from "./kas/rekapitulasi/PeriodDropdown";
 import PeriodModal from "./kas/rekapitulasi/PeriodModal";
-import { actionCreatePeriod } from "./kas/rekapitulasi/actions";
+import {
+  actionCreatePeriod,
+  actionDeletePeriod,
+  actionUpdatePeriod,
+} from "./kas/rekapitulasi/actions";
 
 export default function DashboardHeaderControls({ isLoggedIn, periodes = [] }) {
   const router = useRouter();
@@ -20,6 +24,11 @@ export default function DashboardHeaderControls({ isLoggedIn, periodes = [] }) {
       : undefined
   );
   const [newPeriodOpen, setNewPeriodOpen] = React.useState(false);
+  const [editPeriodOpen, setEditPeriodOpen] = React.useState(false);
+  const [editingPeriod, setEditingPeriod] = React.useState(null);
+
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = React.useState(false);
+  const [deletingPeriod, setDeletingPeriod] = React.useState(null);
 
   const handleSelectPeriode = (periodeId) => {
     const params = new URLSearchParams(sp.toString());
@@ -119,6 +128,115 @@ export default function DashboardHeaderControls({ isLoggedIn, periodes = [] }) {
     }
   };
 
+  const handleEditClick = (periode) => {
+    setEditingPeriod(periode);
+    setEditPeriodOpen(true);
+  };
+
+  const handleEditSubmit = async ({ id, name, nominal, from, to }) => {
+    try {
+      const res = await actionUpdatePeriod({ id, name, nominal, from, to });
+
+      setEditPeriodOpen(false);
+      setEditingPeriod(null);
+
+      show({
+        variant: "success",
+        title: "Periode diperbarui",
+        description:
+          "Periode berhasil diperbarui dan data dashboard sudah di-refresh.",
+      });
+
+      const params = new URLSearchParams(sp.toString());
+
+      if (res?.year) {
+        params.set("year", String(res.year));
+      }
+
+      router.push(`/dashboard?${params.toString()}`);
+      router.refresh();
+    } catch (e) {
+      console.error("Gagal mengedit periode:", e);
+      show({
+        variant: "error",
+        title: "Gagal mengedit periode",
+        description:
+          e?.message ||
+          "Tidak dapat mengedit periode sekarang. Coba lagi beberapa saat lagi.",
+      });
+    }
+  };
+
+  const handleDeleteClick = (periode) => {
+    setDeletingPeriod(periode);
+    setConfirmDeleteOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingPeriod) return;
+    try {
+      await actionDeletePeriod(deletingPeriod.id);
+      show({
+        variant: "success",
+        title: "Periode dihapus",
+        description: `Periode "${deletingPeriod.nama}" berhasil dihapus.`,
+      });
+    } catch (e) {
+      console.error("Gagal menghapus periode:", e);
+      show({
+        variant: "error",
+        title: "Gagal menghapus periode",
+        description:
+          e?.message ||
+          "Tidak dapat menghapus periode. Coba lagi beberapa saat lagi.",
+      });
+    } finally {
+      setConfirmDeleteOpen(false);
+      setDeletingPeriod(null);
+      router.refresh();
+    }
+  };
+
+  const handleDeletePeriod = async (periodeId) => {
+    if (!periodeId) return;
+
+    const ok = window.confirm(
+      "Yakin ingin menghapus periode ini? Semua data kas & arisan di periode tersebut ikut terhapus."
+    );
+    if (!ok) return;
+
+    try {
+      await actionDeletePeriod(periodeId);
+
+      show({
+        variant: "success",
+        title: "Periode dihapus",
+        description:
+          "Periode dan seluruh data terkait sudah dihapus dari sistem.",
+      });
+
+      const params = new URLSearchParams(sp.toString());
+
+      if (String(periodeId) === sp.get("periode")) {
+        params.delete("periode");
+      }
+      params.delete("from");
+      params.delete("to");
+
+      router.push(`/dashboard?${params.toString()}`);
+      router.refresh();
+    } catch (e) {
+      console.error("Gagal menghapus periode:", e);
+      show({
+        variant: "error",
+        title: "Gagal menghapus periode",
+        description:
+          e?.message ||
+          "Tidak dapat menghapus periode. Coba lagi beberapa saat lagi.",
+      });
+    }
+  };
+
   return (
     <div className="flex items-center gap-2">
       <PeriodDropdown
@@ -130,6 +248,8 @@ export default function DashboardHeaderControls({ isLoggedIn, periodes = [] }) {
         }
         onSelect={handleSelectPeriode}
         onNew={() => setNewPeriodOpen(true)}
+        onEdit={isLoggedIn ? handleEditClick : undefined}
+        onDelete={isLoggedIn ? handleDeleteClick : undefined}
         showCreateButton={isLoggedIn}
       />
 
@@ -175,7 +295,53 @@ export default function DashboardHeaderControls({ isLoggedIn, periodes = [] }) {
         open={newPeriodOpen}
         onClose={() => setNewPeriodOpen(false)}
         onSubmit={handleCreatePeriod}
+        mode="create"
       />
+
+      <PeriodModal
+        open={editPeriodOpen}
+        onClose={() => {
+          setEditPeriodOpen(false);
+          setEditingPeriod(null);
+        }}
+        onSubmit={handleEditSubmit}
+        mode="edit"
+        initialPeriod={editingPeriod}
+      /> 
+
+      {confirmDeleteOpen && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
+          <div className="w-full max-w-[380px] rounded-2xl bg-white px-6 py-6 shadow-2xl border border-gray-100">
+            <h3 className="text-base font-semibold text-gray-800 mb-2">
+              Hapus periode?
+            </h3>
+            <p className="text-sm text-gray-600">
+              Periode{" "}
+              <span className="font-semibold">
+                {deletingPeriod?.nama ?? ""}
+              </span>{" "}
+              dan semua data terkait (kas & arisan) akan dihapus permanen.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                onClick={() => {
+                  setConfirmDeleteOpen(false);
+                  setDeletingPeriod(null);
+                }}
+              >
+                Batal
+              </button>
+              <button
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+                onClick={handleDeleteConfirm}
+              >
+                Ya, hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

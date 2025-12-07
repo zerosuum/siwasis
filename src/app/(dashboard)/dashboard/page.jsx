@@ -12,23 +12,31 @@ export default async function DashboardPage({ searchParams }) {
   const profile = await getAdminProfile();
   const isLoggedIn = !!profile;
 
-  const sp = await searchParams;
+  const sp = searchParams ?? {};
 
-  const urlFrom = sp?.from ?? null;
-  const urlTo = sp?.to ?? null;
-  const periodeId = sp?.periode ? Number(sp.periode) : null;
+  const urlFrom = sp.from ?? null;
+  const urlTo = sp.to ?? null;
 
   let periodes = [];
   let defaultFrom = null;
   let defaultTo = null;
+  let periodeId = sp.periode ? Number(sp.periode) : null;
 
   try {
     const periodeResp = await getPeriodes().catch(() => null);
     periodes = Array.isArray(periodeResp?.data) ? periodeResp.data : [];
-    const latest = periodes[0];
-    if (latest) {
-      defaultFrom = latest.tanggal_mulai ?? null;
-      defaultTo = latest.tanggal_selesai ?? null;
+
+    const activePeriode = periodeId
+      ? periodes.find((p) => p.id === periodeId)
+      : periodes[0];
+
+    if (activePeriode) {
+      defaultFrom = activePeriode.tanggal_mulai ?? null;
+      defaultTo = activePeriode.tanggal_selesai ?? null;
+
+      if (!periodeId) {
+        periodeId = activePeriode.id;
+      }
     }
   } catch {
     periodes = [];
