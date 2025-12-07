@@ -57,7 +57,12 @@ export async function proxyJSON(
     headers: {
       Accept: "application/json",
       ...(headers || {}),
-      ...(token ? { cookie: `${COOKIE_NAME}=${token}` } : {}),
+      ...(token
+        ? {
+            cookie: `${COOKIE_NAME}=${token}`,
+            Authorization: `Bearer ${token}`,
+          }
+        : {}),
     },
     next: { tags },
   };

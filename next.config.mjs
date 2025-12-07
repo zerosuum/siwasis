@@ -1,3 +1,4 @@
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
     serverActions: {
@@ -19,6 +20,18 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "siwasis.novarentech.web.id",
+        pathname: "/storage/**",
+      },
+      {
+        protocol: "http",
+        hostname: "127.0.0.1",
+        port: "8003",
+        pathname: "/storage/**",
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "8000",
         pathname: "/storage/**",
       },
     ],

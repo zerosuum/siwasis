@@ -2,30 +2,24 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { DateRangePicker } from "@/components/DatePicker";
 import { Calendar as IconCalendar } from "lucide-react";
+import { DateRangePicker } from "@/components/DatePicker";
+import { useToast } from "@/components/ui/useToast";
 import PeriodDropdown from "./kas/rekapitulasi/PeriodDropdown";
 import PeriodModal from "./kas/rekapitulasi/PeriodModal";
+import { actionCreatePeriod } from "./kas/rekapitulasi/actions";
 
 export default function DashboardHeaderControls({ isLoggedIn, periodes = [] }) {
   const router = useRouter();
   const sp = useSearchParams();
+  const { show } = useToast();
 
-  const [year, setYear] = React.useState(new Date().getFullYear());
-  const [newPeriodOpen, setNewPeriodOpen] = React.useState(false);
-
-  const handleSelectYear = (y) => setYear(Number(y));
-  const handleCreatePeriod = async ({ name, nominal, from, to }) => {
-    setNewPeriodOpen(false);
-    router.refresh();
-  };
-
-  const initRange =
+  const [range, setRange] = React.useState(
     sp.get("from") && sp.get("to")
       ? { from: new Date(sp.get("from")), to: new Date(sp.get("to")) }
-      : undefined;
-
-  const [range, setRange] = React.useState(initRange);
+      : undefined
+  );
+  const [newPeriodOpen, setNewPeriodOpen] = React.useState(false);
 
   const handleSelectPeriode = (periodeId) => {
     const params = new URLSearchParams(sp.toString());
@@ -35,6 +29,7 @@ export default function DashboardHeaderControls({ isLoggedIn, periodes = [] }) {
     router.push(`/dashboard?${params.toString()}`);
     router.refresh();
   };
+
   const pushWithParams = React.useCallback(
     (extra = {}) => {
       const params = new URLSearchParams(sp.toString());
@@ -61,7 +56,7 @@ export default function DashboardHeaderControls({ isLoggedIn, periodes = [] }) {
       router.push(`/dashboard?${params.toString()}`);
       router.refresh();
     },
-    [router, sp]
+    [router, sp, range]
   );
 
   React.useEffect(() => {
@@ -89,6 +84,41 @@ export default function DashboardHeaderControls({ isLoggedIn, periodes = [] }) {
     );
   }, []);
 
+  const handleCreatePeriod = async ({ name, nominal, from, to }) => {
+    try {
+      const res = await actionCreatePeriod({ name, nominal, from, to });
+
+      setNewPeriodOpen(false);
+
+      show({
+        variant: "success",
+        title: "Periode baru dibuat",
+        description:
+          "Periode berhasil dibuat. Data kas dan arisan otomatis disiapkan.",
+      });
+
+      const params = new URLSearchParams(sp.toString());
+      params.delete("from");
+      params.delete("to");
+
+      if (res?.year) {
+        params.set("year", String(res.year));
+      }
+
+      router.push(`/dashboard?${params.toString()}`);
+      router.refresh();
+    } catch (e) {
+      console.error("Gagal membuat periode dari Dashboard:", e);
+      show({
+        variant: "error",
+        title: "Gagal membuat periode",
+        description:
+          e?.message ||
+          "Tidak dapat membuat periode baru. Coba lagi beberapa saat lagi.",
+      });
+    }
+  };
+
   return (
     <div className="flex items-center gap-2">
       <PeriodDropdown
@@ -97,7 +127,7 @@ export default function DashboardHeaderControls({ isLoggedIn, periodes = [] }) {
           sp.get("periode")
             ? Number(sp.get("periode"))
             : periodes[0]?.id ?? null
-        } 
+        }
         onSelect={handleSelectPeriode}
         onNew={() => setNewPeriodOpen(true)}
         showCreateButton={isLoggedIn}
@@ -140,6 +170,7 @@ export default function DashboardHeaderControls({ isLoggedIn, periodes = [] }) {
           />
         </div>
       </div>
+
       <PeriodModal
         open={newPeriodOpen}
         onClose={() => setNewPeriodOpen(false)}

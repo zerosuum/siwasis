@@ -6,14 +6,17 @@ import { UploadCloud } from "lucide-react";
 export default function ImageDropzone({
   initialUrl,
   onChange,
+  onError,
   accept = "image/*",
   labelIdle = "Klik atau drag file ke sini",
   className = "",
   aspect = "16/9",
+  maxSize,
 }) {
   const inputRef = useRef(null);
   const [preview, setPreview] = useState(initialUrl || null);
   const [drag, setDrag] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(() => {
     if (!preview && initialUrl) {
@@ -23,6 +26,19 @@ export default function ImageDropzone({
 
   const handlePick = (file) => {
     if (!file) return;
+
+    if (maxSize && file.size > maxSize) {
+      const mb = maxSize / (1024 * 1024);
+      const msg = `Ukuran file terlalu besar. Maksimal ${mb}MB.`;
+
+      setErrorMsg(msg);
+      if (typeof onError === "function") {
+        onError(msg, file);
+      }
+      return;
+    }
+
+    setErrorMsg(null);
 
     const url = URL.createObjectURL(file);
     setPreview(url);
@@ -76,6 +92,16 @@ export default function ImageDropzone({
         <div className="flex flex-col items-center justify-center gap-2 p-4 text-gray-500 text-sm">
           <UploadCloud className="w-8 h-8 text-gray-400" />
           <span>{labelIdle}</span>
+          {maxSize && (
+            <span className="text-xs text-gray-400">
+              Maksimal {(maxSize / (1024 * 1024)).toFixed(1)}MB
+            </span>
+          )}
+          {errorMsg && (
+            <span className="mt-1 text-xs text-red-500 text-center">
+              {errorMsg}
+            </span>
+          )}
         </div>
       )}
 

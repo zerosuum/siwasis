@@ -3,7 +3,11 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/useToast";
 
-import { actionCreateAdmin, actionChangePassword, actionDeleteAdmin } from "./actions";
+import {
+  actionCreateAdmin,
+  actionChangePassword,
+  actionDeleteAdmin,
+} from "./actions";
 
 import ProfileCard from "./ProfileCard";
 import AccountDetails from "./AccountDetails";
@@ -79,10 +83,32 @@ function PageInner({ initialProfile, initialAdmins }) {
   }
 
   async function handleUpdateProfile(p) {
+    if (!p.name || !p.email) {
+      show({
+        title: "Gagal",
+        description: "Nama dan email tidak boleh kosong.",
+        variant: "error",
+      });
+      return;
+    }
+
+    if (p.photo) {
+      const maxSizeMB = 5;
+      const maxBytes = maxSizeMB * 1024 * 1024;
+
+      if (p.photo.size > maxBytes) {
+        show({
+          title: "Gagal",
+          description: `Ukuran foto terlalu besar. Maksimal ${maxSizeMB}MB.`,
+          variant: "error",
+        });
+        return;
+      }
+    }
+
     setIsMutating(true);
     try {
       const fd = new FormData();
-
       fd.append("name", p.name);
       fd.append("email", p.email);
       if (p.photo) fd.append("photo", p.photo);
@@ -95,13 +121,25 @@ function PageInner({ initialProfile, initialAdmins }) {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        const msg =
-          data?.message || data?.errors || "Gagal memperbarui profil.";
-        throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
+        let msg = "Gagal memperbarui profil.";
+
+        if (res.status === 413) {
+          msg = "Ukuran foto terlalu besar. Maksimal 5MB.";
+        } else if (data?.errors) {
+          if (data.errors.photo) {
+            msg = data.errors.photo[0] || msg;
+          } else {
+            const allErrors = Object.values(data.errors).flat();
+            msg = allErrors[0] || msg;
+          }
+        } else if (data?.message) {
+          msg = data.message;
+        }
+
+        throw new Error(msg);
       }
 
       const updatedProfile = data?.data ?? data ?? {};
-
       setProfile((old) => ({ ...old, ...updatedProfile }));
       router.refresh();
 

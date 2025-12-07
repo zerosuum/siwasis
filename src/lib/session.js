@@ -44,8 +44,17 @@ export async function getAdminProfile() {
       timeoutMs: 5000,
     }).catch(() => null);
 
-    const raw = payload?.data ?? payload ?? null;
+    const raw =
+      payload?.data ??
+      payload?.user ??
+      (typeof payload === "object" ? payload : null);
+
     if (!raw || typeof raw !== "object") return null;
+
+    const msg = String(raw.message || payload?.message || "").toLowerCase();
+    if (msg.includes("unauth")) {
+      return null;
+    }
 
     const API_BASE =
       process.env.NEXT_PUBLIC_API_BASE ||
