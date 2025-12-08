@@ -34,6 +34,7 @@ export default function RekapClient({ initial, readOnly }) {
 
   const q = sp.get("q") || "";
   const rt = sp.get("rt") || "all";
+
   const from = sp.get("from");
   const to = sp.get("to");
 
@@ -53,10 +54,9 @@ export default function RekapClient({ initial, readOnly }) {
   const [confirmDownload, setConfirmDownload] = React.useState(false);
   // const [successOpen, setSuccessOpen] = React.useState(false);
   const filterBtnRef = React.useRef(null);
+
   const initRange =
-    sp.get("from") && sp.get("to")
-      ? { from: new Date(sp.get("from")), to: new Date(sp.get("to")) }
-      : undefined;
+    from && to ? { from: new Date(from), to: new Date(to) } : undefined;
   const [range, setRange] = React.useState(initRange);
 
   const filterAnchorRef = React.useRef(null);
@@ -75,6 +75,13 @@ export default function RekapClient({ initial, readOnly }) {
     });
   }, []);
 
+  const toLocalYMD = (d) =>
+    [
+      d.getFullYear(),
+      String(d.getMonth() + 1).padStart(2, "0"),
+      String(d.getDate()).padStart(2, "0"),
+    ].join("-");
+
   React.useEffect(() => {
     if (!range?.from || !range?.to) return;
 
@@ -84,19 +91,12 @@ export default function RekapClient({ initial, readOnly }) {
     if (sp.get("q")) params.set("q", sp.get("q"));
 
     params.set("year", String(year));
-    const toLocalYMD = (d) =>
-      [
-        d.getFullYear(),
-        String(d.getMonth() + 1).padStart(2, "0"),
-        String(d.getDate()).padStart(2, "0"),
-      ].join("-");
     params.set("from", toLocalYMD(range.from));
     params.set("to", toLocalYMD(range.to));
-
     params.set("page", "1");
 
     router.push(`/dashboard/kas/rekapitulasi?${params.toString()}`);
-  }, [range?.from, range?.to]);
+  }, [range?.from, range?.to]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const navigate = (newParams) => {
     const params = new URLSearchParams(sp.toString());
@@ -182,13 +182,26 @@ export default function RekapClient({ initial, readOnly }) {
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [editing]);
 
-  // Data untuk modal
-  const rtOptions = React.useMemo(() => ["01", "02", "03", "04", "05"], []);
-  const setoranBounds = React.useMemo(() => ({ min: 0, max: 100000 }), []);
+  const rtOptions = React.useMemo(() => {
+    const base =
+      Array.isArray(initial?.listRt) && initial.listRt.length > 0
+        ? initial.listRt
+        : Array.from(
+            new Set((initial?.rows || []).map((row) => row.rt).filter(Boolean))
+          );
+
+    return base
+      .map((v) => ({
+        value: String(v).padStart(2, "0"),
+        label: `RT ${String(v).padStart(2, "0")}`,
+      }))
+      .sort((a, b) => Number(a.value) - Number(b.value));
+  }, [initial?.listRt, initial?.rows]);
+
+  const setoranBounds = React.useMemo(() => ({ min: 0, max: 10_000_000 }), []);
 
   const [newPeriodOpen, setNewPeriodOpen] = React.useState(false);
   const handleSelectYear = (y) => {
-    // pindah periode, bersihkan range biar nggak bentrok
     navigate({ year: y, from: "", to: "" });
   };
 
@@ -280,16 +293,46 @@ export default function RekapClient({ initial, readOnly }) {
             <IconFilter size={16} />
           </button>
 
-          <button
-            type="button"
-            onClick={openFilterCalendar}
-            className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
-            title="Pilih rentang tanggal"
-            aria-label="Pilih rentang tanggal"
-          >
-            <IconCalendar size={16} />
-          </button>
           <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                if (range?.from && range?.to) {
+                  setRange(undefined);
+
+                  const params = new URLSearchParams(sp.toString());
+                  params.delete("from");
+                  params.delete("to");
+                  params.set("page", "1");
+
+                  router.push(
+                    `/dashboard/kas/rekapitulasi?${params.toString()}`
+                  );
+                  return;
+                }
+
+                openFilterCalendar();
+              }}
+              className={[
+                "flex h-8 w-8 items-center justify-center rounded-[10px] border",
+                range?.from && range?.to
+                  ? "border-[#6E8649] bg-[#EEF0E8] text-[#2B3A1D]"
+                  : "border-[#E2E7D7] bg-white hover:bg-[#F8FAF5] text-gray-700",
+              ].join(" ")}
+              title={
+                range?.from && range?.to
+                  ? "Klik untuk hapus filter tanggal"
+                  : "Pilih rentang tanggal"
+              }
+              aria-label={
+                range?.from && range?.to
+                  ? "Klik untuk hapus filter tanggal"
+                  : "Pilih rentang tanggal"
+              }
+            >
+              <IconCalendar size={16} />
+            </button>
+
             <div
               ref={filterAnchorRef}
               className="absolute inset-0 opacity-0 pointer-events-none"
@@ -436,19 +479,6 @@ export default function RekapClient({ initial, readOnly }) {
           }}
         />
       )}
-
-      {/* {!readOnly && (
-        <ConfirmDialog
-          open={successOpen}
-          onOk={() => setSuccessOpen(false)}
-          hideCancel
-          variant="success"
-          okText="Tutup"
-          title="Sukses!"
-          description="Berhasil menyimpan perubahan."
-          autoCloseMs={1600}
-        />
-      )} */}
 
       {!readOnly && (
         <PeriodModal

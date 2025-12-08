@@ -11,27 +11,45 @@ export default function FilterModal({
   rtOptions,
   value,
   bounds,
-  anchorEl, 
+  anchorEl,
   align = "left",
   offset = 8,
 }) {
   const [rt, setRt] = React.useState(value.rt ?? "all");
-  const [range, setRange] = React.useState([
-    Number.isFinite(value.min) ? value.min : bounds.min,
-    Number.isFinite(value.max) ? value.max : bounds.max,
-  ]);
+  const [range, setRange] = React.useState(() => {
+    const minVal = Number.isFinite(value.min)
+      ? clamp(value.min, bounds.min, bounds.max)
+      : bounds.min;
+    const maxVal = Number.isFinite(value.max)
+      ? clamp(value.max, minVal, bounds.max)
+      : bounds.max;
+    return [minVal, maxVal];
+  });
 
   React.useEffect(() => {
     setRt(value.rt ?? "all");
-    setRange([
-      Number.isFinite(value.min) ? value.min : bounds.min,
-      Number.isFinite(value.max) ? value.max : bounds.max,
-    ]);
+
+    const minVal = Number.isFinite(value.min)
+      ? clamp(value.min, bounds.min, bounds.max)
+      : bounds.min;
+    const maxVal = Number.isFinite(value.max)
+      ? clamp(value.max, minVal, bounds.max)
+      : bounds.max;
+
+    setRange([minVal, maxVal]);
   }, [open, value, bounds]);
 
   const resetAll = () => {
     setRt("all");
     setRange([bounds.min, bounds.max]);
+
+    onApply?.({
+      rt: undefined,
+      min: undefined,
+      max: undefined,
+    });
+
+    onClose?.();
   };
 
   const apply = () => {
@@ -126,34 +144,32 @@ export default function FilterModal({
             <Chip selected={rt === "all"} onClick={() => setRt("all")}>
               Semua
             </Chip>
-            {rtOptions.map((opt) => (
-              <Chip key={opt} selected={rt === opt} onClick={() => setRt(opt)}>
-                {opt}
-              </Chip>
-            ))}
+
+            {rtOptions.map((opt) => {
+              const val = typeof opt === "object" ? opt.value : String(opt);
+              const label = typeof opt === "object" ? opt.label : String(opt);
+
+              return (
+                <Chip
+                  key={val}
+                  selected={rt === val}
+                  onClick={() => setRt(val)}
+                >
+                  {label}
+                </Chip>
+              );
+            })}
           </div>
         </div>
 
         <div className="mt-4">
           <div className="mb-2 text-sm font-medium text-gray-600">
-            Jumlah Setoran
+            Total Setoran
           </div>
 
           <div className="mb-3 grid grid-cols-2 gap-2">
-            <NumberBox
-              label="Min"
-              value={range[0]}
-              onChange={(v) =>
-                setRange([clamp(v, bounds.min, range[1]), range[1]])
-              }
-            />
-            <NumberBox
-              label="Max"
-              value={range[1]}
-              onChange={(v) =>
-                setRange([range[0], clamp(v, range[0], bounds.max)])
-              }
-            />
+            <NumberBox label="Min" value={range[0]} />
+            <NumberBox label="Max" value={range[1]} />
           </div>
 
           <Slider
@@ -209,17 +225,12 @@ function Chip({ selected, onClick, children }) {
   );
 }
 
-function NumberBox({ label, value, onChange }) {
+function NumberBox({ label, value }) {
   return (
-    <label className="flex items-center gap-2 rounded-md border px-3 py-2">
+    <div className="flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-3 py-2 cursor-default select-none">
       <span className="text-xs text-gray-500">{label}</span>
-      <input
-        type="number"
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full bg-transparent text-sm outline-none"
-      />
-    </label>
+      <span className="text-sm font-medium text-gray-900">{fmt(value)}</span>
+    </div>
   );
 }
 

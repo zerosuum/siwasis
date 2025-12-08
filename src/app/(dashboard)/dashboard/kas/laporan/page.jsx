@@ -38,7 +38,6 @@ function normalizeKasLaporan(resp, year) {
     };
   }
 
-  // BE kemungkinan kirim paginator di resp.data
   const paginator =
     resp.data && Array.isArray(resp.data.data)
       ? resp.data
@@ -88,15 +87,37 @@ export default async function Page({ searchParams }) {
   const sp = await searchParams;
 
   const periodeResp = await getPeriodes();
-  const periodes = Array.isArray(periodeResp?.data) ? periodeResp.data : [];
+  const rawPeriodes = Array.isArray(periodeResp?.data) ? periodeResp.data : [];
 
-  const yearFromPeriode =
-    periodes.length && periodes[0]?.tanggal_mulai
-      ? new Date(periodes[0].tanggal_mulai).getFullYear()
-      : new Date().getFullYear();
+  const periodes = rawPeriodes.map((p) => {
+    const tahun = p.tanggal_mulai
+      ? new Date(p.tanggal_mulai).getFullYear()
+      : p.tanggal_selesai
+      ? new Date(p.tanggal_selesai).getFullYear()
+      : null;
+
+    return {
+      ...p,
+      nama: p.nama ?? `Periode ${tahun ?? ""}`.trim(),
+      tahun,
+    };
+  });
+
+  const spPeriodeId = sp.periode_id ? Number(sp.periode_id) : null;
+  const defaultPeriode = periodes[0] || null;
+  const activePeriode =
+    (spPeriodeId && periodes.find((p) => p.id === spPeriodeId)) ||
+    defaultPeriode;
+
+  const activePeriodeId = activePeriode?.id || null;
 
   const page = sp?.page ? Number(first(sp.page)) : 1;
-  const year = sp?.year ? Number(first(sp.year)) : yearFromPeriode;
+
+  const year =
+    activePeriode?.tahun ||
+    (activePeriode?.tanggal_mulai
+      ? new Date(activePeriode.tanggal_mulai).getFullYear()
+      : new Date().getFullYear());
   const from = sp?.from ? String(first(sp.from)) : null;
   const to = sp?.to ? String(first(sp.to)) : null;
   const q = sp?.q ? String(first(sp.q)) : "";
@@ -117,6 +138,7 @@ export default async function Page({ searchParams }) {
       type,
       min,
       max,
+      periodeId: activePeriodeId,
     });
     initial = normalizeKasLaporan(resp, year);
   } catch {
@@ -124,21 +146,25 @@ export default async function Page({ searchParams }) {
   }
   initial.periodes = periodes;
 
+  const rangeText =
+    activePeriode?.nama ||
+    (initial.meta?.year ? `Tahun ${initial.meta.year}` : "Semua Periode");
+
   const kpis = [
     {
       label: "Pemasukan",
       value: initial.kpi.pemasukanFormatted,
-      range: initial.kpi.rangeLabel,
+      range: rangeText,
     },
     {
       label: "Pengeluaran",
       value: initial.kpi.pengeluaranFormatted,
-      range: initial.kpi.rangeLabel,
+      range: rangeText,
     },
     {
       label: "Saldo",
       value: initial.kpi.saldoFormatted,
-      range: initial.kpi.rangeLabel,
+      range: rangeText,
     },
   ];
 
@@ -154,7 +180,7 @@ export default async function Page({ searchParams }) {
           />
         ))}
       </div>
-    
+
       <LaporanClient initial={initial} readOnly={!isLoggedIn} />
     </div>
   );

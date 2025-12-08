@@ -301,12 +301,36 @@ export default function SampahClient({
           <div className="relative">
             <button
               type="button"
-              onClick={openFilterCalendar}
-              className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
-              title="Pilih rentang tanggal"
+              onClick={() => {
+                if (range?.from && range?.to) {
+                  setRange(undefined);
+
+                  const params = new URLSearchParams(sp.toString());
+                  params.delete("from");
+                  params.delete("to");
+                  params.set("page", "1");
+
+                  router.push(`/dashboard/sampah/laporan?${params.toString()}`);
+                  return;
+                }
+
+                openFilterCalendar();
+              }}
+              className={[
+                "flex h-8 w-8 items-center justify-center rounded-[10px] border",
+                range?.from && range?.to
+                  ? "border-[#6E8649] bg-[#EEF0E8] text-[#2B3A1D]"
+                  : "border-[#E2E7D7] bg-white hover:bg-[#F8FAF5] text-gray-700",
+              ].join(" ")}
+              title={
+                range?.from && range?.to
+                  ? "Klik untuk hapus filter tanggal"
+                  : "Pilih rentang tanggal"
+              }
             >
               <IconCalendar size={16} />
             </button>
+
             <div
               ref={filterAnchorRef}
               className="absolute inset-0 pointer-events-none opacity-0"

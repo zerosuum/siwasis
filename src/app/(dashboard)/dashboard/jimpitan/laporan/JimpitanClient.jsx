@@ -45,7 +45,6 @@ export default function JimpitanClient({
   const [q, setQ] = React.useState("");
   const [searchOpen, setSearchOpen] = React.useState(false);
 
-  // 🔹 periode selected (mirip Sampah)
   const initialPeriodeId =
     activePeriodeId ||
     (Array.isArray(periodes) && periodes.length > 0 ? periodes[0].id : null);
@@ -78,39 +77,65 @@ export default function JimpitanClient({
 
   const [submitting, setSubmitting] = React.useState(false);
 
+  const filterBtnRef = React.useRef(null);
+  const filterAnchorRef = React.useRef(null);
+
+  const toLocalYMD = React.useCallback((d) => {
+    if (!d) return "";
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }, []);
+
   const pushWithParams = React.useCallback(
     (extra = {}) => {
       const params = new URLSearchParams(sp.toString());
 
       if (periodeId) params.set("periode_id", String(periodeId));
 
-      if (range?.from && range?.to) {
-        params.set("from", range.from.toISOString().slice(0, 10));
-        params.set("to", range.to.toISOString().slice(0, 10));
+      if (
+        Object.prototype.hasOwnProperty.call(extra, "from") ||
+        Object.prototype.hasOwnProperty.call(extra, "to")
+      ) {
+        const fromExtra = extra.from;
+        const toExtra = extra.to;
+
+        if (fromExtra) params.set("from", fromExtra);
+        else params.delete("from");
+
+        if (toExtra) params.set("to", toExtra);
+        else params.delete("to");
       } else {
-        params.delete("from");
-        params.delete("to");
+        if (range?.from && range?.to) {
+          params.set("from", toLocalYMD(range.from));
+          params.set("to", toLocalYMD(range.to));
+        } else {
+          params.delete("from");
+          params.delete("to");
+        }
       }
 
       params.delete("q");
       params.set("page", "1");
 
       Object.entries(extra).forEach(([k, v]) => {
+        if (k === "from" || k === "to") return;
         if (v === undefined || v === null || v === "") params.delete(k);
         else params.set(k, String(v));
       });
 
       router.push(`/dashboard/jimpitan/laporan?${params.toString()}`);
     },
-    [sp, periodeId, range?.from, range?.to, router]
+    [sp, periodeId, range?.from, range?.to, router, toLocalYMD]
   );
 
   React.useEffect(() => {
-    if (range?.from && range?.to) pushWithParams();
-  }, [range?.from, range?.to]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (range?.from && range?.to) {
+      pushWithParams();
+    }
+  }, [range?.from, range?.to, pushWithParams]);
 
-  const filterBtnRef = React.useRef(null);
-  const filterAnchorRef = React.useRef(null);
   const openFilterCalendar = React.useCallback(() => {
     const root = filterAnchorRef.current;
     if (!root) return;
@@ -292,9 +317,30 @@ export default function JimpitanClient({
           <div className="relative">
             <button
               type="button"
-              onClick={openFilterCalendar}
-              className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
-              title="Pilih rentang tanggal"
+              onClick={() => {
+                if (range?.from && range?.to) {
+                  setRange(undefined);
+                  pushWithParams({ from: "", to: "" });
+                  return;
+                }
+                openFilterCalendar();
+              }}
+              className={[
+                "flex h-8 w-8 items-center justify-center rounded-[10px] border",
+                range?.from && range?.to
+                  ? "border-[#6E8649] bg-[#EEF0E8] text-[#2B3A1D]"
+                  : "border-[#E2E7D7] bg-white hover:bg-[#F8FAF5] text-gray-700",
+              ].join(" ")}
+              title={
+                range?.from && range?.to
+                  ? "Klik untuk hapus filter tanggal"
+                  : "Pilih rentang tanggal"
+              }
+              aria-label={
+                range?.from && range?.to
+                  ? "Klik untuk hapus filter tanggal"
+                  : "Pilih rentang tanggal"
+              }
             >
               <IconCalendar size={16} />
             </button>
