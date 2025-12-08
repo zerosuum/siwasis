@@ -12,7 +12,7 @@ export default async function DashboardPage({ searchParams }) {
   const profile = await getAdminProfile();
   const isLoggedIn = !!profile;
 
-  const sp = searchParams ?? {};
+  const sp = (await searchParams) ?? {};
 
   const urlFrom = sp.from ?? null;
   const urlTo = sp.to ?? null;

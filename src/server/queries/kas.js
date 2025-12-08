@@ -34,9 +34,8 @@ export async function getKasRekap({
   const paginator = json.data || {};
   const rawRows = Array.isArray(paginator.data) ? paginator.data : [];
 
-  // 1️⃣ Tentukan nominal standar:
-  //    - prioritas: nominal_kas / nominal dari BE
-  //    - fallback: cari dari payment_status pertama yang jumlahnya > 0
+  const listRt = Array.isArray(json.list_rt) ? json.list_rt : [];
+
   let nominal = Number(json.nominal_kas ?? json.nominal ?? 0);
 
   if (!nominal) {
@@ -116,6 +115,7 @@ export async function getKasRekap({
       saldoFormatted: toRp(saldo),
       rangeLabel: json.periode || `Tahun ${year}`,
     },
+    listRt,
   };
 }
 
@@ -145,13 +145,18 @@ export async function getKasLaporan({
   type,
   min,
   max,
+  periodeId,
 } = {}) {
   const params = {};
 
   if (typeof page !== "undefined") params.page = page;
 
-  if (typeof year !== "undefined" && year !== null) {
+  if (!periodeId && typeof year !== "undefined" && year !== null) {
     params.year = year;
+  }
+
+  if (periodeId) {
+    params.periode_id = periodeId;
   }
 
   if (from && to) {

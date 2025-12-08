@@ -164,6 +164,16 @@ export default function WargaClient({
     router.push(`/dashboard/warga/tambah-warga?${params.toString()}`);
   }
 
+  const rtOptions = React.useMemo(() => {
+    const rawList = Array.isArray(initial?.list_rt) ? initial.list_rt : [];
+    const normalized = rawList
+      .filter((v) => v !== null && v !== undefined && v !== "")
+      .map((v) => String(v).padStart(2, "0"));
+
+    const uniqueSorted = Array.from(new Set(normalized)).sort();
+    return ["all", ...uniqueSorted];
+  }, [initial?.list_rt]);
+
   return (
     <>
       <div className="flex items-center justify-between gap-3 px-4">
@@ -323,6 +333,7 @@ export default function WargaClient({
           open={filterOpen}
           onClose={() => setFilterOpen(false)}
           anchorEl={filterBtnRef.current}
+          rtOptions={rtOptions}
           value={{
             rt,
             arisan_status: sp.get("arisan_status") || "",

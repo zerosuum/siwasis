@@ -23,6 +23,7 @@ export default function FilterModal({
   onReset,
   align = "left",
   offset = 8,
+  rtOptions = ["all", "01", "02", "03", "04", "05", "06", "07", "08", "09"],
 }) {
   const [rt, setRt] = React.useState(value.rt ?? "all");
   const [statusSudah, setStatusSudah] = React.useState(
@@ -37,16 +38,16 @@ export default function FilterModal({
   const [arMin, setArMin] = React.useState(value.arisan_min ?? "");
   const [arMax, setArMax] = React.useState(value.arisan_max ?? "");
 
-React.useEffect(() => {
-  if (!open) return;
-  setRt(value.rt ?? "all");
-  setStatusSudah(value.arisan_status === "sudah_dapat");
-  setStatusBelum(value.arisan_status === "belum_dapat");
-  setKasMin(value.kas_min ?? "");
-  setKasMax(value.kas_max ?? "");
-  setArMin(value.arisan_min ?? "");
-  setArMax(value.arisan_max ?? "");
-}, [open, value]);
+  React.useEffect(() => {
+    if (!open) return;
+    setRt(value.rt ?? "all");
+    setStatusSudah(value.arisan_status === "sudah_dapat");
+    setStatusBelum(value.arisan_status === "belum_dapat");
+    setKasMin(value.kas_min ?? "");
+    setKasMax(value.kas_max ?? "");
+    setArMin(value.arisan_min ?? "");
+    setArMax(value.arisan_max ?? "");
+  }, [open, value]);
 
   const panelRef = React.useRef(null);
   const [pos, setPos] = React.useState({ top: 0, left: 0, ready: false });
@@ -137,18 +138,7 @@ React.useEffect(() => {
           <div>
             <div className="mb-2 font-medium text-[#8B8FA1]">RT</div>
             <div className="flex flex-wrap gap-3">
-              {[
-                "all",
-                "01",
-                "02",
-                "03",
-                "04",
-                "05",
-                "06",
-                "07",
-                "08",
-                "09",
-              ].map((x) => (
+              {rtOptions.map((x) => (
                 <Chip
                   key={x}
                   active={(rt || "all") === x}

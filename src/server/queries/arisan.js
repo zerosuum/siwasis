@@ -65,6 +65,8 @@ export async function getArisanRekap({
 
   const dates = Array.isArray(json.dates) ? json.dates : [];
 
+  const listRt = Array.isArray(json.list_rt) ? json.list_rt : [];
+
   const paginator =
     json.data && Array.isArray(json.data.data)
       ? json.data
@@ -247,6 +249,7 @@ export async function getArisanRekap({
       saldoFormatted: toRp(saldo),
       rangeLabel: json.periode || "Rentang mengikuti periode",
     },
+    listRt,
   };
 }
 

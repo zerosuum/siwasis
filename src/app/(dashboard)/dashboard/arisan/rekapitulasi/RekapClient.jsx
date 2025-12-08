@@ -48,6 +48,7 @@ export default function ArisanRekapClient({ initial, readOnly }) {
   const [range, setRange] = React.useState(initRange);
 
   const filterAnchorRef = React.useRef(null);
+
   const openFilterCalendar = React.useCallback(() => {
     const root = filterAnchorRef.current;
     if (!root) return;
@@ -63,18 +64,22 @@ export default function ArisanRekapClient({ initial, readOnly }) {
     );
   }, []);
 
+  const toLocalYMD = React.useCallback((d) => {
+    return [
+      d.getFullYear(),
+      String(d.getMonth() + 1).padStart(2, "0"),
+      String(d.getDate()).padStart(2, "0"),
+    ].join("-");
+  }, []);
+
   React.useEffect(() => {
     if (!range?.from || !range?.to) return;
 
-    const params = new URLSearchParams(sp.toString());
-    if (sp.get("rt")) params.set("rt", sp.get("rt"));
-    if (sp.get("q")) params.set("q", sp.get("q"));
+    const fromYmd = toLocalYMD(range.from);
+    const toYmd = toLocalYMD(range.to);
 
-    params.set("from", range.from.toISOString().slice(0, 10));
-    params.set("to", range.to.toISOString().slice(0, 10));
-    params.set("page", "1");
-
-    router.push(`/dashboard/arisan/rekapitulasi?${params.toString()}`);
+    navigate({ from: fromYmd, to: toYmd });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     range?.from ? range.from.getTime() : null,
     range?.to ? range.to.getTime() : null,
@@ -163,8 +168,26 @@ export default function ArisanRekapClient({ initial, readOnly }) {
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [editing]);
 
-  const rtOptions = React.useMemo(() => ["01", "02", "03", "04", "05"], []);
-  const setoranBounds = React.useMemo(() => ({ min: 0, max: 100000 }), []);
+  const rtOptions = React.useMemo(() => {
+    const base =
+      Array.isArray(initial?.listRt) && initial.listRt.length > 0
+        ? initial.listRt
+        : (initial?.rows || []).map((row) => row.rt).filter(Boolean);
+
+    const uniq = Array.from(new Set(base.map((v) => String(v))));
+
+    return uniq
+      .map((v) => {
+        const padded = v.padStart(2, "0");
+        return {
+          value: v,
+          label: `RT ${padded}`,
+        };
+      })
+      .sort((a, b) => Number(a.value) - Number(b.value));
+  }, [initial?.listRt, initial?.rows]);
+
+  const setoranBounds = React.useMemo(() => ({ min: 0, max: 10_000_000 }), []);
 
   return (
     <>
@@ -239,10 +262,30 @@ export default function ArisanRekapClient({ initial, readOnly }) {
           <div className="relative">
             <button
               type="button"
-              onClick={openFilterCalendar}
-              className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
-              title="Pilih rentang tanggal"
-              aria-label="Pilih rentang tanggal"
+              onClick={() => {
+                if (range?.from && range?.to) {
+                  setRange(undefined);
+                  navigate({ from: "", to: "" });
+                  return;
+                }
+                openFilterCalendar();
+              }}
+              className={[
+                "flex h-8 w-8 items-center justify-center rounded-[10px] border",
+                range?.from && range?.to
+                  ? "border-[#6E8649] bg-[#EEF0E8] text-[#2B3A1D]"
+                  : "border-[#E2E7D7] bg-white hover:bg-[#F8FAF5] text-gray-700",
+              ].join(" ")}
+              title={
+                range?.from && range?.to
+                  ? "Klik untuk hapus filter tanggal"
+                  : "Pilih rentang tanggal"
+              }
+              aria-label={
+                range?.from && range?.to
+                  ? "Klik untuk hapus filter tanggal"
+                  : "Pilih rentang tanggal"
+              }
             >
               <IconCalendar size={16} />
             </button>

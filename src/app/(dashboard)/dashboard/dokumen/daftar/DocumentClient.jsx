@@ -57,30 +57,47 @@ export default function DocumentClient({ initial, readOnly }) {
     open: false,
     data: null,
   });
-  const [viewer, setViewer] = React.useState({ open: false, url: null });
+  const [viewer, setViewer] = React.useState({
+    open: false,
+    url: null,
+    title: "",
+  });
 
   const [confirmDownload, setConfirmDownload] = React.useState(null);
 
+  const toLocalYMD = React.useCallback((d) => {
+    if (!d) return "";
+    return [
+      d.getFullYear(),
+      String(d.getMonth() + 1).padStart(2, "0"),
+      String(d.getDate()).padStart(2, "0"),
+    ].join("-");
+  }, []);
   const pushWithParams = React.useCallback(
     (extra = {}) => {
       const params = new URLSearchParams(sp.toString());
+
       if (search) params.set("q", search);
       else params.delete("q");
+
       if (range?.from && range?.to) {
-        params.set("from", range.from.toISOString().slice(0, 10));
-        params.set("to", range.to.toISOString().slice(0, 10));
+        params.set("from", toLocalYMD(range.from));
+        params.set("to", toLocalYMD(range.to));
       } else {
         params.delete("from");
         params.delete("to");
       }
+
       params.set("page", "1");
+
       Object.entries(extra).forEach(([k, v]) => {
         if (v === undefined || v === null || v === "") params.delete(k);
         else params.set(k, String(v));
       });
+
       router.push(`/dashboard/dokumen/daftar?${params.toString()}`);
     },
-    [sp, search, range?.from, range?.to, router]
+    [sp, search, range?.from, range?.to, router, toLocalYMD]
   );
 
   React.useEffect(() => {
@@ -177,19 +194,33 @@ export default function DocumentClient({ initial, readOnly }) {
               } md:${searchOpen || search ? "w-56" : "w-6"}`}
             />
           </div>
-
           <div className="relative">
             <button
               type="button"
               onClick={() => {
+                if (range?.from && range?.to) {
+                  setRange(undefined);
+                  pushWithParams({ from: "", to: "" });
+                  return;
+                }
+
                 const root = document.getElementById("doc-range-root");
                 const trigger = root?.querySelector(
                   'button, [role="button"], input'
                 );
                 trigger?.click();
               }}
-              className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white hover:bg-[#F8FAF5]"
-              title="Pilih rentang tanggal"
+              className={[
+                "flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-[10px] border",
+                range?.from && range?.to
+                  ? "border-[#6E8649] bg-[#EEF0E8] text-[#2B3A1D]"
+                  : "border-[#E2E7D7] bg-white hover:bg-[#F8FAF5] text-gray-700",
+              ].join(" ")}
+              title={
+                range?.from && range?.to
+                  ? "Klik untuk hapus filter tanggal"
+                  : "Pilih rentang tanggal"
+              }
             >
               <IconCalendar size={16} />
             </button>
@@ -199,7 +230,6 @@ export default function DocumentClient({ initial, readOnly }) {
               className="absolute left-0 top-0 h-0 w-0 overflow-hidden opacity-0"
               aria-hidden="true"
             >
-              {/* DateRangePicker */}
               <DateRangePicker
                 value={range}
                 onChange={(val) => {
@@ -238,7 +268,7 @@ export default function DocumentClient({ initial, readOnly }) {
           initial={initial}
           readOnly={readOnly}
           onView={(row) =>
-            setViewer({ open: true, url: publicFileURL(row.file_path) })
+            setViewer({ open: true, url: publicFileURL(row.file_path), title: row.title })
           }
           onEdit={(row) => setModalState({ open: true, data: row })}
           onDelete={(row) => setConfirmDelete(row)}
@@ -265,10 +295,12 @@ export default function DocumentClient({ initial, readOnly }) {
           onUpdate={onUpdate}
         />
       )}
+      
       {viewer.open && (
         <ViewerModal
           url={viewer.url}
-          onClose={() => setViewer({ open: false, url: null })}
+          title={viewer.title}
+          onClose={() => setViewer({ open: false, url: null, title: "" })}
         />
       )}
 

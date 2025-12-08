@@ -257,7 +257,7 @@ export default function DashboardHeaderControls({ isLoggedIn, periodes = [] }) {
         <button
           type="button"
           onClick={openCalendar}
-          className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
+          className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white hover:bg-[#F8FAF5] text-gray-700"
           title="Pilih rentang tanggal"
           aria-label="Pilih rentang tanggal"
         >
@@ -266,7 +266,7 @@ export default function DashboardHeaderControls({ isLoggedIn, periodes = [] }) {
 
         <div
           ref={filterAnchorRef}
-          className="absolute inset-0 pointer-events-none opacity-0"
+          className="absolute inset-0 opacity-0 pointer-events-none"
           aria-hidden="true"
         >
           <DateRangePicker
@@ -279,11 +279,9 @@ export default function DashboardHeaderControls({ isLoggedIn, periodes = [] }) {
               apply: "Ya, Simpan",
               range: "Rentang",
             }}
-            align="center"
+            align="end"
             sideOffset={8}
-            contentClassName="mt-2 rounded-xl border bg-white p-4 shadow-lg 
-                              min-w-[300px] sm:min-w-[560px]
-                              [&>div>div:last-child]:hidden sm:[&>div>div:last-child]:block"
+            contentClassName="mt-2 min-w-[560px] rounded-xl border bg-white p-4 shadow-lg"
             footerClassName="mt-3 border-t pt-3 flex justify-end gap-2"
             cancelClassName="rounded-lg bg-gray-100 px-4 py-1.5 text-sm"
             applyClassName="rounded-lg bg-[#6E8649] px-4 py-1.5 text-sm text-white"
@@ -307,7 +305,7 @@ export default function DashboardHeaderControls({ isLoggedIn, periodes = [] }) {
         onSubmit={handleEditSubmit}
         mode="edit"
         initialPeriod={editingPeriod}
-      /> 
+      />
 
       {confirmDeleteOpen && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">

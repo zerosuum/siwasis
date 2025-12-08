@@ -28,6 +28,29 @@ import PeriodDropdown from "../rekapitulasi/PeriodDropdown";
 import PeriodModal from "../rekapitulasi/PeriodModal";
 import { actionCreatePeriod } from "../rekapitulasi/actions";
 
+function formatRp(num) {
+  if (typeof num !== "number") num = Number(num || 0);
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(num);
+}
+
+const defaultData = {
+  meta: { year: new Date().getFullYear() },
+  rows: [],
+  page: 1,
+  perPage: 10,
+  total: 0,
+  kpi: {
+    pemasukanFormatted: formatRp(0),
+    pengeluaranFormatted: formatRp(0),
+    saldoFormatted: formatRp(0),
+    rangeLabel: "Semua",
+  },
+};
+
 function normalizeKasLaporan(resp, year) {
   if (!resp || resp.ok === false) {
     return {
@@ -52,7 +75,7 @@ function normalizeKasLaporan(resp, year) {
   const totalKeluar = rows.reduce((a, b) => a + (b.pengeluaran || 0), 0);
   const saldo = totalMasuk - totalKeluar;
 
-  const filters = resp.filter || {};
+  const filters = resp.filter || resp.filters || {};
   const filterYear = filters.year ?? year ?? null;
 
   return {
@@ -77,13 +100,8 @@ export default function LaporanClient({ initial, readOnly }) {
   const sp = useSearchParams();
   const { show } = useToast();
 
-  const periodes = initial?.periodes || [];
-
-  const metaYear = initial?.meta?.year;
-  const urlYear = sp.get("year") ? Number(sp.get("year")) : null;
-  const [year, setYear] = React.useState(
-    urlYear || metaYear || new Date().getFullYear()
-  );
+  const periodes = Array.isArray(initial?.periodes) ? initial.periodes : [];
+  const periodeId = sp.get("periode_id") ? Number(sp.get("periode_id")) : null;
 
   const [q, setQ] = React.useState(sp.get("q") || "");
   const [searchOpen, setSearchOpen] = React.useState(false);
@@ -123,50 +141,46 @@ export default function LaporanClient({ initial, readOnly }) {
     (extra = {}) => {
       const params = new URLSearchParams(sp.toString());
 
-      // year
-      if (year) params.set("year", String(year));
-      else params.delete("year");
+      params.delete("year");
 
-      // range tanggal
-      if (range?.from && range?.to) {
-        params.set("from", toLocalYMD(range.from));
-        params.set("to", toLocalYMD(range.to));
+      if (
+        Object.prototype.hasOwnProperty.call(extra, "from") ||
+        Object.prototype.hasOwnProperty.call(extra, "to")
+      ) {
+        const fromExtra = extra.from;
+        const toExtra = extra.to;
+
+        if (fromExtra) params.set("from", fromExtra);
+        else params.delete("from");
+
+        if (toExtra) params.set("to", toExtra);
+        else params.delete("to");
       } else {
-        params.delete("from");
-        params.delete("to");
+        if (range?.from && range?.to) {
+          params.set("from", toLocalYMD(range.from));
+          params.set("to", toLocalYMD(range.to));
+        } else {
+          params.delete("from");
+          params.delete("to");
+        }
       }
 
-      // search
       const trimmed = q.trim();
       if (trimmed) params.set("q", trimmed);
       else params.delete("q");
 
-      // reset page kalau ada perubahan
       params.set("page", "1");
 
-      // extra
       Object.entries(extra).forEach(([k, v]) => {
+        if (k === "from" || k === "to") return;
         if (v === undefined || v === null || v === "") params.delete(k);
         else params.set(k, String(v));
       });
 
       router.push(`/dashboard/kas/laporan?${params.toString()}`);
     },
-    [sp, year, range?.from, range?.to, q, router]
+    [sp, range?.from, range?.to, q, router]
   );
-
-  // ganti tahun via dropdown
-  const handleSelectYear = (y) => {
-    setYear(Number(y));
-  };
-
-  React.useEffect(() => {
-    const currentYear = sp.get("year") ? Number(sp.get("year")) : null;
-    if (currentYear !== year) {
-      pushWithParams();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [year]);
 
   React.useEffect(() => {
     if (range?.from && range?.to) {
@@ -248,11 +262,9 @@ export default function LaporanClient({ initial, readOnly }) {
 
   const handleCreatePeriod = async ({ name, nominal, from, to }) => {
     try {
-      const res = await actionCreatePeriod({ name, nominal, from, to });
+      await actionCreatePeriod({ name, nominal, from, to });
       setNewPeriodOpen(false);
       show({ title: "Sukses!", description: "Periode baru dibuat." });
-      const y = Number(res?.year) || new Date().getFullYear();
-      setYear(y);
     } catch (e) {
       console.error(e);
       show({
@@ -265,12 +277,13 @@ export default function LaporanClient({ initial, readOnly }) {
 
   const activePeriode = React.useMemo(() => {
     if (!periodes.length) return null;
-    const found = periodes.find((p) => {
-      if (!p.tanggal_mulai) return false;
-      return new Date(p.tanggal_mulai).getFullYear() === Number(year);
-    });
-    return found || periodes[0];
-  }, [periodes, year]);
+
+    if (periodeId) {
+      const byId = periodes.find((p) => p.id === periodeId);
+      if (byId) return byId;
+    }
+    return periodes[0];
+  }, [periodes, periodeId]);
 
   return (
     <>
@@ -296,11 +309,17 @@ export default function LaporanClient({ initial, readOnly }) {
             activeId={activePeriode?.id ?? null}
             options={periodes}
             onSelect={(id) => {
-              const p = periodes.find((pp) => pp.id === id);
-              if (p?.tanggal_mulai) {
-                const y = new Date(p.tanggal_mulai).getFullYear();
-                setYear(y);
-              }
+              const params = new URLSearchParams(sp.toString());
+
+              if (id) params.set("periode_id", String(id));
+              else params.delete("periode_id");
+
+              params.delete("from");
+              params.delete("to");
+              params.delete("year");
+              params.set("page", "1");
+
+              router.push(`/dashboard/kas/laporan?${params.toString()}`);
             }}
             showCreateButton={false}
           />
@@ -338,10 +357,30 @@ export default function LaporanClient({ initial, readOnly }) {
           <div className="relative">
             <button
               type="button"
-              onClick={openFilterCalendar}
-              className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#E2E7D7] bg-white"
-              title="Pilih rentang tanggal"
-              aria-label="Pilih rentang tanggal"
+              onClick={() => {
+                if (range?.from && range?.to) {
+                  setRange(undefined);
+                  pushWithParams({ from: "", to: "" });
+                  return;
+                }
+                openFilterCalendar();
+              }}
+              className={[
+                "flex h-8 w-8 items-center justify-center rounded-[10px] border",
+                range?.from && range?.to
+                  ? "border-[#6E8649] bg-[#EEF0E8] text-[#2B3A1D]"
+                  : "border-[#E2E7D7] bg-white hover:bg-[#F8FAF5] text-gray-700",
+              ].join(" ")}
+              title={
+                range?.from && range?.to
+                  ? "Klik untuk hapus filter tanggal"
+                  : "Pilih rentang tanggal"
+              }
+              aria-label={
+                range?.from && range?.to
+                  ? "Klik untuk hapus filter tanggal"
+                  : "Pilih rentang tanggal"
+              }
             >
               <IconCalendar size={16} />
             </button>
