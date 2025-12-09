@@ -43,20 +43,29 @@ export async function getArisanRekap({
   to,
   min,
   max,
+  status,
   periode_id,
 } = {}) {
   const params = {};
+  const currentPage = typeof page === "number" && page > 0 ? page : 1;
 
-  if (typeof page !== "undefined") params.page = page;
+  params.page = currentPage;
+
   if (q) params.q = q;
   if (from && to) {
     params.from = from;
     params.to = to;
   }
-  if (typeof min === "number") params.min = min;
-  if (typeof max === "number") params.max = max;
   if (periode_id) params.periode_id = periode_id;
   if (rt && rt !== "all") params.rt = rt;
+
+  const needsClientFilter =
+    typeof min === "number" || typeof max === "number" || !!status;
+
+  if (!needsClientFilter) {
+    if (typeof min === "number") params.min = min;
+    if (typeof max === "number") params.max = max;
+  }
 
   const [json, periodesRaw] = await Promise.all([
     proxyJSON("/arisan/rekap", { params }),
@@ -64,16 +73,44 @@ export async function getArisanRekap({
   ]);
 
   const dates = Array.isArray(json.dates) ? json.dates : [];
-
   const listRt = Array.isArray(json.list_rt) ? json.list_rt : [];
 
-  const paginator =
+  let paginator =
     json.data && Array.isArray(json.data.data)
       ? json.data
       : { data: Array.isArray(json.data) ? json.data : [] };
 
-  const rawRows = Array.isArray(paginator.data) ? paginator.data : [];
+  let rawRows = Array.isArray(paginator.data) ? paginator.data : [];
   const filters = json.filters || {};
+
+  if (needsClientFilter && (paginator.last_page ?? 1) > 1) {
+    const lastPage = paginator.last_page;
+
+    const otherPages = await Promise.all(
+      Array.from({ length: lastPage - 1 }, (_, idx) => {
+        const p = idx + 2;
+        return proxyJSON("/arisan/rekap", {
+          params: { ...params, page: p },
+        });
+      })
+    );
+
+    for (const j of otherPages) {
+      const pag =
+        j.data && Array.isArray(j.data.data)
+          ? j.data
+          : { data: Array.isArray(j.data) ? j.data : [] };
+
+      if (Array.isArray(pag.data)) {
+        rawRows = rawRows.concat(pag.data);
+      }
+    }
+
+    paginator = {
+      ...paginator,
+      total: rawRows.length,
+    };
+  }
 
   const rawPeriodes = Array.isArray(periodesRaw?.data)
     ? periodesRaw.data
@@ -126,11 +163,7 @@ export async function getArisanRekap({
         : [];
 
       for (const item of giliranData) {
-
-        const wargaId =
-          item.warga_id ??
-          item.warga?.id ?? 
-          item.id;
+        const wargaId = item.warga_id ?? item.warga?.id ?? item.id;
 
         const statusRaw =
           item.status_arisan ?? item.pivot?.status_arisan ?? null;
@@ -200,6 +233,22 @@ export async function getArisanRekap({
     };
   });
 
+  let filteredRows = rows;
+
+  if (typeof min === "number") {
+    filteredRows = filteredRows.filter((r) => r.totalSetoran >= min);
+  }
+
+  if (typeof max === "number") {
+    filteredRows = filteredRows.filter((r) => r.totalSetoran <= max);
+  }
+
+  if (status === "sudah_dapat") {
+    filteredRows = filteredRows.filter((r) => r.status === "Sudah Dapat");
+  } else if (status === "belum_dapat") {
+    filteredRows = filteredRows.filter((r) => r.status === "Belum Dapat");
+  }
+
   const yearFromPeriodeString =
     Number((json.periode || "").match(/\d{4}/)?.[0]) ||
     new Date().getFullYear();
@@ -228,13 +277,21 @@ export async function getArisanRekap({
     toNum(json.saldo) ||
     pemasukan - pengeluaran;
 
+  const perPage = paginator.per_page ?? 10;
+  const total = needsClientFilter
+    ? filteredRows.length
+    : paginator.total ?? filteredRows.length;
+
+  const start = (currentPage - 1) * perPage;
+  const pagedRows = filteredRows.slice(start, start + perPage);
+
   return {
-    rows,
+    rows: pagedRows,
     dates,
-    page: paginator.current_page ?? 1,
-    perPage: paginator.per_page ?? 10,
-    total: paginator.total ?? rows.length,
-    filters,
+    page: currentPage,
+    perPage,
+    total,
+    filters: { ...filters, min, max, status },
     periodes,
     periodeId: resolvedPeriodeId,
     meta: {
@@ -252,7 +309,6 @@ export async function getArisanRekap({
     listRt,
   };
 }
-
 
 export async function saveArisanRekap({ periode_id, updates }) {
   return proxyJSON("/arisan/rekap/save", {
