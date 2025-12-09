@@ -6,7 +6,7 @@ import { DateRangePicker } from "@/components/DatePicker";
 import { TabNavigation, TabNavigationLink } from "@/components/TabNavigation";
 import Pagination from "@/components/Pagination";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import FilterModal from "../../kas/rekapitulasi/FilterModal";
+import FilterModal from "./FilterModal";
 import {
   Calendar as IconCalendar,
   Search as IconSearch,
@@ -29,6 +29,7 @@ export default function ArisanRekapClient({ initial, readOnly }) {
   const rt = sp.get("rt") || "all";
   const from = sp.get("from");
   const to = sp.get("to");
+  const status = sp.get("status") || "all";
 
   const [searchQuery, setSearchQuery] = React.useState(q);
   const [searchOpen, setSearchOpen] = React.useState(false);
@@ -391,13 +392,19 @@ export default function ArisanRekapClient({ initial, readOnly }) {
           anchorEl={filterBtnRef.current}
           align="right"
           onApply={(vals) =>
-            navigate({ rt: vals.rt, min: vals.min, max: vals.max })
+            navigate({
+              rt: vals.rt,
+              min: vals.min,
+              max: vals.max,
+              status: vals.status,
+            })
           }
           rtOptions={rtOptions}
           value={{
             rt,
             min: sp.get("min") ? Number(sp.get("min")) : undefined,
             max: sp.get("max") ? Number(sp.get("max")) : undefined,
+            status: sp.get("status") || "",
           }}
           bounds={setoranBounds}
         />

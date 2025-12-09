@@ -45,6 +45,7 @@ export default async function Page({ searchParams }) {
   const to = sp?.to ? String(first(sp.to)) : undefined;
   const min = sp?.min ? Number(first(sp.min)) : undefined;
   const max = sp?.max ? Number(first(sp.max)) : undefined;
+  const status = sp?.status ? String(first(sp.status)) : undefined;
   const periodeIdFromUrl = sp?.periode_id
     ? Number(first(sp.periode_id))
     : undefined;
@@ -59,6 +60,7 @@ export default async function Page({ searchParams }) {
       to,
       min,
       max,
+      status,
       periode_id: periodeIdFromUrl,
     });
   } catch {
