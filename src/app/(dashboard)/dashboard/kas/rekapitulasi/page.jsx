@@ -82,19 +82,26 @@ export default async function Page({ searchParams }) {
     initial.meta.periodeId = periodeId;
   }
 
+  function getCurrentPage(initial) {
+    if (initial?.data?.current_page) return initial.data.current_page;
+    if (initial?.meta?.current_page) return initial.meta.current_page;
+    if (initial?.page) return initial.page;
+    return 1;
+  }
+
   const kpis = [
     {
-      label: "Pemasukan",
+      label: "Pemasukan Kas",
       value: initial.kpi.pemasukanFormatted,
-      range: initial.kpi.rangeLabel,
+      range: `Halaman ${getCurrentPage(initial)}`,
     },
     {
-      label: "Pengeluaran",
+      label: "Pengeluaran Kas",
       value: initial.kpi.pengeluaranFormatted,
-      range: initial.kpi.rangeLabel,
+      range: `Halaman ${getCurrentPage(initial)}`,
     },
     {
-      label: "Saldo",
+      label: "Saldo Kas",
       value: initial.kpi.saldoFormatted,
       range: initial.kpi.rangeLabel,
     },
