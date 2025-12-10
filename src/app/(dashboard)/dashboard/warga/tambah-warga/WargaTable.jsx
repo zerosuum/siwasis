@@ -156,7 +156,7 @@ export default function WargaTable({ initial, onEdit, onDelete }) {
 
                     <button
                       onClick={() => onDelete?.(r)}
-                      className="inline-flex h-8 w-8 min-h-8 min-w-8 items-center justify-center rounded-[10px] bg-[#6E8649] text-white hover:bg-opacity-90 transition [line-height:0]"
+                      className="inline-flex h-8 w-8 min-h-8 min-w-8 items-center justify-center rounded-[10px] bg-[#B24949] text-white hover:bg-opacity-90 transition [line-height:0]"
                       title="Hapus"
                       aria-label="Hapus"
                     >
