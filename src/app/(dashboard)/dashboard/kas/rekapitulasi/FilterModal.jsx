@@ -100,10 +100,7 @@ export default function FilterModal({
 
   return (
     <>
-      {/* backdrop full screen */}
       <div className="fixed inset-0 z-[100]" onMouseDown={onBackdrop} />
-
-      {/* panel nempel di bawah icon filter */}
       <div
         ref={panelRef}
         className="fixed z-[101] w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl border border-[#EEF0E8]"

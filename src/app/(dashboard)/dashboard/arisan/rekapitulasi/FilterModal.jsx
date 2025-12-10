@@ -216,9 +216,6 @@ export default function FilterModal({
               />
               <span>Belum Dapat</span>
             </label>
-            <p className="mt-1 text-[11px] text-gray-400">
-              Kalau dua-duanya dicentang / dua-duanya kosong → dianggap Semua.
-            </p>
           </div>
 
           <div>

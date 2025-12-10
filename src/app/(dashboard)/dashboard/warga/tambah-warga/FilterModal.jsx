@@ -1,5 +1,6 @@
 "use client";
 import * as React from "react";
+import { Slider } from "@/components/Slider";
 
 function Chip({ active, children, onClick }) {
   return (
@@ -13,6 +14,22 @@ function Chip({ active, children, onClick }) {
     </button>
   );
 }
+
+function NumberBox({ label, value }) {
+  return (
+    <div className="flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-3 py-2 cursor-default select-none">
+      <span className="text-xs text-gray-500">{label}</span>
+      <span className="text-sm font-medium text-gray-900">{fmt(value)}</span>
+    </div>
+  );
+}
+
+const fmt = (n) =>
+  Number(n || 0).toLocaleString("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  });
 
 export default function FilterModal({
   open,
@@ -33,20 +50,31 @@ export default function FilterModal({
     value.arisan_status === "belum_dapat"
   );
 
-  const [kasMin, setKasMin] = React.useState(value.kas_min ?? "");
-  const [kasMax, setKasMax] = React.useState(value.kas_max ?? "");
-  const [arMin, setArMin] = React.useState(value.arisan_min ?? "");
-  const [arMax, setArMax] = React.useState(value.arisan_max ?? "");
+  const [kasRange, setKasRange] = React.useState(() => {
+    const min = value.kas_min ? Number(value.kas_min) : 0;
+    const max = value.kas_max ? Number(value.kas_max) : 10_000_000;
+    return [min, max];
+  });
+
+  const [arRange, setArRange] = React.useState(() => {
+    const min = value.arisan_min ? Number(value.arisan_min) : 0;
+    const max = value.arisan_max ? Number(value.arisan_max) : 10_000_000;
+    return [min, max];
+  });
 
   React.useEffect(() => {
     if (!open) return;
     setRt(value.rt ?? "all");
     setStatusSudah(value.arisan_status === "sudah_dapat");
     setStatusBelum(value.arisan_status === "belum_dapat");
-    setKasMin(value.kas_min ?? "");
-    setKasMax(value.kas_max ?? "");
-    setArMin(value.arisan_min ?? "");
-    setArMax(value.arisan_max ?? "");
+
+    const kasMin = value.kas_min ? Number(value.kas_min) : 0;
+    const kasMax = value.kas_max ? Number(value.kas_max) : 10_000_000;
+    setKasRange([kasMin, kasMax]);
+
+    const arMin = value.arisan_min ? Number(value.arisan_min) : 0;
+    const arMax = value.arisan_max ? Number(value.arisan_max) : 10_000_000;
+    setArRange([arMin, arMax]);
   }, [open, value]);
 
   const panelRef = React.useRef(null);
@@ -81,8 +109,6 @@ export default function FilterModal({
       : statusSudah
       ? "sudah_dapat"
       : "belum_dapat";
-
-  const onlyNum = (s) => s.replace(/\D+/g, "");
 
   const onBackdrop = (e) => {
     if (e.target === e.currentTarget) onClose?.();
@@ -154,29 +180,25 @@ export default function FilterModal({
             <div className="mb-2 font-medium text-[#8B8FA1]">
               Jumlah Setoran Kas
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1 block text-xs text-gray-600">Min</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={kasMin}
-                  onChange={(e) => setKasMin(onlyNum(e.target.value))}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  aria-label="Kas minimum"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-gray-600">Max</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={kasMax}
-                  onChange={(e) => setKasMax(onlyNum(e.target.value))}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  aria-label="Kas maksimum"
-                />
-              </div>
+
+            <div className="mb-3 grid grid-cols-2 gap-3">
+              <NumberBox label="Min" value={kasRange[0]} />
+              <NumberBox label="Max" value={kasRange[1]} />
+            </div>
+
+            <Slider
+              value={kasRange}
+              min={0}
+              max={10_000_000}
+              step={10000}
+              onValueChange={(val) => setKasRange(val)}
+              ariaLabelThumb="Jumlah Setoran Kas"
+              className="w-full"
+            />
+
+            <div className="mt-1 flex justify-between text-xs text-gray-500">
+              <span>{fmt(0)}</span>
+              <span>{fmt(10_000_000)}</span>
             </div>
           </div>
 
@@ -184,29 +206,25 @@ export default function FilterModal({
             <div className="mb-2 font-medium text-[#8B8FA1]">
               Jumlah Setoran Arisan
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1 block text-xs text-gray-600">Min</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={arMin}
-                  onChange={(e) => setArMin(onlyNum(e.target.value))}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  aria-label="Arisan minimum"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-gray-600">Max</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={arMax}
-                  onChange={(e) => setArMax(onlyNum(e.target.value))}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  aria-label="Arisan maksimum"
-                />
-              </div>
+
+            <div className="mb-3 grid grid-cols-2 gap-3">
+              <NumberBox label="Min" value={arRange[0]} />
+              <NumberBox label="Max" value={arRange[1]} />
+            </div>
+
+            <Slider
+              value={arRange}
+              min={0}
+              max={10_000_000}
+              step={10000}
+              onValueChange={(val) => setArRange(val)}
+              ariaLabelThumb="Jumlah Setoran Arisan"
+              className="w-full"
+            />
+
+            <div className="mt-1 flex justify-between text-xs text-gray-500">
+              <span>{fmt(0)}</span>
+              <span>{fmt(10_000_000)}</span>
             </div>
           </div>
         </div>
@@ -225,10 +243,10 @@ export default function FilterModal({
               onApply({
                 rt,
                 arisan_status: chosenStatus || undefined,
-                kas_min: kasMin || undefined,
-                kas_max: kasMax || undefined,
-                arisan_min: arMin || undefined,
-                arisan_max: arMax || undefined,
+                kas_min: kasRange[0],
+                kas_max: kasRange[1],
+                arisan_min: arRange[0],
+                arisan_max: arRange[1],
               })
             }
             className="rounded-lg bg-[#6E8649] px-4 py-2 text-sm text-white"
