@@ -282,8 +282,14 @@ export async function getArisanRekap({
     ? filteredRows.length
     : paginator.total ?? filteredRows.length;
 
-  const start = (currentPage - 1) * perPage;
-  const pagedRows = filteredRows.slice(start, start + perPage);
+  let pagedRows;
+
+  if (needsClientFilter) {
+    const start = (currentPage - 1) * perPage;
+    pagedRows = filteredRows.slice(start, start + perPage);
+  } else {
+    pagedRows = filteredRows;
+  }
 
   return {
     rows: pagedRows,
@@ -333,7 +339,6 @@ export async function getSpinCandidates({ periode_id } = {}) {
     id: item.id,
     label: item.nama,
     color: SPIN_COLORS[idx % SPIN_COLORS.length],
-    // field lain kalau mau:
     tipe_warga: item.tipe_warga,
     status_arisan: item.status_arisan,
   }));
