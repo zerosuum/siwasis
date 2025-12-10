@@ -150,16 +150,23 @@ export default async function Page({ searchParams }) {
     activePeriode?.nama ||
     (initial.meta?.year ? `Tahun ${initial.meta.year}` : "Semua Periode");
 
+    function getCurrentPage(initial) {
+      if (initial?.data?.current_page) return initial.data.current_page;
+      if (initial?.meta?.current_page) return initial.meta.current_page;
+      if (initial?.page) return initial.page;
+      return 1;
+    }
+
   const kpis = [
     {
       label: "Pemasukan",
       value: initial.kpi.pemasukanFormatted,
-      range: rangeText,
+      range: `Halaman ${getCurrentPage(initial)}`,
     },
     {
       label: "Pengeluaran",
       value: initial.kpi.pengeluaranFormatted,
-      range: rangeText,
+      range: `Halaman ${getCurrentPage(initial)}`,
     },
     {
       label: "Saldo",
